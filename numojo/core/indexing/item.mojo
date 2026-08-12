@@ -14,7 +14,12 @@ It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to acces
 """
 
 from std.builtin.int import index as convert_to_int
-from std.memory import unsafe_memcpy, unsafe_memset_zero, UnsafePointer, unsafe_memcmp
+from std.memory import (
+    unsafe_memcpy,
+    unsafe_memset_zero,
+    UnsafePointer,
+    unsafe_memcmp,
+)
 from std.os import abort
 from std.sys import simd_width_of
 from std.utils import Variant
@@ -522,7 +527,6 @@ struct Item(
             True if the value is in the Item, False otherwise.
         """
         return val in self._buf
-
 
     # ===----------------------------------------------------------------------=== #
     # Utility Methods

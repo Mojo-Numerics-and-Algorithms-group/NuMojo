@@ -648,7 +648,9 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
 
     var data_ptr = dl_tensor.data.unsafe_bitcast[Scalar[dtype]]()
     if dl_tensor.byte_offset > 0:
-        data_ptr = data_ptr.unsafe_offset(Int(dl_tensor.byte_offset) // size_of[dtype]())
+        data_ptr = data_ptr.unsafe_offset(
+            Int(dl_tensor.byte_offset) // size_of[dtype]()
+        )
 
     var size = shape.size()
     var buf = DataContainer[dtype](

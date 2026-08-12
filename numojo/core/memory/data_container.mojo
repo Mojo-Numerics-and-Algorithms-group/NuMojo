@@ -116,9 +116,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         """
         Create an empty, managed DataContainer.
         """
-        self.ptr = Pointer[
-            Scalar[Self.dtype], Self.origin
-        ].unsafe_dangling()
+        self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
         self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
@@ -280,9 +278,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         return self.ptr
 
     @always_inline
-    def offset(
-        self, offset: Int
-    ) -> Pointer[Scalar[Self.dtype], Self.origin]:
+    def offset(self, offset: Int) -> Pointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a pointer offset by the specified number of elements.
 

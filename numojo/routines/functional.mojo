@@ -286,6 +286,10 @@ def apply_along_axis_preserve[
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
+                # `DataContainer.origin` is untracked, so the raw pointer
+                # above does not keep `elements` alive; hold it until the
+                # copy has finished.
+                _ = elements^
             except e:
                 print("Error in parallelized_func", e)
 
@@ -309,9 +313,9 @@ def apply_along_axis_preserve[
                 var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (result._buf.ptr.unsafe_offset(Int(indices[j]))).unsafe_write(
-                        (res_along_axis._buf.ptr.unsafe_offset(j))[]
-                    )
+                    (
+                        result._buf.ptr.unsafe_offset(Int(indices[j]))
+                    ).unsafe_write((res_along_axis._buf.ptr.unsafe_offset(j))[])
             except e:
                 print("Error in parallelized_func", e)
 
@@ -360,6 +364,10 @@ def apply_along_axis_inplace[
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
+                # `DataContainer.origin` is untracked, so the raw pointer
+                # above does not keep `elements` alive; hold it until the
+                # copy has finished.
+                _ = elements^
             except e:
                 print("Error in parallelized_func", e)
 
@@ -435,6 +443,10 @@ def apply_along_axis_indices[
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
+                # `DataContainer.origin` is untracked, so the raw pointer
+                # above does not keep `elements` alive; hold it until the
+                # copy has finished.
+                _ = elements^
             except e:
                 print("Error in parallelized_func", e)
 

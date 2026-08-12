@@ -236,7 +236,9 @@ def cumprod[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j + 1]] *= B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
+            B._buf.ptr[
+                unsafe_offset=I._buf.ptr[unsafe_offset=i + j + 1]
+            ] *= B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
 
     return B^
 

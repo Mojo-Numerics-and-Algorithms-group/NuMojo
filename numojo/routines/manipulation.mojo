@@ -66,7 +66,9 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
                 remainder = remainder // dst.shape[dim]
                 src_offset += coord * src.strides[dim]
                 dst_offset += coord * dst.strides[dim]
-            dst._buf.ptr[unsafe_offset=dst_offset] = src._buf.ptr[unsafe_offset=src_offset]
+            dst._buf.ptr[unsafe_offset=dst_offset] = src._buf.ptr[
+                unsafe_offset=src_offset
+            ]
 
 
 def ndim[dtype: DType](array: NDArray[dtype]) -> Int:
@@ -346,7 +348,9 @@ def transpose[
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf.ptr[unsafe_offset=i] = (A._buf.ptr.unsafe_offset(A.offset))[unsafe_offset=Int(I._buf.ptr[unsafe_offset=i])]
+        B._buf.ptr[unsafe_offset=i] = (A._buf.ptr.unsafe_offset(A.offset))[
+            unsafe_offset=Int(I._buf.ptr[unsafe_offset=i])
+        ]
     return B^
 
 
@@ -677,10 +681,18 @@ def flip[
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
             var temp = A._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
-            A._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]] = A._buf.ptr[unsafe_offset=
-                I._buf.ptr[unsafe_offset=i + A.shape[axis] - 1 - j]
+            A._buf.ptr[
+                unsafe_offset=I._buf.ptr[unsafe_offset=i + j]
+            ] = A._buf.ptr[
+                unsafe_offset=I._buf.ptr[
+                    unsafe_offset=i + A.shape[axis] - 1 - j
+                ]
             ]
-            A._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + A.shape[axis] - 1 - j]] = temp
+            A._buf.ptr[
+                unsafe_offset=I._buf.ptr[
+                    unsafe_offset=i + A.shape[axis] - 1 - j
+                ]
+            ] = temp
 
     return A^
 
@@ -800,7 +812,9 @@ def _concatenate_list[
         # Adjust the coordinate along the concat axis to be local.
         nd_index[ax] = coord_along_axis - boundaries[src_idx]
 
-        result._buf.ptr[unsafe_offset=flat_idx] = arrays[src_idx]._getitem(nd_index)
+        result._buf.ptr[unsafe_offset=flat_idx] = arrays[src_idx]._getitem(
+            nd_index
+        )
 
     return result^
 

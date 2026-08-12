@@ -60,7 +60,9 @@ def _apply_unary_chunk[
 ):
     var i = start
     while i + width <= end:
-        dst.unsafe_store(i, kernel[dtype, width](src.unsafe_load[width=width](i)))
+        dst.unsafe_store(
+            i, kernel[dtype, width](src.unsafe_load[width=width](i))
+        )
         i += width
     while i < end:
         dst.unsafe_store(i, kernel[dtype, 1](src.unsafe_load[width=1](i)))
@@ -86,14 +88,17 @@ def _apply_binary_chunk[
         dst.unsafe_store(
             i,
             kernel[dtype, width](
-                src1.unsafe_load[width=width](i), src2.unsafe_load[width=width](i)
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
             ),
         )
         i += width
     while i < end:
         dst.unsafe_store(
             i,
-            kernel[dtype, 1](src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)
+            ),
         )
         i += 1
 
@@ -147,10 +152,14 @@ def _apply_binary_int_chunk[
 ):
     var i = start
     while i + width <= end:
-        dst.unsafe_store(i, kernel[dtype, width](src.unsafe_load[width=width](i), intval))
+        dst.unsafe_store(
+            i, kernel[dtype, width](src.unsafe_load[width=width](i), intval)
+        )
         i += width
     while i < end:
-        dst.unsafe_store(i, kernel[dtype, 1](src.unsafe_load[width=1](i), intval))
+        dst.unsafe_store(
+            i, kernel[dtype, 1](src.unsafe_load[width=1](i), intval)
+        )
         i += 1
 
 
@@ -174,7 +183,8 @@ def _apply_binary_predicate_chunk[
             dst,
             i,
             kernel[dtype, width](
-                src1.unsafe_load[width=width](i), src2.unsafe_load[width=width](i)
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
             ),
         )
         i += width
@@ -182,7 +192,9 @@ def _apply_binary_predicate_chunk[
         bool_simd_store[1](
             dst,
             i,
-            kernel[dtype, 1](src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)
+            ),
         )
         i += 1
 
@@ -215,7 +227,9 @@ def _apply_binary_predicate_scalar_chunk[
         bool_simd_store[1](
             dst,
             i,
-            kernel[dtype, 1](src.unsafe_load[width=1](i), SIMD[dtype, 1](scalar)),
+            kernel[dtype, 1](
+                src.unsafe_load[width=1](i), SIMD[dtype, 1](scalar)
+            ),
         )
         i += 1
 
@@ -240,7 +254,9 @@ def _apply_unary_predicate_chunk[
         )
         i += width
     while i < end:
-        bool_simd_store[1](dst, i, kernel[dtype, 1](src.unsafe_load[width=1](i)))
+        bool_simd_store[1](
+            dst, i, kernel[dtype, 1](src.unsafe_load[width=1](i))
+        )
         i += 1
 
 
@@ -466,7 +482,9 @@ struct HostExecutor:
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
             var result_array = _0darray(
-                val=kernel[dtype, 1]((array._buf.ptr.unsafe_offset(array.offset))[])
+                val=kernel[dtype, 1](
+                    (array._buf.ptr.unsafe_offset(array.offset))[]
+                )
             )
             return result_array^
 
@@ -1098,4 +1116,6 @@ def bool_simd_store[
         start: Start position in the pointer.
         val: SIMD boolean value to store.
     """
-    (ptr.unsafe_offset(start)).unsafe_strided_store[width=simd_width](val=val, stride=1)
+    (ptr.unsafe_offset(start)).unsafe_strided_store[width=simd_width](
+        val=val, stride=1
+    )

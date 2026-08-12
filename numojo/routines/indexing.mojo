@@ -204,7 +204,9 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf.ptr[unsafe_offset=i] = x_c._buf.ptr[unsafe_offset=i] if cond_c._buf.ptr[unsafe_offset=i] else y
+        result._buf.ptr[unsafe_offset=i] = x_c._buf.ptr[
+            unsafe_offset=i
+        ] if cond_c._buf.ptr[unsafe_offset=i] else y
     return result^
 
 
@@ -250,7 +252,9 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf.ptr[unsafe_offset=i] = x if cond_c._buf.ptr[unsafe_offset=i] else y_c._buf.ptr[unsafe_offset=i]
+        result._buf.ptr[unsafe_offset=i] = x if cond_c._buf.ptr[
+            unsafe_offset=i
+        ] else y_c._buf.ptr[unsafe_offset=i]
     return result^
 
 
@@ -503,7 +507,9 @@ def compress[
                         remainder %= res_strides.unsafe_load(j)
 
                 (
-                    result._buf.ptr.unsafe_offset(IndexMethods.get_1d_index(item, result.strides))
+                    result._buf.ptr.unsafe_offset(
+                        IndexMethods.get_1d_index(item, result.strides)
+                    )
                 ).unsafe_write(current_slice._buf.ptr[unsafe_offset=offset])
 
                 count += 1
@@ -656,7 +662,9 @@ def take_along_axis[
                 indices_slice
             ]
             unsafe_memcpy(
-                dest=result._buf.ptr.unsafe_offset(i * result.shape[normalized_axis]),
+                dest=result._buf.ptr.unsafe_offset(
+                    i * result.shape[normalized_axis]
+                ),
                 src=arr_slice_after_applying_indices._buf.ptr,
                 count=result.shape[normalized_axis],
             )
@@ -1112,12 +1120,16 @@ def unravel_index(
         if order == "C":
             for d in range(shape.ndim - 1, -1, -1):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](rem % dim)
+                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
+                    rem % dim
+                )
                 rem //= dim
         elif order == "F":
             for d in range(shape.ndim):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](rem % dim)
+                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
+                    rem % dim
+                )
                 rem //= dim
 
     return result^
@@ -1328,7 +1340,9 @@ def nonzero[
             for d in range(a.ndim - 1, -1, -1):
                 var coord = rem % a.shape[d]
                 rem //= a.shape[d]
-                result[d]._buf.ptr[unsafe_offset=out_idx] = Scalar[DType.int](coord)
+                result[d]._buf.ptr[unsafe_offset=out_idx] = Scalar[DType.int](
+                    coord
+                )
             out_idx += 1
 
     return result^

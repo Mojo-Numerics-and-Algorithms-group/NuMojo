@@ -171,7 +171,9 @@ def matmul_tiled_unrolled_parallelized[
                             m * t2 + (n + x)
                         )
                         + A._buf.ptr.unsafe_load(m * t1 + k)
-                        * B._buf.ptr.unsafe_load[width=simd_width](k * t2 + (n + x)),
+                        * B._buf.ptr.unsafe_load[width=simd_width](
+                            k * t2 + (n + x)
+                        ),
                     )
 
                 comptime unroll_factor = tile_x // width
@@ -290,7 +292,9 @@ def matmul_2darray[
             } -> None:
                 result._buf.ptr.unsafe_store(
                     m * t2 + n,
-                    val=result._buf.ptr.unsafe_load[width=simd_width](m * t2 + n)
+                    val=result._buf.ptr.unsafe_load[width=simd_width](
+                        m * t2 + n
+                    )
                     + A._buf.ptr.unsafe_load[width=simd_width](m * t1 + k)
                     * B._buf.ptr.unsafe_load[width=simd_width](k * t2 + n),
                 )
@@ -393,6 +397,13 @@ def matmul[
             src=result_sub_matrix._buf.ptr,
             count=result_sub_matrix.size,
         )
+
+    # `DataContainer.origin` is untracked, so the raw pointers above do not
+    # keep the sub-matrices alive; hold them until the loop is done.
+    _ = result_sub_matrix^
+    _ = A_sub_matrix^
+    _ = B_sub_matrix^
+
     return result^
 
 

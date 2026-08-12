@@ -287,7 +287,6 @@ struct NDArrayShape(
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
 
-
     @always_inline("nodebug")
     def __getitem__(
         self, index: Scalar[Self.element_type]
@@ -333,7 +332,6 @@ struct NDArrayShape(
            Error: Index out of bound.
         """
         self._buf[index] = val
-
 
     def load[
         width: Int = 1
@@ -786,7 +784,6 @@ struct NDArrayShape(
            True if both shapes do not have identical dimensions or values.
         """
         return not self.__eq__(other)
-
 
     @always_inline("nodebug")
     def __contains__(self, val: Scalar[Self.element_type]) -> Bool:

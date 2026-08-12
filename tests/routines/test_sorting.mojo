@@ -97,7 +97,7 @@ def test_inplace_sort() raises:
     var C = nm.random.randn(2, 3, 4)
     for i in range(3):
         C.sort(axis=i)
-        Cnp = C.to_numpy()
+        var Cnp = C.to_numpy()
         Cnp.sort(axis=i)
         check(
             C,

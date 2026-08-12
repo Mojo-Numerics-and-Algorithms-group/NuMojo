@@ -109,8 +109,6 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         self.re = val
         self.im = val
 
-
-
     # Factory constructors.
     @staticmethod
     def zero() -> Self:

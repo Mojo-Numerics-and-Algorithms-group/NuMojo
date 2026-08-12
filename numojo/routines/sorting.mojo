@@ -359,9 +359,14 @@ def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
         for i in range(1, end):
-            if result._buf.ptr[unsafe_offset=i - 1] > result._buf.ptr[unsafe_offset=i]:
+            if (
+                result._buf.ptr[unsafe_offset=i - 1]
+                > result._buf.ptr[unsafe_offset=i]
+            ):
                 var temp = result._buf.ptr[unsafe_offset=i - 1]
-                result._buf.ptr[unsafe_offset=i - 1] = result._buf.ptr[unsafe_offset=i]
+                result._buf.ptr[unsafe_offset=i - 1] = result._buf.ptr[
+                    unsafe_offset=i
+                ]
                 result._buf.ptr[unsafe_offset=i] = temp
     return result^
 
@@ -440,11 +445,13 @@ def bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
     for i in range(length):
         for j in range(length - i - 1):
-            if result._buf.ptr.unsafe_load[width=1](j) > result._buf.ptr.unsafe_load[width=1](
-                j + 1
-            ):
+            if result._buf.ptr.unsafe_load[width=1](
+                j
+            ) > result._buf.ptr.unsafe_load[width=1](j + 1):
                 var temp = result._buf.ptr.unsafe_load[width=1](j)
-                result._buf.ptr.unsafe_store(j, result._buf.ptr.unsafe_load[width=1](j + 1))
+                result._buf.ptr.unsafe_store(
+                    j, result._buf.ptr.unsafe_load[width=1](j + 1)
+                )
                 result._buf.ptr.unsafe_store(j + 1, temp)
 
     return result^
@@ -607,7 +614,9 @@ def _partition_in_range(
 
     for i in range(left, right):
         if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=i] = (
+            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
+                unsafe_offset=i
+            ] = (
                 A._buf.ptr[unsafe_offset=i],
                 A._buf.ptr[unsafe_offset=store_index],
             )
@@ -659,11 +668,15 @@ def _partition_in_range(
 
     for i in range(left, right):
         if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=i] = (
+            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
+                unsafe_offset=i
+            ] = (
                 A._buf.ptr[unsafe_offset=i],
                 A._buf.ptr[unsafe_offset=store_index],
             )
-            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[unsafe_offset=i] = (
+            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[
+                unsafe_offset=i
+            ] = (
                 I._buf.ptr[unsafe_offset=i],
                 I._buf.ptr[unsafe_offset=store_index],
             )
@@ -722,11 +735,15 @@ def _quick_sort_partition(
 
     for i in range(left, right):
         if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=i] = (
+            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
+                unsafe_offset=i
+            ] = (
                 A._buf.ptr[unsafe_offset=i],
                 A._buf.ptr[unsafe_offset=store_index],
             )
-            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[unsafe_offset=i] = (
+            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[
+                unsafe_offset=i
+            ] = (
                 I._buf.ptr[unsafe_offset=i],
                 I._buf.ptr[unsafe_offset=store_index],
             )
@@ -942,4 +959,6 @@ def _quick_sort_stable_inplace[
         a._buf.ptr[unsafe_offset=i] = left._buf.ptr[unsafe_offset=i]
     a._buf.ptr[unsafe_offset=left_index] = pivot_value
     for i in range(right_index):
-        a._buf.ptr[unsafe_offset=left_index + 1 + i] = right._buf.ptr[unsafe_offset=i]
+        a._buf.ptr[unsafe_offset=left_index + 1 + i] = right._buf.ptr[
+            unsafe_offset=i
+        ]

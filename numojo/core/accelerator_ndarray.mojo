@@ -774,16 +774,24 @@ struct AcceleratorNDArray[
             var src2 = other.unsafe_ptr()
             comptime if op_code == kernels.ADD:
                 for i in range(self.size):
-                    dst[unsafe_offset=i] = src1[unsafe_offset=i] + src2[unsafe_offset=i]
+                    dst[unsafe_offset=i] = (
+                        src1[unsafe_offset=i] + src2[unsafe_offset=i]
+                    )
             elif op_code == kernels.SUB:
                 for i in range(self.size):
-                    dst[unsafe_offset=i] = src1[unsafe_offset=i] - src2[unsafe_offset=i]
+                    dst[unsafe_offset=i] = (
+                        src1[unsafe_offset=i] - src2[unsafe_offset=i]
+                    )
             elif op_code == kernels.MUL:
                 for i in range(self.size):
-                    dst[unsafe_offset=i] = src1[unsafe_offset=i] * src2[unsafe_offset=i]
+                    dst[unsafe_offset=i] = (
+                        src1[unsafe_offset=i] * src2[unsafe_offset=i]
+                    )
             else:
                 for i in range(self.size):
-                    dst[unsafe_offset=i] = src1[unsafe_offset=i] / src2[unsafe_offset=i]
+                    dst[unsafe_offset=i] = (
+                        src1[unsafe_offset=i] / src2[unsafe_offset=i]
+                    )
         else:
             comptime assert Self.device.type == "gpu"
             var context = self.device_context()

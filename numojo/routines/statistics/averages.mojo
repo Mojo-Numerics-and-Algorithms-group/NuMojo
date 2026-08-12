@@ -378,9 +378,9 @@ def stddev[
                 ).format(ddof, A.shape[i], i)
             )
 
-    return variance[returned_dtype](A, axis=normalized_axis, ddof=ddof) ** Scalar[
-        returned_dtype
-    ](0.5)
+    return variance[returned_dtype](
+        A, axis=normalized_axis, ddof=ddof
+    ) ** Scalar[returned_dtype](0.5)
 
 
 def stddev[

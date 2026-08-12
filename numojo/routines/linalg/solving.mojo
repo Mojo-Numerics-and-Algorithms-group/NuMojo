@@ -185,9 +185,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m):  # row of L
             var _temp = Y._buf.ptr.unsafe_load(i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.ptr.unsafe_load(i * m + j) * Z._buf.ptr.unsafe_load(
-                    j * m + col
-                )
+                _temp = _temp - L._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * Z._buf.ptr.unsafe_load(j * m + col)
             _temp = _temp / L._buf.ptr.unsafe_load(i * m + i)
             Z._buf.ptr.unsafe_store(i * m + col, _temp)
 
@@ -195,9 +195,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._buf.ptr.unsafe_load(i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.ptr.unsafe_load(i * m + j) * X._buf.ptr.unsafe_load(
-                    j * m + col
-                )
+                _temp2 = _temp2 - U._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * X._buf.ptr.unsafe_load(j * m + col)
             _temp2 = _temp2 / U._buf.ptr.unsafe_load(i * m + i)
             X._buf.ptr.unsafe_store(i * m + col, _temp2)
 
@@ -328,9 +328,9 @@ def solve[
         for i in range(m):  # row of L
             var _temp = Y._buf.ptr.unsafe_load(i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.ptr.unsafe_load(i * m + j) * Z._buf.ptr.unsafe_load(
-                    j * n + col
-                )
+                _temp = _temp - L._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * Z._buf.ptr.unsafe_load(j * n + col)
             _temp = _temp / L._buf.ptr.unsafe_load(i * m + i)
             Z._buf.ptr.unsafe_store(i * n + col, _temp)
 
@@ -338,9 +338,9 @@ def solve[
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._buf.ptr.unsafe_load(i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.ptr.unsafe_load(i * m + j) * X._buf.ptr.unsafe_load(
-                    j * n + col
-                )
+                _temp2 = _temp2 - U._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * X._buf.ptr.unsafe_load(j * n + col)
             _temp2 = _temp2 / U._buf.ptr.unsafe_load(i * m + i)
             X._buf.ptr.unsafe_store(i * n + col, _temp2)
 

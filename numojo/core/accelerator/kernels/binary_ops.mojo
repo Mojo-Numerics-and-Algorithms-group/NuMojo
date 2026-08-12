@@ -45,7 +45,9 @@ def binary_op_kernel[
     """GPU kernel: `result[i] = op(a[i], b[i])` for contiguous buffers."""
     var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
     if i < size:
-        result[unsafe_offset=i] = _binary_op[dtype, op_code](a[unsafe_offset=i], b[unsafe_offset=i])
+        result[unsafe_offset=i] = _binary_op[dtype, op_code](
+            a[unsafe_offset=i], b[unsafe_offset=i]
+        )
 
 
 def launch_config(size: Int) -> Tuple[Int, Int]:

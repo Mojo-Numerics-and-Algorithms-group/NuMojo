@@ -125,7 +125,9 @@ def trace[
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
         result._buf.ptr.unsafe_store(
-            0, result._buf.ptr.unsafe_load(0) + array._buf.ptr[unsafe_offset=row * cols + col]
+            0,
+            result._buf.ptr.unsafe_load(0)
+            + array._buf.ptr[unsafe_offset=row * cols + col],
         )
 
     return result^

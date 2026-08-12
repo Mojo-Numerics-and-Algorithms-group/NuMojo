@@ -79,7 +79,7 @@ def test_matmul_2dx1d() raises:
 # ! The `inv` is broken, it outputs -INF for some values
 def test_inv() raises:
     var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(100, 100)
+    var arr = nm.random.rand(100, 100)
     var np_arr = arr.to_numpy()
     check_is_close(
         nm.math.linalg.inv(arr), np.linalg.inv(np_arr), "Inverse is broken"
@@ -89,8 +89,8 @@ def test_inv() raises:
 # ! The `solve` is broken, it outputs -INF, nan, 0 etc for some values
 def test_solve() raises:
     var np = Python.import_module("numpy")
-    var A = nm.core.random.randn(100, 100)
-    var B = nm.core.random.randn(100, 50)
+    var A = nm.random.randn(100, 100)
+    var B = nm.random.randn(100, 50)
     var A_np = A.to_numpy()
     var B_np = B.to_numpy()
     check_is_close(
@@ -102,7 +102,7 @@ def test_solve() raises:
 
 def norms() raises:
     var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(20, 20)
+    var arr = nm.random.rand(20, 20)
     var np_arr = arr.to_numpy()
     check_values_close(
         nm.math.linalg.det(arr), np.linalg.det(np_arr), "`det` is broken"
@@ -111,7 +111,7 @@ def norms() raises:
 
 def test_misc() raises:
     var np = Python.import_module("numpy")
-    var arr = nm.core.random.rand(4, 8)
+    var arr = nm.random.rand(4, 8)
     var np_arr = arr.to_numpy()
     for i in range(-(arr.shape[0] - 1), arr.shape[1]):
         check_is_close(

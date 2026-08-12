@@ -75,9 +75,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
-        self.ptr = Pointer[
-            Scalar[Self.dtype], Self.origin
-        ].unsafe_dangling()
+        self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
         self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
@@ -256,9 +254,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
         return self.ptr
 
     @always_inline
-    def offset(
-        self, offset: Int
-    ) -> Pointer[Scalar[Self.dtype], Self.origin]:
+    def offset(self, offset: Int) -> Pointer[Scalar[Self.dtype], Self.origin]:
         """Return a pointer advanced by `offset` elements.
 
         Args:
@@ -596,7 +592,11 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         Returns:
             An `UnsafePointer` to the first element on the device.
         """
-        return self.buffer.unsafe_ptr().unsafe_mut_cast[True]().as_unsafe_any_origin()
+        return (
+            self.buffer.unsafe_ptr()
+            .unsafe_mut_cast[True]()
+            .as_unsafe_any_origin()
+        )
 
     def share(self) raises -> DeviceStorage[Self.dtype, Self.device]:
         """Create a shallow handle sharing this device buffer."""
@@ -850,7 +850,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        return self.host_storage.unsafe_value().ptr.unsafe_load[width=width](offset)
+        return self.host_storage.unsafe_value().ptr.unsafe_load[width=width](
+            offset
+        )
 
     @always_inline
     def store[
@@ -872,7 +874,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        self.host_storage.unsafe_value().ptr.unsafe_store[width=width](offset, value)
+        self.host_storage.unsafe_value().ptr.unsafe_store[width=width](
+            offset, value
+        )
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -989,7 +993,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             An `UnsafePointer` to the first element on the host.
         """
-        return self.host_storage.unsafe_value().unsafe_ptr().as_unsafe_any_origin()
+        return (
+            self.host_storage.unsafe_value().unsafe_ptr().as_unsafe_any_origin()
+        )
 
     def device_ptr(
         self,

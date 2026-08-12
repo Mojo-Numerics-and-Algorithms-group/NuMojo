@@ -346,7 +346,6 @@ struct NDArrayStrides(
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
 
-
     @always_inline("nodebug")
     def __getitem__(
         self, index: Scalar[Self.element_type]
@@ -392,7 +391,6 @@ struct NDArrayStrides(
            Error: Index out of bound.
         """
         self._buf[Int(index)] = Int(val)
-
 
     def load[
         width: Int = 1
@@ -760,7 +758,6 @@ struct NDArrayStrides(
            True if both strides do not have identical dimensions or values.
         """
         return not self.__eq__(other)
-
 
     @always_inline("nodebug")
     def __contains__(self, val: Scalar[Self.element_type]) -> Bool:

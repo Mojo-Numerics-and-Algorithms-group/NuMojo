@@ -163,7 +163,7 @@ struct IndexBuffer(
         self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
         unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """
         Deinitialize the IndexBuffer and free resources.
         """

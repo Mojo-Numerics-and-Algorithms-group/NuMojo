@@ -402,7 +402,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         self.ndim = copy.ndim
         self.data_container = copy.data_container.copy()
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         if Int(self.shape) != 0:
             self.shape.unsafe_free()
         if Int(self.strides) != 0:
@@ -534,14 +534,14 @@ def _extract_dlpack_pointer(
         Error: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
         already consumed).
     """
-    ctypes = Python.import_module("ctypes")
+    var ctypes = Python.import_module("ctypes")
 
     ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [
         ctypes.py_object,
         ctypes.c_char_p,
     ]
     ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-    result_obj = ctypes.pythonapi.PyCapsule_GetPointer(
+    var result_obj = ctypes.pythonapi.PyCapsule_GetPointer(
         capsule, _get_c_char_p_from_string["dltensor"]()
     )
 
@@ -559,7 +559,7 @@ def _extract_dlpack_pointer(
 
 
 def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
-    ctypes = Python.import_module("ctypes")
+    var ctypes = Python.import_module("ctypes")
 
     return ctypes.cast(
         Int(s.as_c_string_slice().unsafe_ptr().unsafe_bitcast[NoneType]()),

@@ -68,8 +68,8 @@ def det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     var A_pivoted_s = partial_pivoting(A.copy())
-    A_pivoted = A_pivoted_s[0].copy()
-    s = A_pivoted_s[2].copy()
+    var A_pivoted = A_pivoted_s[0].copy()
+    var s = A_pivoted_s[2].copy()
     var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
         A_pivoted
     )

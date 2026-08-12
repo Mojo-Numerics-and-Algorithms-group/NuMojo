@@ -206,7 +206,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.size = take.size
 
     @always_inline
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """Destructor.
 
         For managed containers the reference count is atomically

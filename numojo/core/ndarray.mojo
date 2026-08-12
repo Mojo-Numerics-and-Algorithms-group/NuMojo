@@ -402,7 +402,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.print_options = take.print_options
 
     @always_inline("nodebug")
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """Destroys all elements and frees memory."""
         _ = self._buf^
 
@@ -3780,7 +3780,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            def vec_op[w: Int](i: Int) {mut self, read other}:
+            def vec_op[w: Int](i: Int) {mut self, imm other}:
                 self._buf.ptr.unsafe_store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -3836,7 +3836,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
 
-            def vec_op[w: Int](i: Int) {mut self, read other_c}:
+            def vec_op[w: Int](i: Int) {mut self, imm other_c}:
                 self._buf.ptr.unsafe_store(
                     self.offset + i,
                     func[Self.dtype, w](
@@ -4013,7 +4013,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         def vectorized_pow[
             simd_width: Int
-        ](index: Int) {mut result, read src, read p_c}:
+        ](index: Int) {mut result, imm src, imm p_c}:
             result._buf.ptr.unsafe_store(
                 index,
                 src._buf.ptr.unsafe_load[width=simd_width](index)
@@ -4027,7 +4027,7 @@ struct NDArray[dtype: DType = DType.float64](
         """Enables `array **= int`. View-safe: modifies buffer in-place."""
         if self.is_c_contiguous():
 
-            def vec_pow[w: Int](i: Int) {mut self, read p}:
+            def vec_pow[w: Int](i: Int) {mut self, imm p}:
                 self._buf.ptr.unsafe_store(
                     self.offset + i,
                     builtin_math.pow(
@@ -4052,7 +4052,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         def array_scalar_vectorize[
             simd_width: Int
-        ](index: Int) {mut src, read p} -> None:
+        ](index: Int) {mut src, imm p} -> None:
             src._buf.ptr.unsafe_store(
                 index,
                 builtin_math.pow(src._buf.ptr.unsafe_load[width=simd_width](index), p),
@@ -4672,7 +4672,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         def vectorized_all[
             simd_width: Int
-        ](idx: Int) {mut result, read a} -> None:
+        ](idx: Int) {mut result, imm a} -> None:
             result = result and builtin_bool.all(
                 (a._buf.ptr + a.offset + idx).unsafe_strided_load[width=simd_width](1)
             )
@@ -4698,7 +4698,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         def vectorized_any[
             simd_width: Int
-        ](idx: Int) {mut result, read a} -> None:
+        ](idx: Int) {mut result, imm a} -> None:
             result = result or builtin_bool.any(
                 (a._buf.ptr + a.offset + idx).unsafe_strided_load[width=simd_width](1)
             )
@@ -4914,7 +4914,7 @@ struct NDArray[dtype: DType = DType.float64](
                 def closure[
                     simd_w: Int
                 ](i: Int) {
-                    mut result, read self, base_offset, dest_base, last_stride
+                    mut result, imm self, base_offset, dest_base, last_stride
                 }:
                     var simd_data = (
                         self._buf.ptr + base_offset + i * last_stride
@@ -5554,7 +5554,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     def iter_over_dimension[
         forward: Bool = True
-    ](read self, dimension: Int) raises -> _NDArrayIter[
+    ](imm self, dimension: Int) raises -> _NDArrayIter[
         origin_of(self), Self.dtype, forward
     ]:
         """Returns an iterator yielding `ndim-1` arrays over the given
@@ -6457,7 +6457,7 @@ struct _NDAxisIter[
             ndim=self.ndim, initialized=True
         )
         (self.strides_compatible._buf.ptr + axis).unsafe_write(1)
-        temp = self.shape[axis]
+        var temp = self.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:
@@ -6754,7 +6754,7 @@ struct _NDIter[
             ndim=self.ndim, initialized=False
         )
         (self.strides_compatible._buf.ptr + axis).unsafe_write(1)
-        temp = a.shape[axis]
+        var temp = a.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:

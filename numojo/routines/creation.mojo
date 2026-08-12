@@ -2202,7 +2202,7 @@ def astype[
 
         def vectorized_astype[
             simd_width: Int
-        ](idx: Int) {mut result, read a} -> None:
+        ](idx: Int) {mut result, imm a} -> None:
             (result.unsafe_ptr() + idx).unsafe_strided_store[width=simd_width](
                 a._buf.ptr.unsafe_load[width=simd_width](idx).cast[target](), 1
             )
@@ -2214,7 +2214,7 @@ def astype[
 
             def vectorized_astypenb_from_b[
                 simd_width: Int
-            ](idx: Int) {mut result, read a} -> None:
+            ](idx: Int) {mut result, imm a} -> None:
                 result._buf.ptr.unsafe_store(
                     idx,
                     (a._buf.ptr + idx)
@@ -2228,7 +2228,7 @@ def astype[
 
             def vectorized_astypenb[
                 simd_width: Int
-            ](idx: Int) {mut result, read a} -> None:
+            ](idx: Int) {mut result, imm a} -> None:
                 result._buf.ptr.unsafe_store(
                     idx, a._buf.ptr.unsafe_load[width=simd_width](idx).cast[target]()
                 )
@@ -2515,7 +2515,7 @@ def array[
         raise Error(
             "Error in array: Real and imaginary data must have the same length!"
         )
-    A = ComplexNDArray[cdtype](shape=shape, order=order)
+    var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
         A._re._buf.ptr[unsafe_offset=i] = data[i].re
         A._im._buf.ptr[unsafe_offset=i] = data[i].im

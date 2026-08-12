@@ -101,7 +101,7 @@ def dot[
 
         def vectorized_dot[
             simd_width: Int
-        ](idx: Int) {mut result, read array1, read array2} -> None:
+        ](idx: Int) {mut result, imm array1, imm array2} -> None:
             result._buf.ptr.unsafe_store(
                 idx,
                 array1._buf.ptr.unsafe_load[width=simd_width](idx)
@@ -157,13 +157,13 @@ def matmul_tiled_unrolled_parallelized[
                     simd_width: Int
                 ](n: Int) {
                     mut result,
-                    read A,
-                    read B,
-                    read t1,
-                    read t2,
-                    read x,
-                    read m,
-                    read k,
+                    imm A,
+                    imm B,
+                    imm t1,
+                    imm t2,
+                    imm x,
+                    imm m,
+                    imm k,
                 } -> None:
                     result._buf.ptr.unsafe_store(
                         m * t2 + (n + x),
@@ -286,7 +286,7 @@ def matmul_2darray[
             def dot[
                 simd_width: Int
             ](n: Int) {
-                mut result, read A, read B, read t2, read t1, read k, read m
+                mut result, imm A, imm B, imm t2, imm t1, imm k, imm m
             } -> None:
                 result._buf.ptr.unsafe_store(
                     m * t2 + n,
@@ -434,7 +434,7 @@ def matmul[
 
                 def dot[
                     simd_width: Int
-                ](n: Int) {mut result, read A, read B, read m, read k} -> None:
+                ](n: Int) {mut result, imm A, imm B, imm m, imm k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -456,7 +456,7 @@ def matmul[
 
                 def dot_F[
                     simd_width: Int
-                ](m: Int) {mut result, read A, read B, read n, read k} -> None:
+                ](m: Int) {mut result, imm A, imm B, imm n, imm k} -> None:
                     result._store[simd_width](
                         m,
                         n,
@@ -479,7 +479,7 @@ def matmul[
 
                 def dot_product[
                     simd_width: Int
-                ](k: Int) {mut sum, read A, read B, read m, read n} -> None:
+                ](k: Int) {mut sum, imm A, imm B, imm m, imm n} -> None:
                     sum += (
                         A._load[simd_width](m, k) * B._load[simd_width](k, n)
                     ).reduce_add()

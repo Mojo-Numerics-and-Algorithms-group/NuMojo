@@ -438,7 +438,7 @@ struct Matrix[
         self.flags = take.flags^
 
     @always_inline("nodebug")
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """
         Destructor for the matrix instance.
 
@@ -5082,7 +5082,7 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
-    def vec_func[simd_width: Int](i: Int) {mut res, read A, read B}:
+    def vec_func[simd_width: Int](i: Int) {mut res, imm A, imm B}:
         res._buf.ptr.unsafe_store(
             i,
             simd_func(
@@ -5121,7 +5121,7 @@ def _arithmetic_func_matrix_to_matrix[
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
-    def vec_func[simd_width: Int](i: Int) {mut C, read A}:
+    def vec_func[simd_width: Int](i: Int) {mut C, imm A}:
         C._buf.ptr.unsafe_store(i, simd_func(A._buf.ptr.unsafe_load[width=simd_width](i)))
 
     vectorize[simd_width](A.size, vec_func)
@@ -5188,7 +5188,7 @@ def _logic_func_matrix_matrix_to_matrix[
 
     # Use vectorized comparison for better performance
     # Process elements using input dtype width, then store results as bool
-    def vec_compare[w: Int](i: Int) {mut C, read A, read B}:
+    def vec_compare[w: Int](i: Int) {mut C, imm A, imm B}:
         var a_vec = A._buf.ptr.unsafe_load[width=w](i)
         var b_vec = B._buf.ptr.unsafe_load[width=w](i)
         var result = simd_func[dtype, w](a_vec, b_vec)

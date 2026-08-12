@@ -457,7 +457,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.print_options = take.print_options
 
     @always_inline("nodebug")
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """Destroys array buffers."""
         _ = self._re^
         _ = self._im^

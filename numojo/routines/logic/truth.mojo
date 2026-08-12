@@ -46,7 +46,7 @@ def all(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     var result = Scalar[DType.bool](True)
     comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
-    def closure[simd_width: Int](idx: Int) {mut result, read array} -> None:
+    def closure[simd_width: Int](idx: Int) {mut result, imm array} -> None:
         var simd_data = array.unsafe_load[width=simd_width](idx)
         result = (result & simd_data).reduce_and()
 
@@ -76,7 +76,7 @@ def any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     var result = Scalar[DType.bool](False)
     comptime opt_nelts: Int = simd_width_of[DType.bool]()
 
-    def closure[simd_width: Int](idx: Int) {mut result, read array} -> None:
+    def closure[simd_width: Int](idx: Int) {mut result, imm array} -> None:
         var simd_data = array.unsafe_load[width=simd_width](idx)
         result = (result | simd_data).reduce_or()
 
@@ -102,7 +102,7 @@ def all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     var res = Scalar[dtype](1)
     comptime width: Int = simd_width_of[dtype]()
 
-    def closure[width: Int](i: Int) {mut res, read A}:
+    def closure[width: Int](i: Int) {mut res, imm A}:
         res = (res & A._buf.ptr.unsafe_load[width=width](i)).reduce_and()
 
     vectorize[width](A.size, closure)
@@ -121,7 +121,7 @@ def all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         for i in range(A.shape[0]):
 
-            def cal_vec_sum[width: Int](j: Int) {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) {mut B, imm A, imm i}:
                 B._store[width](
                     0, j, B._load[width](0, j) & A._load[width](i, j)
                 )
@@ -135,7 +135,7 @@ def all[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         @parameter
         def cal_rows(i: Int):
-            def cal_sum[width: Int](j: Int) {mut B, read A, read i}:
+            def cal_sum[width: Int](j: Int) {mut B, imm A, imm i}:
                 B._store(
                     i,
                     0,
@@ -163,7 +163,7 @@ def any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     var res = Scalar[dtype](0)
     comptime width: Int = simd_width_of[dtype]()
 
-    def cal_and[width: Int](i: Int) {mut res, read A}:
+    def cal_and[width: Int](i: Int) {mut res, imm A}:
         res = res | A._buf.ptr.unsafe_load[width=width](i).reduce_or()
 
     vectorize[width](A.size, cal_and)
@@ -182,7 +182,7 @@ def any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         for i in range(A.shape[0]):
 
-            def cal_vec_sum[width: Int](j: Int) {mut B, read A, read i}:
+            def cal_vec_sum[width: Int](j: Int) {mut B, imm A, imm i}:
                 B._store[width](
                     0, j, B._load[width](0, j) | A._load[width](i, j)
                 )
@@ -196,7 +196,7 @@ def any[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
 
         @parameter
         def cal_rows(i: Int):
-            def cal_sum[width: Int](j: Int) {mut B, read A, read i}:
+            def cal_sum[width: Int](j: Int) {mut B, imm A, imm i}:
                 B._store(
                     i,
                     0,

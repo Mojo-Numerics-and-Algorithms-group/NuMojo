@@ -291,7 +291,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             Pointer to the element at the given offset.
         """
-        return self.ptr + offset
+        return self.ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:

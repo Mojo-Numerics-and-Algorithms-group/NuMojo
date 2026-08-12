@@ -264,9 +264,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             offset: Number of elements to advance.
 
         Returns:
-            `self.ptr + offset`.
+            (`self.ptr + offset`.
         """
-        return self.ptr + offset
+        return self.ptr).unsafe_offset(offset)
 
     @always_inline
     def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
@@ -789,7 +789,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        return self.host_storage.unsafe_value().ptr + offset
+        return self.host_storage.unsafe_value().ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(

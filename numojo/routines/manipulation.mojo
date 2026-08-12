@@ -52,8 +52,8 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
 
     if dst.is_c_contiguous() and src.is_c_contiguous():
         unsafe_memcpy(
-            dest=dst._buf.ptr + dst.offset,
-            src=src._buf.ptr + src.offset,
+            dest=dst._buf.ptr.unsafe_offset(dst.offset),
+            src=src._buf.ptr.unsafe_offset(src.offset),
             count=src.size,
         )
     else:
@@ -234,8 +234,8 @@ def ravel[
     for i in range(length_of_iterator):
         var sub = iterator.ith(i)
         unsafe_memcpy(
-            dest=res._buf.ptr + i * length_of_elements,
-            src=sub._buf.ptr + sub.offset,
+            dest=res._buf.ptr.unsafe_offset(i * length_of_elements),
+            src=sub._buf.ptr.unsafe_offset(sub.offset),
             count=length_of_elements,
         )
 
@@ -340,7 +340,7 @@ def transpose[
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf.ptr[unsafe_offset=i] = (A._buf.ptr + A.offset)[unsafe_offset=Int(I._buf.ptr[unsafe_offset=i])]
+        B._buf.ptr[unsafe_offset=i] = (A._buf.ptr.unsafe_offset(A.offset))[unsafe_offset=Int(I._buf.ptr[unsafe_offset=i])]
     return B^
 
 

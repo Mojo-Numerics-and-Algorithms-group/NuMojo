@@ -379,17 +379,17 @@ def matmul[
     for i in range(result.size // result_sub_matrix.size):
         unsafe_memcpy(
             dest=A_sub_matrix._buf.ptr,
-            src=A._buf.ptr + (i * A_sub_matrix.size),
+            src=A._buf.ptr.unsafe_offset((i * A_sub_matrix.size)),
             count=A_sub_matrix.size,
         )
         unsafe_memcpy(
             dest=B_sub_matrix._buf.ptr,
-            src=B._buf.ptr + (i * B_sub_matrix.size),
+            src=B._buf.ptr.unsafe_offset((i * B_sub_matrix.size)),
             count=B_sub_matrix.size,
         )
         result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         unsafe_memcpy(
-            dest=result._buf.ptr + (i * result_sub_matrix.size),
+            dest=result._buf.ptr.unsafe_offset((i * result_sub_matrix.size)),
             src=result_sub_matrix._buf.ptr,
             count=result_sub_matrix.size,
         )

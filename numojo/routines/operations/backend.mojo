@@ -466,7 +466,7 @@ struct HostExecutor:
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
             var result_array = _0darray(
-                val=kernel[dtype, 1]((array._buf.ptr + array.offset)[])
+                val=kernel[dtype, 1]((array._buf.ptr.unsafe_offset(array.offset))[])
             )
             return result_array^
 
@@ -1098,4 +1098,4 @@ def bool_simd_store[
         start: Start position in the pointer.
         val: SIMD boolean value to store.
     """
-    (ptr + start).unsafe_strided_store[width=simd_width](val=val, stride=1)
+    (ptr.unsafe_offset(start)).unsafe_strided_store[width=simd_width](val=val, stride=1)

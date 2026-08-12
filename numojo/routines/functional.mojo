@@ -120,7 +120,7 @@ def apply_along_axis_reduce_to_int[
         @parameter
         def parallelized_func(i: Int):
             try:
-                (res._buf.ptr + i).unsafe_write(
+                (res._buf.ptr.unsafe_offset(i)).unsafe_write(
                     func1d[dtype](iterator.ith(i))
                 )
             except e:
@@ -233,7 +233,7 @@ def apply_along_axis_reduce_with_dtype[
         @parameter
         def parallelized_func(i: Int):
             try:
-                (res._buf.ptr + i).unsafe_write(
+                (res._buf.ptr.unsafe_offset(i)).unsafe_write(
                     func1d[dtype, returned_dtype](iterator.ith(i))
                 )
             except e:
@@ -282,7 +282,7 @@ def apply_along_axis_preserve[
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
                 unsafe_memcpy(
-                    dest=result._buf.ptr + i * elements.size,
+                    dest=result._buf.ptr.unsafe_offset(i * elements.size),
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
@@ -309,8 +309,8 @@ def apply_along_axis_preserve[
                 var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (result._buf.ptr + Int(indices[j])).unsafe_write(
-                        (res_along_axis._buf.ptr + j)[]
+                    (result._buf.ptr.unsafe_offset(Int(indices[j]))).unsafe_write(
+                        (res_along_axis._buf.ptr.unsafe_offset(j))[]
                     )
             except e:
                 print("Error in parallelized_func", e)
@@ -356,7 +356,7 @@ def apply_along_axis_inplace[
                 var elements: NDArray[dtype] = iterator.ith(i)
                 func1d[dtype](elements)
                 unsafe_memcpy(
-                    dest=a._buf.ptr + i * elements.size,
+                    dest=a._buf.ptr.unsafe_offset(i * elements.size),
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
@@ -382,8 +382,8 @@ def apply_along_axis_inplace[
                 func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (a._buf.ptr + Int(indices[j])).unsafe_write(
-                        (elements._buf.ptr + j)[]
+                    (a._buf.ptr.unsafe_offset(Int(indices[j]))).unsafe_write(
+                        (elements._buf.ptr.unsafe_offset(j))[]
                     )
             except e:
                 print("Error in parallelized_func", e)
@@ -431,7 +431,7 @@ def apply_along_axis_indices[
                     iterator.ith(i)
                 )
                 unsafe_memcpy(
-                    dest=res._buf.ptr + i * elements.size,
+                    dest=res._buf.ptr.unsafe_offset(i * elements.size),
                     src=elements._buf.ptr,
                     count=elements.size,
                 )
@@ -457,8 +457,8 @@ def apply_along_axis_indices[
                 var res_along_axis: NDArray[DType.int] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (res._buf.ptr + Int(indices[j])).unsafe_write(
-                        (res_along_axis._buf.ptr + j)[]
+                    (res._buf.ptr.unsafe_offset(Int(indices[j]))).unsafe_write(
+                        (res_along_axis._buf.ptr.unsafe_offset(j))[]
                     )
             except e:
                 print("Error in parallelized_func", e)

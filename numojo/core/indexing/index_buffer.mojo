@@ -109,7 +109,7 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).unsafe_write(values[i])
+            (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
     def __init__(out self, values: List[Scalar[Self.element_type]]):
         """
@@ -126,7 +126,7 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).unsafe_write(values[i])
+            (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
 
     def __init__(out self, values: VariadicList[Scalar[Self.element_type], _]):
@@ -144,7 +144,7 @@ struct IndexBuffer(
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).unsafe_write(values[i])
+            (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
 
     def __init__(out self, *, copy: Self):
@@ -199,7 +199,7 @@ struct IndexBuffer(
         Returns:
             UnsafePointer offset by the given amount.
         """
-        return self.ptr + offset
+        return self.ptr.unsafe_offset(offset)
 
 
     def __getitem__(
@@ -524,7 +524,7 @@ struct IndexBuffer(
         offset += self.ndim
         for i in range(len(others)):
             unsafe_memcpy(
-                dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
+                dest=res.ptr.unsafe_offset(offset), src=others[i].ptr, count=others[i].ndim
             )
             offset += others[i].ndim
         return res^
@@ -549,7 +549,7 @@ struct IndexBuffer(
         offset += self.ndim
         for i in range(len(others)):
             unsafe_memcpy(
-                dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
+                dest=res.ptr.unsafe_offset(offset), src=others[i].ptr, count=others[i].ndim
             )
             offset += others[i].ndim
         return res^
@@ -878,7 +878,7 @@ struct IndexBuffer(
             value: Value to set.
         """
         # self.ptr[idx] = value
-        (self.ptr + idx).unsafe_write(value)
+        (self.ptr.unsafe_offset(idx)).unsafe_write(value)
 
     def tolist(self) -> List[Scalar[Self.element_type]]:
         """

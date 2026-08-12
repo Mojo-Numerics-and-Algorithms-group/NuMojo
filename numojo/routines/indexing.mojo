@@ -471,9 +471,9 @@ def compress[
     var temp: Scalar[DType.int] = 1
     for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
-            (res_strides._buf.ptr + i).unsafe_write(temp)
+            (res_strides._buf.ptr.unsafe_offset(i)).unsafe_write(temp)
             temp *= Scalar[DType.int](result.shape[i])
-    (res_strides._buf.ptr + normalized_axis).unsafe_write(temp)
+    (res_strides._buf.ptr.unsafe_offset(normalized_axis)).unsafe_write(temp)
 
     var iterator = a.iter_over_dimension(normalized_axis)
 
@@ -488,7 +488,7 @@ def compress[
 
                 # First along the axis
                 var j = normalized_axis
-                (item._buf.ptr + j).unsafe_write(
+                (item._buf.ptr.unsafe_offset(j)).unsafe_write(
                     remainder // res_strides.unsafe_load(j)
                 )
                 remainder %= res_strides.unsafe_load(j)
@@ -496,14 +496,13 @@ def compress[
                 # Then along other axes
                 for j in range(result.ndim):
                     if j != normalized_axis:
-                        (item._buf.ptr + j).unsafe_write(
+                        (item._buf.ptr.unsafe_offset(j)).unsafe_write(
                             remainder // res_strides.unsafe_load(j)
                         )
                         remainder %= res_strides.unsafe_load(j)
 
                 (
-                    result._buf.ptr
-                    + IndexMethods.get_1d_index(item, result.strides)
+                    result._buf.ptr.unsafe_offset(IndexMethods.get_1d_index(item, result.strides))
                 ).unsafe_write(current_slice._buf.ptr[unsafe_offset=offset])
 
                 count += 1
@@ -656,7 +655,7 @@ def take_along_axis[
                 indices_slice
             ]
             unsafe_memcpy(
-                dest=result._buf.ptr + i * result.shape[normalized_axis],
+                dest=result._buf.ptr.unsafe_offset(i * result.shape[normalized_axis]),
                 src=arr_slice_after_applying_indices._buf.ptr,
                 count=result.shape[normalized_axis],
             )
@@ -674,7 +673,7 @@ def take_along_axis[
             var arr_slice_after_applying_indices = arr_slice[indices_slice]
             for j in range(arr_slice_after_applying_indices.size):
                 (
-                    result._buf.ptr + Int(indices_slice_offsets[j])
+                    result._buf.ptr.unsafe_offset(Int(indices_slice_offsets[j]))
                 ).unsafe_write(
                     arr_slice_after_applying_indices._buf.ptr[unsafe_offset=j]
                 )
@@ -786,8 +785,8 @@ def take[
             )
             var dst_base = outer * n_idx * inner_size + i * inner_size
             unsafe_memcpy(
-                dest=result._buf.ptr + dst_base,
-                src=a_c._buf.ptr + src_base,
+                dest=result._buf.ptr.unsafe_offset(dst_base),
+                src=a_c._buf.ptr.unsafe_offset(src_base),
                 count=inner_size,
             )
 

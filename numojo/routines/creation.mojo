@@ -124,7 +124,7 @@ def arange[
     var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
-        (result._buf.ptr + i).unsafe_write(Scalar[dtype](i))
+        (result._buf.ptr.unsafe_offset(i)).unsafe_write(Scalar[dtype](i))
 
     return result^
 
@@ -2203,7 +2203,7 @@ def astype[
         def vectorized_astype[
             simd_width: Int
         ](idx: Int) {mut result, imm a} -> None:
-            (result.unsafe_ptr() + idx).unsafe_strided_store[width=simd_width](
+            (result.unsafe_ptr().unsafe_offset(idx)).unsafe_strided_store[width=simd_width](
                 a._buf.ptr.unsafe_load[width=simd_width](idx).cast[target](), 1
             )
 
@@ -2217,7 +2217,7 @@ def astype[
             ](idx: Int) {mut result, imm a} -> None:
                 result._buf.ptr.unsafe_store(
                     idx,
-                    (a._buf.ptr + idx)
+                    (a._buf.ptr.unsafe_offset(idx))
                     .unsafe_strided_load[width=simd_width](1)
                     .cast[target](),
                 )

@@ -255,7 +255,7 @@ struct Matrix[
         if data.is_c_contiguous() or data.is_f_contiguous():
             unsafe_memcpy(
                 dest=self._buf.ptr,
-                src=data._buf.ptr + data.offset,
+                src=data._buf.ptr.unsafe_offset(data.offset),
                 count=data.size,
             )
         else:
@@ -1143,7 +1143,7 @@ struct Matrix[
                 )
                 unsafe_memcpy(
                     dest=dest_ptr,
-                    src=value._buf.ptr + value.offset,
+                    src=value._buf.ptr.unsafe_offset(value.offset),
                     count=self.shape[1],
                 )
             else:
@@ -1237,7 +1237,7 @@ struct Matrix[
                 )
                 unsafe_memcpy(
                     dest=dest_ptr,
-                    src=value._buf.ptr + value.offset,
+                    src=value._buf.ptr.unsafe_offset(value.offset),
                     count=self.shape[1],
                 )
             else:
@@ -3578,7 +3578,7 @@ struct Matrix[
         """
         if self.is_c_contiguous():
             for i in range(self.size):
-                (self._buf.ptr + self.offset + i).unsafe_write(fill_value)
+                ((self._buf.ptr + self.offset).unsafe_offset(i)).unsafe_write(fill_value)
         else:
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):
@@ -3706,7 +3706,7 @@ struct Matrix[
         if self.is_c_contiguous():
             unsafe_memcpy(
                 dest=result._buf.ptr,
-                src=self._buf.ptr + self.offset,
+                src=self._buf.ptr.unsafe_offset(self.offset),
                 count=self.size,
             )
         else:
@@ -3935,7 +3935,7 @@ struct Matrix[
         else:
             unsafe_memcpy(
                 dest=res._buf.ptr,
-                src=self._buf.ptr + self.offset,
+                src=self._buf.ptr.unsafe_offset(self.offset),
                 count=res.size,
             )
         return res^
@@ -3969,7 +3969,7 @@ struct Matrix[
             if self.is_c_contiguous():
                 unsafe_memcpy(
                     dest=other._buf.ptr,
-                    src=self._buf.ptr + self.offset,
+                    src=self._buf.ptr.unsafe_offset(self.offset),
                     count=self.size,
                 )
                 for i in range(self.size, other.size):

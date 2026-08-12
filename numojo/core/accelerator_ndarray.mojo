@@ -23,6 +23,7 @@ from numojo.core.accelerator.device import Device
 import numojo.core.accelerator.kernels as kernels
 from numojo.core.ndarray import NDArray
 from numojo.core.dtype.default_dtype import _concise_dtype_str
+from numojo.core.type_aliases import Shape
 
 
 struct AcceleratorNDArray[
@@ -134,14 +135,14 @@ struct AcceleratorNDArray[
         self._buf = copy._buf.copy()
 
     @always_inline("nodebug")
-    def __init__(out self, *, deinit take: Self):
-        self.ndim = take.ndim
-        self.shape = take.shape
-        self.size = take.size
-        self.strides = take.strides
-        self.offset = take.offset
-        self.flags = take.flags
-        self._buf = take._buf^
+    def __init__(out self, *, deinit move: Self):
+        self.ndim = move.ndim
+        self.shape = move.shape
+        self.size = move.size
+        self.strides = move.strides
+        self.offset = move.offset
+        self.flags = move.flags
+        self._buf = move._buf^
 
     @always_inline("nodebug")
     def view(self) raises -> Self:

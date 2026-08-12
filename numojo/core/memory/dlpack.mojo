@@ -41,6 +41,7 @@ Example:
 """
 
 from std.memory import UnsafePointer
+from std.memory.alloc import unsafe_alloc
 from std.sys.info import size_of
 from std.python import PythonObject, Python
 
@@ -469,11 +470,11 @@ def to_dlpack[
     """
     var buf = arr._buf.copy()
 
-    var shape_ptr = alloc[Int64](arr.ndim)
+    var shape_ptr = unsafe_alloc[Int64](arr.ndim)
     for i in range(arr.ndim):
         shape_ptr[unsafe_offset=i] = Int64(arr.shape[i])
 
-    var strides_ptr = alloc[Int64](arr.ndim)
+    var strides_ptr = unsafe_alloc[Int64](arr.ndim)
     for i in range(arr.ndim):
         strides_ptr[unsafe_offset=i] = Int64(arr.strides[i])
 
@@ -498,10 +499,10 @@ def to_dlpack[
         buf^,
     )
 
-    var ctx = alloc[DLPackMetadata[dtype]](1)
+    var ctx = unsafe_alloc[DLPackMetadata[dtype]](1)
     ctx.unsafe_write(metadata^)
 
-    var managed = alloc[DLManagedTensor](1)
+    var managed = unsafe_alloc[DLManagedTensor](1)
     managed.unsafe_write(
         DLManagedTensor(
             dl_tensor,

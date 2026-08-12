@@ -13,7 +13,8 @@ GPU kernel functions and launch helpers for full-array reduction ops.
 from std.gpu import thread_idx, block_idx, block_dim
 from max.gpu.sync import barrier
 from max.gpu.host import DeviceContext
-from std.memory import AddressSpace, stack_allocation, alloc
+from std.memory import AddressSpace, stack_allocation
+from std.memory.alloc import unsafe_alloc
 
 from .binary_ops import launch_config
 
@@ -86,7 +87,7 @@ def launch_sum_reduce[
         block_dim=block_dim_size,
     )
 
-    var host_partial = alloc[Scalar[dtype]](num_blocks)
+    var host_partial = unsafe_alloc[Scalar[dtype]](num_blocks)
     partial_sums.enqueue_copy_to(host_partial)
     context.synchronize()
 

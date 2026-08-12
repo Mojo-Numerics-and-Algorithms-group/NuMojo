@@ -1,4 +1,4 @@
-comptime IndexerCollectionElement = Indexer & Copyable & Movable
+comptime IndexerCollectionElement = Indexer & Copyable
 
 # trait IndexerCollectionElement(Copyable, Indexer, Movable):
 #     """The IndexerCollectionElement trait denotes a trait composition

@@ -25,6 +25,7 @@ import numojo.routines.manipulation as manipulation
 from numojo.routines.creation import array as _array_creation_from_list
 from numojo.core.type_aliases import Shape
 from numojo.core.indexing.item import Item
+from numojo.routines.manipulation import ravel
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays

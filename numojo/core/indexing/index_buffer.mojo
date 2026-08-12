@@ -14,6 +14,7 @@ small helpers for pointer access and SIMD load/store.
 """
 
 from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
+from std.memory.alloc import unsafe_alloc
 from std.sys import simd_width_of
 from std.algorithm.functional import vectorize
 from std.os import abort
@@ -65,7 +66,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.element_type]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.element_type]](size)
             unsafe_memset_zero(self.ptr, size)
 
     def __init__(
@@ -107,7 +108,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
+        self.ptr = unsafe_alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
@@ -124,7 +125,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
+        self.ptr = unsafe_alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
@@ -142,7 +143,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
+        self.ptr = unsafe_alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
             (self.ptr.unsafe_offset(i)).unsafe_write(values[i])
 
@@ -160,7 +161,7 @@ struct IndexBuffer(
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
-        self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
+        self.ptr = unsafe_alloc[Scalar[Self.element_type]](copy.ndim)
         unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
 
     def __deinit__(deinit self):

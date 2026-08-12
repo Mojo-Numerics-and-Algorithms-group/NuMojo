@@ -415,7 +415,7 @@ struct Matrix[
         )
 
     @always_inline("nodebug")
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 
@@ -424,18 +424,18 @@ struct Matrix[
         is left in an invalid state and should not be used.
 
         Args:
-            take: The source matrix instance whose resources will be moved.
+            move: The source matrix instance whose resources will be moved.
 
         Notes:
             - This operation is efficient as it avoids copying data.
             - The `other` instance is deinitialized as part of this operation.
         """
-        self.shape = take.shape^
-        self.strides = take.strides^
-        self.size = take.size
-        self._buf = take._buf^
-        self.offset = take.offset
-        self.flags = take.flags^
+        self.shape = move.shape^
+        self.strides = move.strides^
+        self.size = move.size
+        self._buf = move._buf^
+        self.offset = move.offset
+        self.flags = move.flags^
 
     @always_inline("nodebug")
     def __deinit__(deinit self):
@@ -645,8 +645,8 @@ struct Matrix[
             var slice_view = mat.get(Slice(1, 3), Slice(0, 2))  # Get a view of the submatrix
             ```
         """
-        start_x, end_x, step_x = x.indices(self.shape[0])
-        start_y, end_y, step_y = y.indices(self.shape[1])
+        var start_x, end_x, step_x = x.indices(self.shape[0])
+        var start_y, end_y, step_y = y.indices(self.shape[1])
 
         var offset = start_x * self.strides[0] + start_y * self.strides[1]
         return Matrix[Self.dtype](

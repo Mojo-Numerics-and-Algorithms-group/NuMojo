@@ -12,6 +12,7 @@ DataContainer manages memory ownership and reference counting for shared or exte
 """
 
 from std.memory import UnsafePointer, unsafe_memcpy
+from std.memory.alloc import unsafe_alloc
 from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 
@@ -75,7 +76,7 @@ struct Ownership(ImplicitlyCopyable):
         writer.write(self.__str__())
 
 
-struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
+struct DataContainer[dtype: DType](Copyable & Sized & Writable):
     """
     Reference-counted container for a contiguous buffer of elements.
 
@@ -118,7 +119,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ptr = Pointer[
             Scalar[Self.dtype], Self.origin
         ].unsafe_dangling()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
         self.size = 0
@@ -135,7 +136,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
 
@@ -144,7 +145,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
 
     @always_inline
     def __init__(
@@ -169,9 +170,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
+            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
             self._refcount[] = Atomic[DType.uint64](1)
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
             unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
@@ -217,30 +218,30 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         if copy.size == 0:
             self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](copy.size)
             unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """
         Move constructor.
 
         Transfers ownership without changing the reference count.
 
         Args:
-            take: DataContainer to move from.
+            move: DataContainer to move from.
         """
-        self.ptr = take.ptr
-        self._refcount = take._refcount
-        self.ownership = take.ownership
-        self.size = take.size
+        self.ptr = move.ptr
+        self._refcount = move._refcount
+        self.ownership = move.ownership
+        self.size = move.size
 
     @always_inline
     def __deinit__(deinit self):

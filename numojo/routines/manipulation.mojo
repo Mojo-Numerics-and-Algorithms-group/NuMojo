@@ -367,7 +367,7 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
                     B._setitem(i, j, val=A._getitem(j, i))
         return B^
     else:
-        flipped_axes = List[Int]()
+        var flipped_axes = List[Int]()
         for i in range(A.ndim - 1, -1, -1):
             flipped_axes.append(i)
 

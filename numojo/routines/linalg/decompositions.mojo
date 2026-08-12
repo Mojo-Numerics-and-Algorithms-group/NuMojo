@@ -48,7 +48,7 @@ def _compute_householder[
 
     norm = builtin_math.sqrt(norm)
     if work_index == rRows - 1 or norm == 0:
-        first_element = H._load(work_index, work_index)
+        var first_element = H._load(work_index, work_index)
         R._store(work_index, work_index, -first_element)
         H._store(work_index, work_index, sqrt2)
         return

@@ -227,6 +227,7 @@ def argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
         Indices that would sort an array.
     """
 
+    var a_flattened: NDArray[dtype]
     if a.ndim == 1:
         a_flattened = a.contiguous()
     else:

@@ -103,6 +103,7 @@ import numojo.routines.math as numojo_math
 from numojo.routines import math
 from numojo.routines.manipulation import ravel
 from numojo.routines.statistics import stddev
+from numojo.core.type_aliases import Shape
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
@@ -386,20 +387,20 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
     @always_inline("nodebug")
-    def __init__(out self, *, deinit take: Self):
-        """Moves `take` into `self`.
+    def __init__(out self, *, deinit move: Self):
+        """Moves `move` into `self`.
 
         Args:
-            take: The NDArray to move from.
+            move: The NDArray to move from.
         """
-        self.ndim = take.ndim
-        self.shape = take.shape
-        self.size = take.size
-        self.strides = take.strides
-        self.offset = take.offset
-        self.flags = take.flags^
-        self._buf = take._buf^
-        self.print_options = take.print_options
+        self.ndim = move.ndim
+        self.shape = move.shape
+        self.size = move.size
+        self.strides = move.strides
+        self.offset = move.offset
+        self.flags = move.flags^
+        self._buf = move._buf^
+        self.print_options = move.print_options
 
     @always_inline("nodebug")
     def __deinit__(deinit self):

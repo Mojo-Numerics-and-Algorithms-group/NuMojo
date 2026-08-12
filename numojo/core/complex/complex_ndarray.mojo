@@ -443,18 +443,18 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         self.print_options = copy.print_options
 
     @always_inline("nodebug")
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """
         Move other into self.
         """
-        self._re = take._re^
-        self._im = take._im^
-        self.ndim = take.ndim
-        self.shape = take.shape
-        self.size = take.size
-        self.strides = take.strides
-        self.flags = take.flags
-        self.print_options = take.print_options
+        self._re = move._re^
+        self._im = move._im^
+        self.ndim = move.ndim
+        self.shape = move.shape
+        self.size = move.size
+        self.strides = move.strides
+        self.flags = move.flags
+        self.print_options = move.print_options
 
     @always_inline("nodebug")
     def __deinit__(deinit self):

@@ -160,8 +160,8 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
     def __init__(out self, *, copy: Self):
         self.context = copy.context.copy()
 
-    def __init__(out self, *, deinit take: Self):
-        self.context = take.context^
+    def __init__(out self, *, deinit move: Self):
+        self.context = move.context^
 
     def __str__(self) -> String:
         return "DeviceHandle(" + Self.device.device_name() + ", context=True)"

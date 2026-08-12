@@ -22,6 +22,7 @@ from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
 from std.memory import unsafe_memcpy
+from std.memory.alloc import unsafe_alloc
 from max.gpu.host import DeviceBuffer, DeviceContext
 
 from numojo.core.accelerator import Device, DeviceHandle
@@ -35,7 +36,7 @@ from numojo.core.error import NumojoError
 # ===----------------------------------------------------------------------=== #
 
 
-struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
+struct HostStorage[dtype: DType](Copyable & Sized & Writable):
     """Reference-counted host (CPU) memory container.
 
     Manages a contiguous buffer of `Scalar[dtype]` elements with two ownership
@@ -77,7 +78,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ptr = Pointer[
             Scalar[Self.dtype], Self.origin
         ].unsafe_dangling()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
         self.size = 0
@@ -96,7 +97,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("HostStorage: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
 
@@ -105,7 +106,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
 
     @always_inline
     def __init__(
@@ -131,9 +132,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
+            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
             self._refcount[] = Atomic[DType.uint64](1)
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
             unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
@@ -181,29 +182,29 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         if copy.size == 0:
             self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](copy.size)
             unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers all fields without touching the reference count.
 
         Args:
-            take: The source container (consumed).
+            move: The source container (consumed).
         """
-        self.ptr = take.ptr
-        self._refcount = take._refcount
-        self.ownership = take.ownership
-        self.size = take.size
+        self.ptr = move.ptr
+        self._refcount = move._refcount
+        self.ownership = move.ownership
+        self.size = move.size
 
     @always_inline
     def __deinit__(deinit self):
@@ -524,17 +525,17 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             abort("DeviceStorage: deep copy failed: " + String(e))
         self.size = copy.size
 
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers the buffer handle without copying.
 
         Args:
-            take: The source storage (consumed).
+            move: The source storage (consumed).
         """
-        self.handle = take.handle^
-        self.buffer = take.buffer^
-        self.size = take.size
+        self.handle = move.handle^
+        self.buffer = move.buffer^
+        self.size = move.size
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -609,7 +610,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
 
 
 struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
-    Copyable & Movable & Sized & Writable
+    Copyable & Sized & Writable
 ):
     """Unified, reference-counted storage for Host (CPU) or Device (GPU) data.
 
@@ -756,17 +757,17 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.size = copy.size
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers all fields without touching reference counts.
 
         Args:
-            take: The source container (consumed).
+            move: The source container (consumed).
         """
-        self.host_storage = take.host_storage^
-        self.device_storage = take.device_storage^
-        self.size = take.size
+        self.host_storage = move.host_storage^
+        self.device_storage = move.device_storage^
+        self.size = move.size
 
     # ===----------------------------------------------------------------------===#
     # Data Access (CPU)

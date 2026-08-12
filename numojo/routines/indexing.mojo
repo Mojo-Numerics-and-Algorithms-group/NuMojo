@@ -1128,6 +1128,113 @@ def unravel_index(
     return unravel_index(indices, NDArrayShape(shape), order)
 
 
+def ravel_multi_index(
+    multi_index: List[NDArray[DType.int]],
+    shape: NDArrayShape,
+    order: String = "C",
+) raises -> NDArray[DType.int]:
+    """Converts coordinate arrays into flat indices for `shape`.
+
+    Coordinate arrays are broadcast against each other. The result shape is the
+    broadcast shape of those coordinate arrays.
+
+    Args:
+        multi_index: List of integer coordinate arrays, one per dimension.
+        shape: Target shape.
+        order: `"C"` for row-major order or `"F"` for column-major order.
+
+    Returns:
+        Integer array of flat linear indices.
+
+    Raises:
+        Error: If the number of coordinate arrays does not equal `shape.ndim`.
+        Error: If coordinate arrays are not broadcast-compatible.
+        Error: If any coordinate is out of bounds for its dimension.
+        Error: If `order` is not `"C"` or `"F"`.
+    """
+    var n_idx = len(multi_index)
+    if n_idx != shape.ndim:
+        raise Error(
+            String(
+                "\nError in `ravel_multi_index`: expected {} coordinate"
+                " arrays, got {}."
+            ).format(shape.ndim, n_idx)
+        )
+
+    if order != "C" and order != "F":
+        raise Error(
+            String(
+                "\nError in `ravel_multi_index`: order must be 'C' or 'F', got"
+                " '{}'."
+            ).format(order)
+        )
+    if n_idx == 0:
+        raise Error(
+            "\nError in `ravel_multi_index`: expected at least one coordinate"
+            " array."
+        )
+
+    var out_shape = multi_index[0].shape
+    for k in range(1, n_idx):
+        try:
+            out_shape = out_shape.broadcast(multi_index[k].shape)
+        except e:
+            raise Error(
+                String(
+                    "\nError in `ravel_multi_index`: coordinate arrays are not"
+                    " broadcast-compatible: "
+                )
+                + String(e)
+            )
+
+    var bc_indices = List[NDArray[DType.int]](capacity=n_idx)
+    for k in range(n_idx):
+        bc_indices.append(broadcast_to(multi_index[k], out_shape).contiguous())
+
+    var result = NDArray[DType.int](out_shape)
+    for i in range(result.size):
+        var flat = 0
+        if order == "C":
+            for d in range(shape.ndim):
+                var coord = Int(bc_indices[d]._buf.ptr[i])
+                var dim = shape[d]
+                if coord < 0 or coord >= dim:
+                    raise Error(
+                        String(
+                            "\nError in `ravel_multi_index`: coordinate {} is"
+                            " out of bounds for axis {} with size {}."
+                        ).format(coord, d, dim)
+                    )
+                flat = flat * dim + coord
+        elif order == "F":
+            var stride = 1
+            for d in range(shape.ndim):
+                var coord = Int(bc_indices[d]._buf.ptr[i])
+                var dim = shape[d]
+                if coord < 0 or coord >= dim:
+                    raise Error(
+                        String(
+                            "\nError in `ravel_multi_index`: coordinate {} is"
+                            " out of bounds for axis {} with size {}."
+                        ).format(coord, d, dim)
+                    )
+                flat += coord * stride
+                stride *= dim
+
+        result._buf.ptr[i] = Scalar[DType.int](flat)
+
+    return result^
+
+
+def ravel_multi_index(
+    multi_index: List[NDArray[DType.int]],
+    shape: List[Int],
+    order: String = "C",
+) raises -> NDArray[DType.int]:
+    """Overload of `ravel_multi_index` accepting a shape list."""
+    return ravel_multi_index(multi_index, NDArrayShape(shape), order)
+
+
 def flatnonzero[
     dtype: DType,
     //,

@@ -247,7 +247,7 @@ struct AcceleratorNDArray[
 
     def unsafe_ptr(
         ref self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
         Self.device.type == "cpu"
     ):
         return (
@@ -258,7 +258,7 @@ struct AcceleratorNDArray[
 
     def unsafe_device_ptr(
         ref self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
         Self.device.type == "gpu"
     ):
         """Return the raw device pointer to the buffer's data.
@@ -663,7 +663,7 @@ struct AcceleratorNDArray[
             var src_ptr = self._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
             for i in range(self.size):
-                dst_ptr[i] = src_ptr[i]
+                dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
         else:
             self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
                 out._buf.device_storage.unsafe_value().get_buffer()
@@ -681,7 +681,7 @@ struct AcceleratorNDArray[
             var src_ptr = self._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
             for i in range(self.size):
-                dst_ptr[i] = src_ptr[i]
+                dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
         else:
             self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
                 out._buf.host_storage.unsafe_value().ptr
@@ -702,7 +702,7 @@ struct AcceleratorNDArray[
             var src_ptr = host._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
             for i in range(host.size):
-                dst_ptr[i] = src_ptr[i]
+                dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
             return out^
         else:
             var host = self.to_host()
@@ -773,16 +773,16 @@ struct AcceleratorNDArray[
             var src2 = other.unsafe_ptr()
             comptime if op_code == kernels.ADD:
                 for i in range(self.size):
-                    dst[i] = src1[i] + src2[i]
+                    dst[unsafe_offset=i] = src1[unsafe_offset=i] + src2[unsafe_offset=i]
             elif op_code == kernels.SUB:
                 for i in range(self.size):
-                    dst[i] = src1[i] - src2[i]
+                    dst[unsafe_offset=i] = src1[unsafe_offset=i] - src2[unsafe_offset=i]
             elif op_code == kernels.MUL:
                 for i in range(self.size):
-                    dst[i] = src1[i] * src2[i]
+                    dst[unsafe_offset=i] = src1[unsafe_offset=i] * src2[unsafe_offset=i]
             else:
                 for i in range(self.size):
-                    dst[i] = src1[i] / src2[i]
+                    dst[unsafe_offset=i] = src1[unsafe_offset=i] / src2[unsafe_offset=i]
         else:
             comptime assert Self.device.type == "gpu"
             var context = self.device_context()
@@ -836,7 +836,7 @@ struct AcceleratorNDArray[
             var src = self.unsafe_ptr()
             var result = Scalar[Self.dtype](0)
             for i in range(self.size):
-                result += src[i]
+                result += src[unsafe_offset=i]
             return result
         else:
             comptime assert Self.device.type == "gpu"
@@ -871,7 +871,7 @@ struct AcceleratorNDArray[
             var dst = out.unsafe_ptr()
             var src = self.unsafe_ptr()
             for i in range(self.size):
-                dst[i] = -src[i]
+                dst[unsafe_offset=i] = -src[unsafe_offset=i]
         else:
             comptime assert Self.device.type == "gpu"
             var context = self.device_context()

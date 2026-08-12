@@ -12,7 +12,7 @@ This module implements functional programming utilities for NDArray operations, 
 
 from std.algorithm.functional import vectorize
 from max.algorithm import parallelize
-from std.memory import memcpy
+from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
 
 from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
@@ -112,7 +112,7 @@ def apply_along_axis_reduce_to_int[
 
     if a.ndim == 1:
         res = _0darray[DType.int](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+        (res._buf.ptr).unsafe_write(func1d[dtype](a))
 
     else:
         res = NDArray[DType.int](a.shape.pop(axis=axis))
@@ -120,7 +120,7 @@ def apply_along_axis_reduce_to_int[
         @parameter
         def parallelized_func(i: Int):
             try:
-                (res._buf.ptr + i).init_pointee_copy(
+                (res._buf.ptr + i).unsafe_write(
                     func1d[dtype](iterator.ith(i))
                 )
             except e:
@@ -163,7 +163,7 @@ def apply_along_axis_reduce[
 
     if a.ndim == 1:
         res = _0darray[dtype](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype](a))
+        (res._buf.ptr).unsafe_write(func1d[dtype](a))
 
     else:
         var new_shape = a.shape.pop(axis=axis)
@@ -225,7 +225,7 @@ def apply_along_axis_reduce_with_dtype[
 
     if a.ndim == 1:
         res = _0darray[returned_dtype](0)
-        (res._buf.ptr).init_pointee_copy(func1d[dtype, returned_dtype](a))
+        (res._buf.ptr).unsafe_write(func1d[dtype, returned_dtype](a))
 
     else:
         res = NDArray[returned_dtype](a.shape.pop(axis=axis))
@@ -233,7 +233,7 @@ def apply_along_axis_reduce_with_dtype[
         @parameter
         def parallelized_func(i: Int):
             try:
-                (res._buf.ptr + i).init_pointee_copy(
+                (res._buf.ptr + i).unsafe_write(
                     func1d[dtype, returned_dtype](iterator.ith(i))
                 )
             except e:
@@ -281,7 +281,7 @@ def apply_along_axis_preserve[
         def parallelized_func_c(i: Int):
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
-                memcpy(
+                unsafe_memcpy(
                     dest=result._buf.ptr + i * elements.size,
                     src=elements._buf.ptr,
                     count=elements.size,
@@ -309,7 +309,7 @@ def apply_along_axis_preserve[
                 var res_along_axis: NDArray[dtype] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (result._buf.ptr + Int(indices[j])).init_pointee_copy(
+                    (result._buf.ptr + Int(indices[j])).unsafe_write(
                         (res_along_axis._buf.ptr + j)[]
                     )
             except e:
@@ -355,7 +355,7 @@ def apply_along_axis_inplace[
             try:
                 var elements: NDArray[dtype] = iterator.ith(i)
                 func1d[dtype](elements)
-                memcpy(
+                unsafe_memcpy(
                     dest=a._buf.ptr + i * elements.size,
                     src=elements._buf.ptr,
                     count=elements.size,
@@ -382,7 +382,7 @@ def apply_along_axis_inplace[
                 func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (a._buf.ptr + Int(indices[j])).init_pointee_copy(
+                    (a._buf.ptr + Int(indices[j])).unsafe_write(
                         (elements._buf.ptr + j)[]
                     )
             except e:
@@ -430,7 +430,7 @@ def apply_along_axis_indices[
                 var elements: NDArray[DType.int] = func1d[dtype](
                     iterator.ith(i)
                 )
-                memcpy(
+                unsafe_memcpy(
                     dest=res._buf.ptr + i * elements.size,
                     src=elements._buf.ptr,
                     count=elements.size,
@@ -457,7 +457,7 @@ def apply_along_axis_indices[
                 var res_along_axis: NDArray[DType.int] = func1d[dtype](elements)
 
                 for j in range(a.shape[axis]):
-                    (res._buf.ptr + Int(indices[j])).init_pointee_copy(
+                    (res._buf.ptr + Int(indices[j])).unsafe_write(
                         (res_along_axis._buf.ptr + j)[]
                     )
             except e:

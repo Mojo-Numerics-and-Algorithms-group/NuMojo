@@ -14,7 +14,7 @@ It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to acces
 """
 
 from std.builtin.int import index as convert_to_int
-from std.memory import memcpy, memset_zero, UnsafePointer, memcmp
+from std.memory import unsafe_memcpy, unsafe_memset_zero, UnsafePointer, unsafe_memcmp
 from std.os import abort
 from std.sys import simd_width_of
 from std.utils import Variant
@@ -158,7 +158,7 @@ struct Item(
         """
         self.ndim = ndim
         self._buf = IndexBuffer(size=ndim)
-        memset_zero(self._buf.ptr, ndim)
+        unsafe_memset_zero(self._buf.ptr, ndim)
 
     @always_inline("nodebug")
     def __init__(out self, *, copy: Self):
@@ -169,7 +169,7 @@ struct Item(
         """
         self.ndim = copy.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(dest=self._buf.ptr, src=copy._buf.ptr, count=copy.ndim)
+        unsafe_memcpy(dest=self._buf.ptr, src=copy._buf.ptr, count=copy.ndim)
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
@@ -584,7 +584,7 @@ struct Item(
 
 
 struct _ItemIter[
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Item.

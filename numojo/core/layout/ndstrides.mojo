@@ -11,7 +11,7 @@ Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDAr
 which is used to calculate the memory offset for each dimension when indexing into the array.
 """
 
-from std.memory import memcmp, memcpy, UnsafePointer
+from std.memory import unsafe_memcmp, unsafe_memcpy, UnsafePointer
 
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndshape import NDArrayShape
@@ -172,7 +172,7 @@ struct NDArrayStrides(
         """
         self.ndim = strides.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(
+        unsafe_memcpy(
             dest=self._buf.ptr,
             src=strides._buf.ptr,
             count=strides.ndim,
@@ -336,7 +336,7 @@ struct NDArrayStrides(
             self._buf.init_value(0, 0)
         else:
             self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr,
                 src=copy._buf.ptr,
                 count=copy.ndim,
@@ -880,7 +880,7 @@ struct NDArrayStrides(
 
 
 struct _StrideIter[
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayStrides.

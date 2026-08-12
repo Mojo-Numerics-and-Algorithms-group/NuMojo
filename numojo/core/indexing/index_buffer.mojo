@@ -13,7 +13,7 @@ This type owns a contiguous heap buffer of Ints and provides
 small helpers for pointer access and SIMD load/store.
 """
 
-from std.memory import UnsafePointer, memcpy, memset_zero
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 from std.sys import simd_width_of
 from std.algorithm.functional import vectorize
 from std.os import abort
@@ -42,7 +42,7 @@ struct IndexBuffer(
     comptime _origin = MutUntrackedOrigin
     """Mutability origin of the buffer."""
 
-    var ptr: UnsafePointer[Scalar[Self.element_type], Self._origin]
+    var ptr: Pointer[Scalar[Self.element_type], Self._origin]
     """Pointer to the buffer."""
     var ndim: Int
     """Number of elements in the buffer."""
@@ -61,16 +61,16 @@ struct IndexBuffer(
 
         self.ndim = size
         if size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.element_type]](size)
-            memset_zero(self.ptr, size)
+            unsafe_memset_zero(self.ptr, size)
 
     def __init__(
         out self,
-        ptr: UnsafePointer[Scalar[Self.element_type], Self._origin],
+        ptr: Pointer[Scalar[Self.element_type], Self._origin],
         size: Int,
     ):
         """
@@ -88,7 +88,7 @@ struct IndexBuffer(
         Initialize an empty IndexBuffer.
         """
         self.ndim = 0
-        self.ptr = UnsafePointer[
+        self.ptr = Pointer[
             Scalar[Self.element_type], Self._origin
         ].unsafe_dangling()
 
@@ -103,13 +103,13 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(values[i])
+            (self.ptr + i).unsafe_write(values[i])
 
     def __init__(out self, values: List[Scalar[Self.element_type]]):
         """
@@ -120,13 +120,13 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(values[i])
+            (self.ptr + i).unsafe_write(values[i])
 
 
     def __init__(out self, values: VariadicList[Scalar[Self.element_type], _]):
@@ -138,13 +138,13 @@ struct IndexBuffer(
         """
         self.ndim = len(values)
         if self.ndim <= 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
         for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(values[i])
+            (self.ptr + i).unsafe_write(values[i])
 
 
     def __init__(out self, *, copy: Self):
@@ -156,26 +156,26 @@ struct IndexBuffer(
         """
         self.ndim = copy.ndim
         if copy.ndim <= 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.element_type], Self._origin
             ].unsafe_dangling()
             return
         self.ptr = alloc[Scalar[Self.element_type]](copy.ndim)
-        memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
+        unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.ndim)
 
     def __del__(deinit self):
         """
         Deinitialize the IndexBuffer and free resources.
         """
         if self.ndim > 0:
-            self.ptr.free()
+            self.ptr.unsafe_free()
 
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
     def get_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.element_type], Self._origin]:
+    ) -> ref[self.ptr] Pointer[Scalar[Self.element_type], Self._origin]:
         """
         Get the underlying pointer of the buffer.
 
@@ -189,7 +189,7 @@ struct IndexBuffer(
 
     def offset(
         ref self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.element_type], Self._origin]:
+    ) -> Pointer[Scalar[Self.element_type], Self._origin]:
         """
         Get a pointer offset by the given amount.
 
@@ -223,7 +223,7 @@ struct IndexBuffer(
                     location="IndexBuffer.__getitem__(idx: Int)",
                 )
             )
-        return self.ptr[index]
+        return self.ptr[unsafe_offset=index]
 
     def __getitem__(self, slice: Slice) raises -> Self:
         """
@@ -251,7 +251,7 @@ struct IndexBuffer(
         var new_buffer = Self(size=length)
         var idx = 0
         for i in range(start, end, step_value):
-            new_buffer.ptr[idx] = self.ptr[i]
+            new_buffer.ptr[unsafe_offset=idx] = self.ptr[unsafe_offset=i]
             idx += 1
 
         return new_buffer^
@@ -278,7 +278,7 @@ struct IndexBuffer(
                     location="IndexBuffer.__setitem__(idx: Int)",
                 )
             )
-        self.ptr[index] = value
+        self.ptr[unsafe_offset=index] = value
 
     def __setitem__(mut self, slice: Slice, value: Self) raises:
         """
@@ -315,7 +315,7 @@ struct IndexBuffer(
 
         var idx = 0
         for i in range(start, end, step_value):
-            self.ptr[i] = value.ptr[idx]
+            self.ptr[unsafe_offset=i] = value.ptr[unsafe_offset=idx]
             idx += 1
 
 
@@ -335,7 +335,7 @@ struct IndexBuffer(
         Returns:
             SIMD vector loaded from the buffer.
         """
-        return self.ptr.load[width=width](idx)
+        return self.ptr.unsafe_load[width=width](idx)
 
     def unsafe_store[
         width: Int = 1
@@ -354,7 +354,7 @@ struct IndexBuffer(
             idx: Index to store to.
             value: SIMD vector to store.
         """
-        self.ptr.store[width=width](idx, value)
+        self.ptr.unsafe_store[width=width](idx, value)
 
     # ===----------------------------------------------------------------------=== #
     # Transformation Methods
@@ -373,9 +373,9 @@ struct IndexBuffer(
         var total_dims = self.ndim + len(values)
         var new_buf = Self(size=total_dims)
         for i in range(self.ndim):
-            new_buf.ptr[i] = self.ptr[i]
+            new_buf.ptr[unsafe_offset=i] = self.ptr[unsafe_offset=i]
         for j in range(len(values)):
-            new_buf.ptr[self.ndim + j] = Scalar[Self.element_type](values[j])
+            new_buf.ptr[unsafe_offset=self.ndim + j] = Scalar[Self.element_type](values[j])
         return new_buf^
 
     def extend(self, values: List[Int]) -> Self:
@@ -391,9 +391,9 @@ struct IndexBuffer(
         var total_dims = self.ndim + len(values)
         var new_buf = Self(size=total_dims)
         for i in range(self.ndim):
-            new_buf.ptr[i] = self.ptr[i]
+            new_buf.ptr[unsafe_offset=i] = self.ptr[unsafe_offset=i]
         for j in range(len(values)):
-            new_buf.ptr[self.ndim + j] = Scalar[Self.element_type](values[j])
+            new_buf.ptr[unsafe_offset=self.ndim + j] = Scalar[Self.element_type](values[j])
         return new_buf^
 
     def flip(mut self):
@@ -401,9 +401,9 @@ struct IndexBuffer(
         Flip the items in-place.
         """
         for i in range(self.ndim // 2):
-            var temp = self.ptr[i]
-            self.ptr[i] = self.ptr[self.ndim - 1 - i]
-            self.ptr[self.ndim - 1 - i] = temp
+            var temp = self.ptr[unsafe_offset=i]
+            self.ptr[unsafe_offset=i] = self.ptr[unsafe_offset=self.ndim - 1 - i]
+            self.ptr[unsafe_offset=self.ndim - 1 - i] = temp
 
     def flipped(self) -> Self:
         """
@@ -414,7 +414,7 @@ struct IndexBuffer(
         """
         var res = Self(size=self.ndim)
         for i in range(self.ndim):
-            res.ptr[i] = self.ptr[self.ndim - 1 - i]
+            res.ptr[unsafe_offset=i] = self.ptr[unsafe_offset=self.ndim - 1 - i]
         return res^
 
     def move_axis_to_end(self, axis: Int) -> Self:
@@ -434,9 +434,9 @@ struct IndexBuffer(
         var idx = 0
         for i in range(self.ndim):
             if i != ax:
-                res.ptr[idx] = self.ptr[i]
+                res.ptr[unsafe_offset=idx] = self.ptr[unsafe_offset=i]
                 idx += 1
-        res.ptr[self.ndim - 1] = self.ptr[ax]
+        res.ptr[unsafe_offset=self.ndim - 1] = self.ptr[unsafe_offset=ax]
         return res^
 
     def pop(self, axis: Int) raises -> Self:
@@ -473,7 +473,7 @@ struct IndexBuffer(
         for i in range(self.ndim):
             if i == ax:
                 continue
-            res.ptr[idx] = self.ptr[i]
+            res.ptr[unsafe_offset=idx] = self.ptr[unsafe_offset=i]
             idx += 1
         return res^
 
@@ -498,10 +498,10 @@ struct IndexBuffer(
             )
         var res = Self(size=self.ndim + 1)
         for i in range(axis):
-            res.ptr[i] = self.ptr[i]
-        res.ptr[axis] = Scalar[Self.element_type](value)
+            res.ptr[unsafe_offset=i] = self.ptr[unsafe_offset=i]
+        res.ptr[unsafe_offset=axis] = Scalar[Self.element_type](value)
         for i in range(axis, self.ndim):
-            res.ptr[i + 1] = self.ptr[i]
+            res.ptr[unsafe_offset=i + 1] = self.ptr[unsafe_offset=i]
         return res^
 
     def join(self, *others: Self) -> Self:
@@ -520,10 +520,10 @@ struct IndexBuffer(
 
         var res = Self(size=total_dims)
         var offset = 0
-        memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
+        unsafe_memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(
+            unsafe_memcpy(
                 dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
             )
             offset += others[i].ndim
@@ -545,10 +545,10 @@ struct IndexBuffer(
 
         var res = Self(size=total_dims)
         var offset = 0
-        memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
+        unsafe_memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         offset += self.ndim
         for i in range(len(others)):
-            memcpy(
+            unsafe_memcpy(
                 dest=res.ptr + offset, src=others[i].ptr, count=others[i].ndim
             )
             offset += others[i].ndim
@@ -563,12 +563,12 @@ struct IndexBuffer(
         """
         for i in range(self.ndim):
             for j in range(0, self.ndim - i - 1):
-                if (order and self.ptr[j] > self.ptr[j + 1]) or (
-                    not order and self.ptr[j] < self.ptr[j + 1]
+                if (order and self.ptr[unsafe_offset=j] > self.ptr[unsafe_offset=j + 1]) or (
+                    not order and self.ptr[unsafe_offset=j] < self.ptr[unsafe_offset=j + 1]
                 ):
-                    var temp = self.ptr[j]
-                    self.ptr[j] = self.ptr[j + 1]
-                    self.ptr[j + 1] = temp
+                    var temp = self.ptr[unsafe_offset=j]
+                    self.ptr[unsafe_offset=j] = self.ptr[unsafe_offset=j + 1]
+                    self.ptr[unsafe_offset=j + 1] = temp
 
     def sorted(self, order: Bool) -> Self:
         """
@@ -581,7 +581,7 @@ struct IndexBuffer(
             A new IndexBuffer that is sorted.
         """
         var res = Self(size=self.ndim)
-        memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
+        unsafe_memcpy(dest=res.ptr, src=self.ptr, count=self.ndim)
         res.sort(order)
         return res^
 
@@ -619,7 +619,7 @@ struct IndexBuffer(
         var result = Self(size=size)
         var val = start
         for i in range(size):
-            result.ptr[i] = Scalar[Self.element_type](val)
+            result.ptr[unsafe_offset=i] = Scalar[Self.element_type](val)
             val += step
 
         return result^
@@ -638,7 +638,7 @@ struct IndexBuffer(
         """
         var res = Self(size=size)
         for i in range(size):
-            res.ptr[i] = Scalar[Self.element_type](value)
+            res.ptr[unsafe_offset=i] = Scalar[Self.element_type](value)
         return res^
 
     @staticmethod
@@ -653,7 +653,7 @@ struct IndexBuffer(
             IndexBuffer filled with zeros.
         """
         var res = Self(size=size)
-        memset_zero(res.ptr, size)
+        unsafe_memset_zero(res.ptr, size)
         return res^
 
     @staticmethod
@@ -669,7 +669,7 @@ struct IndexBuffer(
         """
         var res = Self(size=size)
         for i in range(size):
-            res.ptr[i] = 1
+            res.ptr[unsafe_offset=i] = 1
         return res^
 
     @staticmethod
@@ -696,12 +696,12 @@ struct IndexBuffer(
 
         var res = Self(size=num)
         if num == 1:
-            res.ptr[0] = Scalar[Self.element_type](start)
+            res.ptr[unsafe_offset=0] = Scalar[Self.element_type](start)
             return res^
 
         var step = (end - start) / (num - 1)
         for i in range(num):
-            res.ptr[i] = Scalar[Self.element_type](start + i * step)
+            res.ptr[unsafe_offset=i] = Scalar[Self.element_type](start + i * step)
 
         return res^
 
@@ -719,7 +719,7 @@ struct IndexBuffer(
         var n = len(perm)
         var inverted = Self(size=n)
         for i in range(n):
-            inverted.ptr[perm.ptr[i]] = Scalar[DType.int](i)
+            inverted.ptr[unsafe_offset=perm.ptr[unsafe_offset=i]] = Scalar[DType.int](i)
         return inverted^
 
     # ===----------------------------------------------------------------------=== #
@@ -755,7 +755,7 @@ struct IndexBuffer(
         #     total += self.load[width](i).reduce_add()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):
-            total += self.ptr[i]
+            total += self.ptr[unsafe_offset=i]
         return total
 
     def product(self) -> Scalar[Self.element_type]:
@@ -770,7 +770,7 @@ struct IndexBuffer(
         #     total += self.load[width](i).reduce_mul()
         # vectorize[Self.simd_width](self.ndim, closure)
         for i in range(self.ndim):
-            total *= self.ptr[i]
+            total *= self.ptr[unsafe_offset=i]
         return total
 
     # ===----------------------------------------------------------------------=== #
@@ -803,7 +803,7 @@ struct IndexBuffer(
         """
         var res = String("IndexBuffer([")
         for i in range(self.ndim):
-            res += String(self.ptr[i])
+            res += String(self.ptr[unsafe_offset=i])
             if i < self.ndim - 1:
                 res += String(", ")
         res += String("])")
@@ -815,7 +815,7 @@ struct IndexBuffer(
         """
         writer.write("IndexBuffer([")
         for i in range(self.ndim):
-            writer.write(String(self.ptr[i]))
+            writer.write(String(self.ptr[unsafe_offset=i]))
             if i < self.ndim - 1:
                 writer.write(", ")
         writer.write("])")
@@ -831,7 +831,7 @@ struct IndexBuffer(
             True if the value is in the IndexBuffer, False otherwise.
         """
         for i in range(self.ndim):
-            if self.ptr[i] == value:
+            if self.ptr[unsafe_offset=i] == value:
                 return True
         return False
 
@@ -849,7 +849,7 @@ struct IndexBuffer(
         if self.ndim != other.ndim:
             return False
         for i in range(self.ndim):
-            if self.ptr[i] != other.ptr[i]:
+            if self.ptr[unsafe_offset=i] != other.ptr[unsafe_offset=i]:
                 return False
         return True
 
@@ -878,7 +878,7 @@ struct IndexBuffer(
             value: Value to set.
         """
         # self.ptr[idx] = value
-        (self.ptr + idx).init_pointee_copy(value)
+        (self.ptr + idx).unsafe_write(value)
 
     def tolist(self) -> List[Scalar[Self.element_type]]:
         """
@@ -888,7 +888,7 @@ struct IndexBuffer(
             Scalar[Self.element_type]
         ]()
         for i in range(self.ndim):
-            result.append(self.ptr[i])
+            result.append(self.ptr[unsafe_offset=i])
         return result^
 
     # ===----------------------------------------------------------------------=== #
@@ -926,7 +926,7 @@ struct IndexBuffer(
 # ===----------------------------------------------------------------------=== #
 struct _IndexBufferIter[
     dtype: DType,
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for Item.

@@ -11,7 +11,7 @@ A reference-counted container for contiguous data buffers, used for NDArray and 
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
 
-from std.memory import UnsafePointer, memcpy
+from std.memory import UnsafePointer, unsafe_memcpy
 from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 
@@ -95,10 +95,10 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     comptime origin = MutUntrackedOrigin
     """Memory origin for the allocation."""
 
-    var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
+    var ptr: Pointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: UnsafePointer[Atomic[DType.uint64], Self.origin]
+    var _refcount: Pointer[Atomic[DType.uint64], Self.origin]
     """Pointer to the atomic reference count."""
 
     var ownership: Ownership
@@ -115,7 +115,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         Create an empty, managed DataContainer.
         """
-        self.ptr = UnsafePointer[
+        self.ptr = Pointer[
             Scalar[Self.dtype], Self.origin
         ].unsafe_dangling()
         self._refcount = alloc[Atomic[DType.uint64]](1)
@@ -140,7 +140,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
@@ -149,7 +149,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def __init__(
         out self,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
         copy: Bool = False,
     ):
@@ -172,10 +172,10 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             self._refcount = alloc[Atomic[DType.uint64]](1)
             self._refcount[] = Atomic[DType.uint64](1)
             self.ptr = alloc[Scalar[Self.dtype]](size)
-            memcpy(dest=self.ptr, src=ptr, count=size)
+            unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[
+            self._refcount = Pointer[
                 Atomic[DType.uint64], Self.origin
             ].unsafe_dangling()
             self.ptr = ptr
@@ -185,9 +185,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     def __init__(
         out self,
         *,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        refcount: Pointer[Atomic[DType.uint64], Self.origin],
         ownership: Ownership,
     ):
         """Create a DataContainer that shares an existing buffer and refcount.
@@ -220,12 +220,12 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         self._refcount = alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         if copy.size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
             self.ptr = alloc[Scalar[Self.dtype]](copy.size)
-            memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
+            unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
     def __init__(out self, *, deinit take: Self):
@@ -260,8 +260,8 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
 
         fence[ordering=Ordering.ACQUIRE]()
         if self.size > 0:
-            self.ptr.free()
-        self._refcount.free()
+            self.ptr.unsafe_free()
+        self._refcount.unsafe_free()
 
     # ===----------------------------------------------------------------------===#
     # Data Access Methods
@@ -269,7 +269,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def get_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] Pointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a reference to the data pointer.
 
@@ -281,7 +281,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def offset(
         self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> Pointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a pointer offset by the specified number of elements.
 
@@ -307,7 +307,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure index is valid.
         """
-        return self.ptr[idx]
+        return self.ptr[unsafe_offset=idx]
 
     @always_inline
     def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
@@ -321,7 +321,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure index is valid.
         """
-        self.ptr[idx] = val
+        self.ptr[unsafe_offset=idx] = val
 
     @always_inline
     def load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
@@ -340,7 +340,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
-        return self.ptr.load[width=width](offset)
+        return self.ptr.unsafe_load[width=width](offset)
 
     @always_inline
     def store[
@@ -359,7 +359,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
-        self.ptr.store[width=width](offset, value)
+        self.ptr.unsafe_store[width=width](offset, value)
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations

@@ -64,7 +64,7 @@ def rand[
         var temp: Scalar[dtype] = builtin_random.random_float64(0, 1).cast[
             dtype
         ]()
-        (result._buf.ptr + i).init_pointee_copy(temp)
+        (result._buf.ptr + i).unsafe_write(temp)
 
     return result^
 
@@ -141,7 +141,7 @@ def rand[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     for i in range(result.size):
-        (result._buf.ptr + i).init_pointee_copy(
+        (result._buf.ptr + i).unsafe_write(
             builtin_random.random_float64(
                 min.cast[DType.float64](), max.cast[DType.float64]()
             ).cast[dtype]()
@@ -420,7 +420,7 @@ def exponential[
 
     for i in range(result.size):
         var u = builtin_random.random_float64().cast[dtype]()
-        (result._buf.ptr + i).init_pointee_copy(-mt.log(u) / scale)
+        (result._buf.ptr + i).unsafe_write(-mt.log(u) / scale)
 
     return result^
 
@@ -492,7 +492,7 @@ def randbool(
 
     for i in range(result.size):
         var val = builtin_random.random_float64(0.0, 1.0) < p
-        (result._buf.ptr + i).init_pointee_copy(val)
+        (result._buf.ptr + i).unsafe_write(val)
 
     return result^
 
@@ -565,4 +565,4 @@ def _float_rand_func[
         var temp: Scalar[dtype] = builtin_random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
-        (result._buf.ptr + i).init_pointee_copy(temp)
+        (result._buf.ptr + i).unsafe_write(temp)

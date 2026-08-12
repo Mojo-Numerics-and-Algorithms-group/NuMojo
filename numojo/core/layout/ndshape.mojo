@@ -13,7 +13,7 @@ The NDArrayShape provides methods for element access, shape transformations (e.g
 and properties like size and rank.
 """
 
-from std.memory import memcpy, memcmp, UnsafePointer
+from std.memory import unsafe_memcpy, unsafe_memcmp, UnsafePointer
 
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
@@ -208,7 +208,7 @@ struct NDArrayShape(
         """
         self.ndim = shape.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
+        unsafe_memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
 
     @always_inline("nodebug")
     def __init__(
@@ -277,7 +277,7 @@ struct NDArrayShape(
             self._buf.init_value(0, 0)
         else:
             self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr,
                 src=copy._buf.ptr,
                 count=copy.ndim,
@@ -365,7 +365,7 @@ struct NDArrayShape(
                     location="Shape.load",
                 )
             )
-        return self._buf.ptr.load[width=width](idx)
+        return self._buf.ptr.unsafe_load[width=width](idx)
 
     def store[
         width: Int = 1
@@ -395,7 +395,7 @@ struct NDArrayShape(
                     location="Shape.store",
                 )
             )
-        self._buf.ptr.store[width=width](idx, value)
+        self._buf.ptr.unsafe_store[width=width](idx, value)
 
     def unsafe_load[
         width: Int = 1
@@ -747,7 +747,7 @@ struct NDArrayShape(
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += String(self._buf.ptr[i])
+            result += String(self._buf.ptr[unsafe_offset=i])
             if i < self.ndim - 1:
                 result += ", "
         result += ")"
@@ -865,7 +865,7 @@ struct NDArrayShape(
 # NDArrayShape Iterator
 # ===----------------------------------------------------------------------=== #
 struct _ShapeIter[
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayShape.

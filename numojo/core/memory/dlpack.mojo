@@ -277,7 +277,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         byte_offset: Byte offset from data pointer to first element.
     """
 
-    var data: UnsafePointer[NoneType, MutUntrackedOrigin]
+    var data: Pointer[NoneType, MutUntrackedOrigin]
     """Opaque pointer to the tensor data."""
     var device: DLDevice
     """Device where the data resides."""
@@ -285,21 +285,21 @@ struct DLTensor(ImplicitlyCopyable, Movable):
     """Number of dimensions."""
     var dtype: DLDataType
     """Element data type."""
-    var shape: UnsafePointer[Int64, MutUntrackedOrigin]
+    var shape: Pointer[Int64, MutUntrackedOrigin]
     """Shape array."""
-    var strides: UnsafePointer[Int64, MutUntrackedOrigin]
+    var strides: Pointer[Int64, MutUntrackedOrigin]
     """Strides in elements."""
     var byte_offset: UInt64
     """Byte offset from data pointer to first element."""
 
     def __init__(
         out self,
-        data: UnsafePointer[NoneType, MutUntrackedOrigin],
+        data: Pointer[NoneType, MutUntrackedOrigin],
         device: DLDevice,
         ndim: Int32,
         dtype: DLDataType,
-        shape: UnsafePointer[Int64, MutUntrackedOrigin],
-        strides: UnsafePointer[Int64, MutUntrackedOrigin],
+        shape: Pointer[Int64, MutUntrackedOrigin],
+        strides: Pointer[Int64, MutUntrackedOrigin],
         byte_offset: UInt64 = 0,
     ):
         self.data = data
@@ -312,7 +312,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
 
 
 comptime DLManagedTensorDeleter = def(
-    UnsafePointer[DLManagedTensor, MutUntrackedOrigin]
+    Pointer[DLManagedTensor, MutUntrackedOrigin]
 ) capturing -> None
 
 
@@ -340,7 +340,7 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
 
     var dl_tensor: DLTensor
     """The underlying tensor."""
-    var manager_ctx: UnsafePointer[NoneType, MutUntrackedOrigin]
+    var manager_ctx: Pointer[NoneType, MutUntrackedOrigin]
     """Context pointer for the deleter (stores metadata, refcount, etc.)."""
     var deleter: DLManagedTensorDeleter
     """Cleanup function called when consumer is done."""
@@ -348,7 +348,7 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
     def __init__(
         out self,
         dl_tensor: DLTensor,
-        manager_ctx: UnsafePointer[NoneType, MutUntrackedOrigin],
+        manager_ctx: Pointer[NoneType, MutUntrackedOrigin],
         deleter: DLManagedTensorDeleter,
     ):
         self.dl_tensor = dl_tensor.copy()
@@ -379,15 +379,15 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         data_container: Container managing the actual tensor data.
     """
 
-    var shape: UnsafePointer[Int64, MutUntrackedOrigin]
-    var strides: UnsafePointer[Int64, MutUntrackedOrigin]
+    var shape: Pointer[Int64, MutUntrackedOrigin]
+    var strides: Pointer[Int64, MutUntrackedOrigin]
     var ndim: Int
     var data_container: DataContainer[Self.dtype]
 
     def __init__(
         out self,
-        shape: UnsafePointer[Int64, MutUntrackedOrigin],
-        strides: UnsafePointer[Int64, MutUntrackedOrigin],
+        shape: Pointer[Int64, MutUntrackedOrigin],
+        strides: Pointer[Int64, MutUntrackedOrigin],
         ndim: Int,
         var data_container: DataContainer[Self.dtype],
     ):
@@ -404,9 +404,9 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 
     def __del__(deinit self):
         if Int(self.shape) != 0:
-            self.shape.free()
+            self.shape.unsafe_free()
         if Int(self.strides) != 0:
-            self.strides.free()
+            self.strides.unsafe_free()
         # TODO: note sure if we should free it explicitly, gotta check this with tests.
         _ = self.data_container^
 
@@ -419,7 +419,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 def _dlpack_deleter_impl[
     dtype: DType
 ](
-    managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutUntrackedOrigin]
+    managed_tensor_ptr: Pointer[DLManagedTensor, MutUntrackedOrigin]
 ) capturing -> None:
     """Type-specific deleter callback for DLManagedTensor."""
     if Int(managed_tensor_ptr) == 0:
@@ -427,11 +427,11 @@ def _dlpack_deleter_impl[
 
     var ctx = managed_tensor_ptr[].manager_ctx
     if Int(ctx) != 0:
-        var metadata_ptr = ctx.bitcast[DLPackMetadata[dtype]]()
-        metadata_ptr.destroy_pointee()
-        metadata_ptr.free()
+        var metadata_ptr = ctx.unsafe_bitcast[DLPackMetadata[dtype]]()
+        metadata_ptr.unsafe_deinit_pointee()
+        metadata_ptr.unsafe_free()
 
-    managed_tensor_ptr.free()
+    managed_tensor_ptr.unsafe_free()
 
 
 # ===-------------------------------------------------------------------===#
@@ -441,7 +441,7 @@ def _dlpack_deleter_impl[
 
 def to_dlpack[
     dtype: DType
-](arr: NDArray[dtype]) raises -> UnsafePointer[DLManagedTensor, MutUntrackedOrigin]:
+](arr: NDArray[dtype]) raises -> Pointer[DLManagedTensor, MutUntrackedOrigin]:
     """Exports a NuMojo NDArray to a DLPack managed tensor for zero-copy sharing.
 
     This function converts a NuMojo NDArray into a DLPack-compatible managed
@@ -471,15 +471,15 @@ def to_dlpack[
 
     var shape_ptr = alloc[Int64](arr.ndim)
     for i in range(arr.ndim):
-        shape_ptr[i] = Int64(arr.shape[i])
+        shape_ptr[unsafe_offset=i] = Int64(arr.shape[i])
 
     var strides_ptr = alloc[Int64](arr.ndim)
     for i in range(arr.ndim):
-        strides_ptr[i] = Int64(arr.strides[i])
+        strides_ptr[unsafe_offset=i] = Int64(arr.strides[i])
 
     var dl_dtype = DLDataType.from_dtype[dtype]()
     var device = DLDevice(DLDevice.CPU, 0)
-    var data_ptr = buf.get_ptr().bitcast[NoneType]()
+    var data_ptr = buf.get_ptr().unsafe_bitcast[NoneType]()
 
     var dl_tensor = DLTensor(
         data=data_ptr,
@@ -499,13 +499,13 @@ def to_dlpack[
     )
 
     var ctx = alloc[DLPackMetadata[dtype]](1)
-    ctx.init_pointee_move(metadata^)
+    ctx.unsafe_write(metadata^)
 
     var managed = alloc[DLManagedTensor](1)
-    managed.init_pointee_move(
+    managed.unsafe_write(
         DLManagedTensor(
             dl_tensor,
-            ctx.bitcast[NoneType](),
+            ctx.unsafe_bitcast[NoneType](),
             _dlpack_deleter_impl[dtype],
         )
     )
@@ -515,7 +515,7 @@ def to_dlpack[
 
 def _extract_dlpack_pointer(
     capsule: PythonObject,
-) raises -> UnsafePointer[DLManagedTensor, MutUntrackedOrigin]:
+) raises -> Pointer[DLManagedTensor, MutUntrackedOrigin]:
     """Extracts the DLManagedTensor pointer from a PyCapsule.
 
     This function uses the Python C API to extract the raw pointer from a
@@ -553,7 +553,7 @@ def _extract_dlpack_pointer(
             " - capsule may be invalid or already consumed"
         )
 
-    return p.bitcast[DLManagedTensor]().unsafe_origin_cast[
+    return p.unsafe_bitcast[DLManagedTensor]().unsafe_origin_cast[
         MutUntrackedOrigin
     ]()
 
@@ -562,7 +562,7 @@ def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
     ctypes = Python.import_module("ctypes")
 
     return ctypes.cast(
-        Int(s.as_c_string_slice().unsafe_ptr().bitcast[NoneType]()),
+        Int(s.as_c_string_slice().unsafe_ptr().unsafe_bitcast[NoneType]()),
         ctypes.c_char_p,
     )
 
@@ -635,17 +635,17 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     var ndim = Int(dl_tensor.ndim)
     var shape = NDArrayShape(ndim=ndim, initialized=True)
     for i in range(ndim):
-        shape[i] = Int(dl_tensor.shape[i])
+        shape[i] = Int(dl_tensor.shape[unsafe_offset=i])
 
     var strides: NDArrayStrides
     if Int(dl_tensor.strides) != 0:
         strides = NDArrayStrides(ndim=ndim, initialized=True)
         for i in range(ndim):
-            strides[i] = Int(dl_tensor.strides[i])
+            strides[i] = Int(dl_tensor.strides[unsafe_offset=i])
     else:
         strides = NDArrayStrides(shape, order="C")
 
-    var data_ptr = dl_tensor.data.bitcast[Scalar[dtype]]()
+    var data_ptr = dl_tensor.data.unsafe_bitcast[Scalar[dtype]]()
     if dl_tensor.byte_offset > 0:
         data_ptr = data_ptr + Int(dl_tensor.byte_offset) // size_of[dtype]()
 

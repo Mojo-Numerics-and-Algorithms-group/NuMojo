@@ -62,7 +62,7 @@ def extrema_1d[
     comptime if is_max:
 
         def vectorize_max[simd_width: Int](offset: Int) {mut value, a}:
-            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_max()
+            var temp = a._buf.ptr.unsafe_load[width=simd_width](offset).reduce_max()
             if temp >= value:
                 value = temp
 
@@ -73,7 +73,7 @@ def extrema_1d[
     else:
 
         def vectorize_min[simd_width: Int](offset: Int) {mut value, a} -> None:
-            var temp = a._buf.ptr.load[width=simd_width](offset).reduce_min()
+            var temp = a._buf.ptr.unsafe_load[width=simd_width](offset).reduce_min()
             if temp < value:
                 value = temp
 

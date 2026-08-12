@@ -13,7 +13,7 @@ Provides sum reductions along axes for NDArrays and Matrices, covering both flat
 from std.sys import simd_width_of
 from std.algorithm import vectorize
 from max.algorithm import parallelize
-from std.memory import UnsafePointer, memset_zero, memcpy
+from std.memory import UnsafePointer, unsafe_memset_zero, unsafe_memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
@@ -52,7 +52,7 @@ def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     def cal_vec[width: Int](i: Int) {mut result, A}:
-        result += A._buf.ptr.load[width=width](i).reduce_add()
+        result += A._buf.ptr.unsafe_load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return result
@@ -148,7 +148,7 @@ def sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res + A._buf.ptr.load[width=width](i).reduce_add()
+        res = res + A._buf.ptr.unsafe_load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -250,7 +250,7 @@ def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf.ptr[i + 1] += B._buf.ptr[i]
+            B._buf.ptr[unsafe_offset=i + 1] += B._buf.ptr[unsafe_offset=i]
         return B^
 
     else:
@@ -295,8 +295,8 @@ def cumsum[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[Int(I._buf.ptr[i + j + 1])] += B._buf.ptr[
-                Int(I._buf.ptr[i + j])
+            B._buf.ptr[unsafe_offset=Int(I._buf.ptr[unsafe_offset=i + j + 1])] += B._buf.ptr[unsafe_offset=
+                Int(I._buf.ptr[unsafe_offset=i + j])
             ]
 
     return B^
@@ -323,7 +323,7 @@ def cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     var reorder = False
     var order = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
-    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if A.is_f_contiguous():
         reorder = True
@@ -332,7 +332,7 @@ def cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     result.resize(shape=(1, A.size))
 
     for i in range(1, A.size):
-        result._buf.ptr[i] += result._buf.ptr[i - 1]
+        result._buf.ptr[unsafe_offset=i] += result._buf.ptr[unsafe_offset=i - 1]
 
     if reorder:
         result = result.reorder_layout()
@@ -362,7 +362,7 @@ def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     comptime width: Int = simd_width_of[dtype]()
     var order = "C" if A.is_c_contiguous() else "F"
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
-    memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+    unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
 
     if axis == 0:
         if result.is_c_contiguous():

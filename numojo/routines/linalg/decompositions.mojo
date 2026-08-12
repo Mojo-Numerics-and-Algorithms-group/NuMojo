@@ -12,7 +12,7 @@ This module provides functions for matrix decompositions, including LU decomposi
 from std.sys import simd_width_of
 from std.algorithm import vectorize
 from max.algorithm import parallelize
-from std.memory import UnsafePointer, memcpy, memset_zero
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 import std.math as builtin_math
 
 from numojo.core.ndarray import NDArray

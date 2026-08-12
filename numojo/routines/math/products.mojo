@@ -13,7 +13,7 @@ Implements product and cumulative product reductions for NDArrays and Matrices.
 from std.algorithm.functional import vectorize
 from max.algorithm import parallelize
 from std.sys import simd_width_of
-from std.memory import UnsafePointer, memcpy, memset_zero
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 
 from numojo.core.ndarray import NDArray
 import numojo.core.matrix as matrix
@@ -53,7 +53,7 @@ def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res *= A._buf.ptr.load[width=width](i).reduce_mul()
+        res *= A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -112,7 +112,7 @@ def prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res * A._buf.ptr.load[width=width](i).reduce_mul()
+        res = res * A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -192,7 +192,7 @@ def cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf.ptr[i + 1] *= B._buf.ptr[i]
+            B._buf.ptr[unsafe_offset=i + 1] *= B._buf.ptr[unsafe_offset=i]
         return B^
 
     else:
@@ -236,7 +236,7 @@ def cumprod[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[I._buf.ptr[i + j + 1]] *= B._buf.ptr[I._buf.ptr[i + j]]
+            B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j + 1]] *= B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
 
     return B^
 
@@ -261,14 +261,14 @@ def cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, "C")
 
     if A.is_c_contiguous():
-        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
                 result[i, j] = A[i, j]
 
     for i in range(1, A.size):
-        result._buf.ptr[i] *= result._buf.ptr[i - 1]
+        result._buf.ptr[unsafe_offset=i] *= result._buf.ptr[unsafe_offset=i - 1]
 
     result.resize(shape=(1, result.size))
     return result^
@@ -297,7 +297,7 @@ def cumprod[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
     var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
 
     if order == "C":
-        memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for j in range(result.shape[1]):
 

@@ -131,9 +131,9 @@ def add[
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
             # TODO: Figure out how to remove this unnecessary copy here (even though we take values as owned.
-            array_list.append(values[i].copy().unsafe_take[NDArray[dtype]]())
+            array_list.append(values[i].copy().unsafe_unwrap[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part += values[i].copy().unsafe_take[Scalar[dtype]]()
+            scalar_part += values[i].copy().unsafe_unwrap[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
@@ -439,9 +439,9 @@ def mul[
     var scalar_part: Scalar[dtype] = 1
     for i in range(len(values)):
         if values[i].isa[NDArray[dtype]]():
-            array_list.append(values[i].copy().unsafe_take[NDArray[dtype]]())
+            array_list.append(values[i].copy().unsafe_unwrap[NDArray[dtype]]())
         elif values[i].isa[Scalar[dtype]]():
-            scalar_part *= values[i].copy().unsafe_take[Scalar[dtype]]()
+            scalar_part *= values[i].copy().unsafe_unwrap[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
             "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"

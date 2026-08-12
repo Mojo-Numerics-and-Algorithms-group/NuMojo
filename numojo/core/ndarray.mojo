@@ -37,7 +37,7 @@ import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
 from std.math import log10
-from std.memory import memset_zero, memcpy
+from std.memory import unsafe_memset_zero, unsafe_memcpy
 from std.python import PythonObject
 from std.sys import simd_width_of
 from std.utils import Variant
@@ -243,7 +243,7 @@ struct NDArray[dtype: DType = DType.float64](
         self.strides = NDArrayStrides(strides=strides)
         self.offset = offset
         self._buf = DataContainer[Self.dtype](self.size)
-        memset_zero(self._buf.ptr, self.size)
+        unsafe_memset_zero(self._buf.ptr, self.size)
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
@@ -486,7 +486,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         index_of_buffer += self.offset
-        return self._buf.ptr[index_of_buffer]
+        return self._buf.ptr[unsafe_offset=index_of_buffer]
 
     def _getitem(self, indices: List[Int]) -> Scalar[Self.dtype]:
         """Gets the item at indices, bypassing all boundary checks.
@@ -515,7 +515,7 @@ struct NDArray[dtype: DType = DType.float64](
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         index_of_buffer += self.offset
-        return self._buf.ptr[index_of_buffer]
+        return self._buf.ptr[unsafe_offset=index_of_buffer]
 
     def __getitem__(self) raises -> SIMD[Self.dtype, 1]:
         """Gets the value of the 0-D array.
@@ -599,7 +599,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
-        return self._buf.ptr.load[width=1](self.offset + idx)
+        return self._buf.ptr.unsafe_load[width=1](self.offset + idx)
 
     # Can be faster if we only return a view since we are not copying the data.
     def __getitem__(self, idx: Int) raises -> Self:
@@ -676,7 +676,7 @@ struct NDArray[dtype: DType = DType.float64](
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
             return creation._0darray[Self.dtype](
-                self._buf.ptr[self.offset + norm]
+                self._buf.ptr[unsafe_offset=self.offset + norm]
             )
 
         var out_shape = self.shape[1:]
@@ -688,7 +688,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Fast path for C-contiguous arrays
         if self.is_c_contiguous():
             var block = self.size // self.shape[0]
-            memcpy(
+            unsafe_memcpy(
                 dest=result._buf.ptr,
                 src=self._buf.ptr + self.offset + norm * block,
                 count=block,
@@ -728,7 +728,7 @@ struct NDArray[dtype: DType = DType.float64](
             var dst_off = dst.offset
             for d in range(out_ndim):
                 dst_off += coords[d] * Int(dst.strides.unsafe_load(d))
-            dst._buf.ptr[dst_off] = src._buf.ptr[off]
+            dst._buf.ptr[unsafe_offset=dst_off] = src._buf.ptr[unsafe_offset=off]
 
     def __getitem__(self, var *slices: Slice) raises -> Self:
         """Retrieves a slice or sub-array from the current array using variadic
@@ -1400,7 +1400,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # Fill in the values (advanced indexing on axis 0).
         for i in range(indices_c.size):
-            var raw_idx = Int(indices_c._buf.ptr[i])
+            var raw_idx = Int(indices_c._buf.ptr[unsafe_offset=i])
             if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                 raise Error(
                     NumojoError(
@@ -1418,7 +1418,7 @@ struct NDArray[dtype: DType = DType.float64](
                 normalized_idx += self.shape[0]
 
             if self.is_c_contiguous():
-                memcpy(
+                unsafe_memcpy(
                     dest=result._buf.ptr + i * size_per_item,
                     src=self._buf.ptr
                     + self.offset
@@ -1427,7 +1427,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             else:
                 var selected = self[normalized_idx].contiguous()
-                memcpy(
+                unsafe_memcpy(
                     dest=result._buf.ptr + i * size_per_item,
                     src=selected._buf.ptr + selected.offset,
                     count=size_per_item,
@@ -1483,7 +1483,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
-            (indices_array._buf.ptr + i).init_pointee_copy(
+            (indices_array._buf.ptr + i).unsafe_write(
                 Scalar[DType.int](indices[i])
             )
 
@@ -1585,8 +1585,8 @@ struct NDArray[dtype: DType = DType.float64](
             var offset = 0
             for i in range(mask.size):
                 if mask.item(i):
-                    (result._buf.ptr + offset).init_pointee_copy(
-                        self_c._buf.ptr[i]
+                    (result._buf.ptr + offset).unsafe_write(
+                        self_c._buf.ptr[unsafe_offset=i]
                     )
                     offset += 1
 
@@ -1613,7 +1613,7 @@ struct NDArray[dtype: DType = DType.float64](
             var offset = 0
             for i in range(mask.size):
                 if mask.item(i):
-                    memcpy(
+                    unsafe_memcpy(
                         dest=result._buf.ptr + offset * size_per_item,
                         src=self_c._buf.ptr + i * size_per_item,
                         count=size_per_item,
@@ -1654,7 +1654,7 @@ struct NDArray[dtype: DType = DType.float64](
             # Count True entries in the mask.
             var true_count = 0
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     true_count += 1
 
             # Build result shape: (true_count, *self.shape[k:])
@@ -1672,7 +1672,7 @@ struct NDArray[dtype: DType = DType.float64](
             var coords = List[Int](length=k, fill=0)
             var out_offset = 0
             for flat in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](flat):
+                if mask_c._buf.ptr.unsafe_load[width=1](flat):
                     var rem = flat
                     for d in range(k - 1, -1, -1):
                         var dim = Int(self.shape.unsafe_load(d))
@@ -1750,7 +1750,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var mask_array = NDArray[DType.bool](shape=Shape(len(mask)))
         for i in range(len(mask)):
-            (mask_array._buf.ptr + i).init_pointee_copy(mask[i])
+            (mask_array._buf.ptr + i).unsafe_write(mask[i])
 
         return self[mask_array]
 
@@ -1834,12 +1834,12 @@ struct NDArray[dtype: DType = DType.float64](
         var item = Item(ndim=self.ndim)
 
         for i in range(self.ndim - 1, -1, -1):
-            (item._buf.ptr + i).init_pointee_copy(
+            (item._buf.ptr + i).unsafe_write(
                 Scalar[DType.int](remainder % self.shape[i])
             )
             remainder = remainder // self.shape[i]
 
-        return self._buf.ptr[
+        return self._buf.ptr[unsafe_offset=
             self.offset + IndexMethods.get_1d_index(item, self.strides)
         ]
 
@@ -1937,7 +1937,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The SIMD element at the index.
         """
-        return self._buf.ptr.load[width=width](self.offset + index)
+        return self._buf.ptr.unsafe_load[width=width](self.offset + index)
 
     def load(self, var index: Int) raises -> Scalar[Self.dtype]:
         """Safely retrieves the i-th item from the underlying buffer.
@@ -1983,7 +1983,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return self._buf.ptr[self.offset + index]
+        return self._buf.ptr[unsafe_offset=self.offset + index]
 
     def load[
         width: Int = 1
@@ -2021,7 +2021,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        return self._buf.ptr.load[width=width](self.offset + index)
+        return self._buf.ptr.unsafe_load[width=width](self.offset + index)
 
     def load[
         width: Int = 1
@@ -2090,7 +2090,7 @@ struct NDArray[dtype: DType = DType.float64](
         # indices_list already built above
 
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
-        return self._buf.ptr.load[width=width](self.offset + idx)
+        return self._buf.ptr.unsafe_load[width=width](self.offset + idx)
 
     # ===-------------------------------------------------------------------===#
     # Setter dunders and other setter methods
@@ -2153,7 +2153,7 @@ struct NDArray[dtype: DType = DType.float64](
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
-        self._buf.ptr[self.offset + index_of_buffer] = val
+        self._buf.ptr[unsafe_offset=self.offset + index_of_buffer] = val
 
     def __setitem__(self, idx: Int, val: Self) raises:
         """Assigns a single first-axis slice.
@@ -2235,7 +2235,7 @@ struct NDArray[dtype: DType = DType.float64](
         # Fast path for C-contiguous arrays (single block)
         if self.is_c_contiguous() and val.is_c_contiguous():
             var block = self.size // self.shape[0]
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr + self.offset + norm * block,
                 src=val._buf.ptr + val.offset,
                 count=block,
@@ -2271,7 +2271,7 @@ struct NDArray[dtype: DType = DType.float64](
                 var c = coords[d]
                 dst_off += c * stride_dst
                 src_off += c * stride_src
-            dst._buf.ptr[dst_off] = src._buf.ptr[src_off]
+            dst._buf.ptr[unsafe_offset=dst_off] = src._buf.ptr[unsafe_offset=src_off]
 
     def __setitem__(mut self, var index: Item, val: Scalar[Self.dtype]) raises:
         """Sets the value at the index list.
@@ -2325,7 +2325,7 @@ struct NDArray[dtype: DType = DType.float64](
             index[i] = self.normalize(index[i], self.shape[i])
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
-        self._buf.ptr.store(self.offset + idx, val)
+        self._buf.ptr.unsafe_store(self.offset + idx, val)
 
     def set(
         mut self, mask: NDArray[DType.bool], *, val: Scalar[Self.dtype]
@@ -2361,7 +2361,7 @@ struct NDArray[dtype: DType = DType.float64](
         # CASE 1: exact shape match — write scalar at every True position.
         if mask.shape == self.shape:
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     self.itemset(i, value)
             return
 
@@ -2372,7 +2372,7 @@ struct NDArray[dtype: DType = DType.float64](
         if mask.ndim == 1 and mask.shape[0] == self.shape[0]:
             var stride0 = Int(self.strides.unsafe_load(0))
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     self._fill_block_in_self(
                         base=self.offset + i * stride0,
                         axis_start=1,
@@ -2401,7 +2401,7 @@ struct NDArray[dtype: DType = DType.float64](
             var k = mask.ndim
             var coords = List[Int](length=k, fill=0)
             for flat in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](flat):
+                if mask_c._buf.ptr.unsafe_load[width=1](flat):
                     var rem = flat
                     for d in range(k - 1, -1, -1):
                         var dim = Int(self.shape.unsafe_load(d))
@@ -2699,7 +2699,7 @@ struct NDArray[dtype: DType = DType.float64](
                 buf_idx += (
                     slice_list[d].start + coords[d] * slice_list[d].step
                 ) * self.strides[d]
-            self._buf.ptr.store(buf_idx, val)
+            self._buf.ptr.unsafe_store(buf_idx, val)
 
             for d in range(self.ndim - 1, -1, -1):
                 coords[d] += 1
@@ -2865,7 +2865,7 @@ struct NDArray[dtype: DType = DType.float64](
             if val.size == 1:
                 var scalar_val = val.item(0)
                 for i in range(index_c.size):
-                    var raw_idx = Int(index_c._buf.ptr[i])
+                    var raw_idx = Int(index_c._buf.ptr[unsafe_offset=i])
                     if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                         raise Error(
                             NumojoError(
@@ -2907,7 +2907,7 @@ struct NDArray[dtype: DType = DType.float64](
 
             var val_c = val.contiguous()
             for i in range(index_c.size):
-                var raw_idx = Int(index_c._buf.ptr[i])
+                var raw_idx = Int(index_c._buf.ptr[unsafe_offset=i])
                 if raw_idx < -self.shape[0] or raw_idx >= self.shape[0]:
                     raise Error(
                         NumojoError(
@@ -2925,7 +2925,7 @@ struct NDArray[dtype: DType = DType.float64](
                 var idx = raw_idx
                 if idx < 0:
                     idx += self.shape[0]
-                self.itemset(idx, val_c._buf.ptr[i])
+                self.itemset(idx, val_c._buf.ptr[unsafe_offset=i])
             return
 
         var tail_shape = self.shape.pop(0)
@@ -2959,7 +2959,7 @@ struct NDArray[dtype: DType = DType.float64](
         )
 
         for i in range(index_c.size):
-            var idx = Int(index_c._buf.ptr[i])
+            var idx = Int(index_c._buf.ptr[unsafe_offset=i])
             if idx < -self.shape[0] or idx >= self.shape[0]:
                 raise Error(
                     NumojoError(
@@ -2981,7 +2981,7 @@ struct NDArray[dtype: DType = DType.float64](
             else:
                 var src_offset = val_c_for_slices.offset + i * per_slice_size
                 var slice = NDArray[Self.dtype](tail_shape)
-                memcpy(
+                unsafe_memcpy(
                     dest=slice._buf.ptr + slice.offset,
                     src=val_c_for_slices._buf.ptr + src_offset,
                     count=per_slice_size,
@@ -3023,27 +3023,27 @@ struct NDArray[dtype: DType = DType.float64](
         if mask.shape == self.shape:
             if val_c.shape == self.shape:
                 for i in range(mask_c.size):
-                    if mask_c._buf.ptr.load[width=1](i):
-                        self.itemset(i, val_c._buf.ptr.load[width=1](i))
+                    if mask_c._buf.ptr.unsafe_load[width=1](i):
+                        self.itemset(i, val_c._buf.ptr.unsafe_load[width=1](i))
                 return
 
             if val_c.size == 1:
-                var scalar_val = val_c._buf.ptr.load[width=1](val_c.offset)
+                var scalar_val = val_c._buf.ptr.unsafe_load[width=1](val_c.offset)
                 for i in range(mask_c.size):
-                    if mask_c._buf.ptr.load[width=1](i):
+                    if mask_c._buf.ptr.unsafe_load[width=1](i):
                         self.itemset(i, scalar_val)
                 return
 
             var true_count = 0
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     true_count += 1
 
             if val_c.ndim == 1 and val_c.size == true_count:
                 var j = 0
                 for i in range(mask_c.size):
-                    if mask_c._buf.ptr.load[width=1](i):
-                        self.itemset(i, val_c._buf.ptr.load[width=1](j))
+                    if mask_c._buf.ptr.unsafe_load[width=1](i):
+                        self.itemset(i, val_c._buf.ptr.unsafe_load[width=1](j))
                         j += 1
                 return
 
@@ -3065,7 +3065,7 @@ struct NDArray[dtype: DType = DType.float64](
             var size_per_item = self._trailing_size(1)
             var true_count = 0
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     true_count += 1
 
             # val must be either a single sub-array (shape self.shape[1:])
@@ -3093,7 +3093,7 @@ struct NDArray[dtype: DType = DType.float64](
             var stride0 = Int(self.strides.unsafe_load(0))
             var out_row = 0
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     var src_ptr = val_c._buf.ptr.unsafe_offset(
                         out_row * size_per_item if val_is_per_index else 0
                     ).as_unsafe_any_origin()
@@ -3129,7 +3129,7 @@ struct NDArray[dtype: DType = DType.float64](
 
             var true_count = 0
             for i in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](i):
+                if mask_c._buf.ptr.unsafe_load[width=1](i):
                     true_count += 1
 
             var tail_shape = NDArrayShape(self.shape[k:])
@@ -3160,7 +3160,7 @@ struct NDArray[dtype: DType = DType.float64](
             var coords = List[Int](length=k, fill=0)
             var out_row = 0
             for flat in range(mask_c.size):
-                if mask_c._buf.ptr.load[width=1](flat):
+                if mask_c._buf.ptr.unsafe_load[width=1](flat):
                     var rem = flat
                     for d in range(k - 1, -1, -1):
                         var dim = Int(self.shape.unsafe_load(d))
@@ -3237,13 +3237,13 @@ struct NDArray[dtype: DType = DType.float64](
                     var coordinate = norm_idx // c_stride[i]
                     norm_idx = norm_idx - c_stride[i] * coordinate
                     c_coordinates.append(coordinate)
-                self._buf.ptr.store(
+                self._buf.ptr.unsafe_store(
                     self.offset
                     + IndexMethods.get_1d_index(c_coordinates, self.strides),
                     item,
                 )
             else:
-                self._buf.ptr.store(self.offset + norm_idx, item)
+                self._buf.ptr.unsafe_store(self.offset + norm_idx, item)
         else:
             raise Error(
                 NumojoError(
@@ -3324,7 +3324,7 @@ struct NDArray[dtype: DType = DType.float64](
                     )
                 )
             indices[i] = norm_idx
-        self._buf.ptr.store(
+        self._buf.ptr.unsafe_store(
             self.offset + IndexMethods.get_1d_index(indices, self.strides),
             item,
         )
@@ -3343,7 +3343,7 @@ struct NDArray[dtype: DType = DType.float64](
             val: The value to store.
         """
 
-        self._buf.ptr.store(self.offset + index, val)
+        self._buf.ptr.unsafe_store(self.offset + index, val)
 
     def store(self, var index: Int, val: Scalar[Self.dtype]) raises:
         """Safely stores a scalar to the i-th item of the underlying buffer.
@@ -3382,7 +3382,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        self._buf.ptr[self.offset + index] = val
+        self._buf.ptr[unsafe_offset=self.offset + index] = val
 
     def store[
         width: Int = 1
@@ -3423,7 +3423,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
             )
 
-        self._buf.ptr.store(self.offset + index, val)
+        self._buf.ptr.unsafe_store(self.offset + index, val)
 
     def store[
         width: Int = 1
@@ -3482,7 +3482,7 @@ struct NDArray[dtype: DType = DType.float64](
                 )
 
         var idx: Int = IndexMethods.get_1d_index(indices, self.strides)
-        self._buf.ptr.store(self.offset + idx, val)
+        self._buf.ptr.unsafe_store(self.offset + idx, val)
 
     # ===-------------------------------------------------------------------===#
     # Operator dunders
@@ -3781,10 +3781,10 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             def vec_op[w: Int](i: Int) {mut self, read other}:
-                self._buf.ptr.store(
+                self._buf.ptr.unsafe_store(
                     self.offset + i,
                     func[Self.dtype, w](
-                        self._buf.ptr.load[width=w](self.offset + i),
+                        self._buf.ptr.unsafe_load[width=w](self.offset + i),
                         SIMD[Self.dtype, w](other),
                     ),
                 )
@@ -3799,8 +3799,8 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = func[Self.dtype, 1](
-                    self._buf.ptr[idx], other
+                self._buf.ptr[unsafe_offset=idx] = func[Self.dtype, 1](
+                    self._buf.ptr[unsafe_offset=idx], other
                 )
 
     def _inplace_array_op[
@@ -3837,11 +3837,11 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             def vec_op[w: Int](i: Int) {mut self, read other_c}:
-                self._buf.ptr.store(
+                self._buf.ptr.unsafe_store(
                     self.offset + i,
                     func[Self.dtype, w](
-                        self._buf.ptr.load[width=w](self.offset + i),
-                        other_c._buf.ptr.load[width=w](i),
+                        self._buf.ptr.unsafe_load[width=w](self.offset + i),
+                        other_c._buf.ptr.unsafe_load[width=w](i),
                     ),
                 )
 
@@ -3855,8 +3855,8 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = func[Self.dtype, 1](
-                    self._buf.ptr[idx], other_c._buf.ptr[i]
+                self._buf.ptr[unsafe_offset=idx] = func[Self.dtype, 1](
+                    self._buf.ptr[unsafe_offset=idx], other_c._buf.ptr[unsafe_offset=i]
                 )
 
     # ===--- In-place arithmetic operators ---===#
@@ -3993,7 +3993,7 @@ struct NDArray[dtype: DType = DType.float64](
         var src = self.contiguous()
         var result: Self = Self(shape=self.shape, order="C")
         for i in range(src.size):
-            result._buf.ptr[i] = src._buf.ptr[i].__pow__(rhs)
+            result._buf.ptr[unsafe_offset=i] = src._buf.ptr[unsafe_offset=i].__pow__(rhs)
         return result^
 
     def __pow__(self, p: Self) raises -> Self:
@@ -4014,10 +4014,10 @@ struct NDArray[dtype: DType = DType.float64](
         def vectorized_pow[
             simd_width: Int
         ](index: Int) {mut result, read src, read p_c}:
-            result._buf.ptr.store(
+            result._buf.ptr.unsafe_store(
                 index,
-                src._buf.ptr.load[width=simd_width](index)
-                ** p_c._buf.ptr.load[width=simd_width](index),
+                src._buf.ptr.unsafe_load[width=simd_width](index)
+                ** p_c._buf.ptr.unsafe_load[width=simd_width](index),
             )
 
         vectorize[self.width](self.size, vectorized_pow)
@@ -4028,10 +4028,10 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
 
             def vec_pow[w: Int](i: Int) {mut self, read p}:
-                self._buf.ptr.store(
+                self._buf.ptr.unsafe_store(
                     self.offset + i,
                     builtin_math.pow(
-                        self._buf.ptr.load[width=w](self.offset + i), p
+                        self._buf.ptr.unsafe_load[width=w](self.offset + i), p
                     ),
                 )
 
@@ -4045,7 +4045,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf.ptr[idx] = builtin_math.pow(self._buf.ptr[idx], p)
+                self._buf.ptr[unsafe_offset=idx] = builtin_math.pow(self._buf.ptr[unsafe_offset=idx], p)
 
     def _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()
@@ -4053,9 +4053,9 @@ struct NDArray[dtype: DType = DType.float64](
         def array_scalar_vectorize[
             simd_width: Int
         ](index: Int) {mut src, read p} -> None:
-            src._buf.ptr.store(
+            src._buf.ptr.unsafe_store(
                 index,
-                builtin_math.pow(src._buf.ptr.load[width=simd_width](index), p),
+                builtin_math.pow(src._buf.ptr.unsafe_load[width=simd_width](index), p),
             )
 
         vectorize[self.width](self.size, array_scalar_vectorize)
@@ -4381,18 +4381,18 @@ struct NDArray[dtype: DType = DType.float64](
         mut self,
         base: Int,
         axis_start: Int,
-        src_ptr: UnsafePointer[Scalar[Self.dtype], MutAnyOrigin],
+        src_ptr: Pointer[Scalar[Self.dtype], MutAnyOrigin],
     ) raises:
         """Writes a C-contiguous source block of `prod(shape[axis_start:])`
         elements into self at offset `base`, following `self.strides[axis_start:]`.
         """
         var n_trail = self.ndim - axis_start
         if n_trail <= 0:
-            self._buf.ptr.store(base, src_ptr.load[width=1](0))
+            self._buf.ptr.unsafe_store(base, src_ptr.unsafe_load[width=1](0))
             return
         var size_per_item = self._trailing_size(axis_start)
         if self._trailing_is_contig(axis_start):
-            memcpy(dest=self._buf.ptr + base, src=src_ptr, count=size_per_item)
+            unsafe_memcpy(dest=self._buf.ptr + base, src=src_ptr, count=size_per_item)
             return
         var tcoords = List[Int](length=n_trail, fill=0)
         var j = 0
@@ -4402,7 +4402,7 @@ struct NDArray[dtype: DType = DType.float64](
                 off += tcoords[d] * Int(
                     self.strides.unsafe_load(axis_start + d)
                 )
-            self._buf.ptr.store(off, src_ptr.load[width=1](j))
+            self._buf.ptr.unsafe_store(off, src_ptr.unsafe_load[width=1](j))
             j += 1
             var d = n_trail - 1
             while d >= 0:
@@ -4424,7 +4424,7 @@ struct NDArray[dtype: DType = DType.float64](
         `base` with `value`, following `self.strides[axis_start:]`."""
         var n_trail = self.ndim - axis_start
         if n_trail <= 0:
-            self._buf.ptr.store(base, value)
+            self._buf.ptr.unsafe_store(base, value)
             return
         var tcoords = List[Int](length=n_trail, fill=0)
         while True:
@@ -4433,7 +4433,7 @@ struct NDArray[dtype: DType = DType.float64](
                 off += tcoords[d] * Int(
                     self.strides.unsafe_load(axis_start + d)
                 )
-            self._buf.ptr.store(off, value)
+            self._buf.ptr.unsafe_store(off, value)
             var d = n_trail - 1
             while d >= 0:
                 tcoords[d] += 1
@@ -4448,18 +4448,18 @@ struct NDArray[dtype: DType = DType.float64](
         self,
         base: Int,
         axis_start: Int,
-        dst_ptr: UnsafePointer[Scalar[Self.dtype], MutAnyOrigin],
+        dst_ptr: Pointer[Scalar[Self.dtype], MutAnyOrigin],
     ) raises:
         """Reads `prod(shape[axis_start:])` elements from self starting at
         offset `base` (following `self.strides[axis_start:]`) into the
         C-contiguous destination block `dst_ptr`."""
         var n_trail = self.ndim - axis_start
         if n_trail <= 0:
-            dst_ptr.store(0, self._buf.ptr.load[width=1](base))
+            dst_ptr.unsafe_store(0, self._buf.ptr.unsafe_load[width=1](base))
             return
         var size_per_item = self._trailing_size(axis_start)
         if self._trailing_is_contig(axis_start):
-            memcpy(dest=dst_ptr, src=self._buf.ptr + base, count=size_per_item)
+            unsafe_memcpy(dest=dst_ptr, src=self._buf.ptr + base, count=size_per_item)
             return
         var tcoords = List[Int](length=n_trail, fill=0)
         var j = 0
@@ -4469,7 +4469,7 @@ struct NDArray[dtype: DType = DType.float64](
                 off += tcoords[d] * Int(
                     self.strides.unsafe_load(axis_start + d)
                 )
-            dst_ptr.store(j, self._buf.ptr.load[width=1](off))
+            dst_ptr.unsafe_store(j, self._buf.ptr.unsafe_load[width=1](off))
             j += 1
             var d = n_trail - 1
             while d >= 0:
@@ -4674,7 +4674,7 @@ struct NDArray[dtype: DType = DType.float64](
             simd_width: Int
         ](idx: Int) {mut result, read a} -> None:
             result = result and builtin_bool.all(
-                (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
+                (a._buf.ptr + a.offset + idx).unsafe_strided_load[width=simd_width](1)
             )
 
         vectorize[a.width](a.size, vectorized_all)
@@ -4700,7 +4700,7 @@ struct NDArray[dtype: DType = DType.float64](
             simd_width: Int
         ](idx: Int) {mut result, read a} -> None:
             result = result or builtin_bool.any(
-                (a._buf.ptr + a.offset + idx).strided_load[width=simd_width](1)
+                (a._buf.ptr + a.offset + idx).unsafe_strided_load[width=simd_width](1)
             )
 
         vectorize[a.width](a.size, vectorized_any)
@@ -4886,13 +4886,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
             # Fast path: single memcpy from (possibly offset) contiguous data
-            memcpy(
+            unsafe_memcpy(
                 dest=result._buf.ptr,
                 src=self._buf.ptr + self.offset,
                 count=self.size,
             )
         elif self.ndim == 0:
-            result._buf.ptr[0] = self._buf.ptr[self.offset]
+            result._buf.ptr[unsafe_offset=0] = self._buf.ptr[unsafe_offset=self.offset]
         else:
             # Stride-aware copy for non-contiguous views.
             var last_dim = self.ndim - 1
@@ -4918,8 +4918,8 @@ struct NDArray[dtype: DType = DType.float64](
                 }:
                     var simd_data = (
                         self._buf.ptr + base_offset + i * last_stride
-                    ).strided_load[width=simd_w](last_stride)
-                    result._buf.ptr.store(dest_base + i, simd_data)
+                    ).unsafe_strided_load[width=simd_w](last_stride)
+                    result._buf.ptr.unsafe_store(dest_base + i, simd_data)
 
                 vectorize[width](last_extent, closure)
 
@@ -4953,7 +4953,7 @@ struct NDArray[dtype: DType = DType.float64](
                 + i * Int(self.strides[0])
                 + id * Int(self.strides[1])
             )
-            buffer._buf.ptr[i] = self._buf.ptr[src_idx]
+            buffer._buf.ptr[unsafe_offset=i] = self._buf.ptr[unsafe_offset=src_idx]
         return buffer^
 
     def cumprod(self) raises -> NDArray[Self.dtype]:
@@ -5296,7 +5296,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
             for i in range(self.size):
-                (self._buf.ptr + self.offset + i).init_pointee_copy(val)
+                (self._buf.ptr + self.offset + i).unsafe_write(val)
         else:
             for i in range(self.size):
                 var remainder = i
@@ -5308,7 +5308,7 @@ struct NDArray[dtype: DType = DType.float64](
                     index_of_buffer += coord * Int(
                         self.strides.unsafe_load(dim)
                     )
-                self._buf.ptr[index_of_buffer] = val
+                self._buf.ptr[unsafe_offset=index_of_buffer] = val
 
     def flatten(self, order: String = "C") raises -> Self:
         """Returns a copy of the array collapsed into one dimension.
@@ -5815,13 +5815,13 @@ struct NDArray[dtype: DType = DType.float64](
 
         if shape.size() > self.size:
             var other = Self(shape=shape, order=order)
-            memcpy(
+            unsafe_memcpy(
                 dest=other._buf.ptr,
                 src=self._buf.ptr + self.offset,
                 count=self.size,
             )
             for i in range(self.size, other.size):
-                (other._buf.ptr + i).init_pointee_copy(0)
+                (other._buf.ptr + i).unsafe_write(0)
             self = other^
         else:
             self.shape = shape
@@ -5872,7 +5872,7 @@ struct NDArray[dtype: DType = DType.float64](
                 + id * Int(self.strides[0])
                 + i * Int(self.strides[1])
             )
-            buffer._buf.ptr[i] = self._buf.ptr[src_idx]
+            buffer._buf.ptr[unsafe_offset=i] = self._buf.ptr[unsafe_offset=src_idx]
         return buffer^
 
     def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
@@ -6004,7 +6004,7 @@ struct NDArray[dtype: DType = DType.float64](
                     index_of_buffer += coord * Int(
                         self.strides.unsafe_load(dim)
                     )
-                result.append(self._buf.ptr[index_of_buffer])
+                result.append(self._buf.ptr[unsafe_offset=index_of_buffer])
         return result^
 
     def to_numpy(self) raises -> PythonObject:
@@ -6081,7 +6081,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     def unsafe_ptr(
         ref self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin]:
         """Retrieves the pointer to the logical start of the array data.
 
         For views with a non-zero offset, this returns a pointer to
@@ -6263,7 +6263,7 @@ struct _NDArrayIter[
                     # (item._buf.ptr + i).init_pointee_copy(
                     #     Scalar[DType.int](remainder % self.shape[i])
                     # )
-                    item._buf.ptr[i] = Scalar[DType.int](
+                    item._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
                         remainder % self.shape[i]
                     )
                     remainder = remainder // self.shape[i]
@@ -6271,14 +6271,14 @@ struct _NDArrayIter[
                     # (item._buf.ptr + self.dimension).init_pointee_copy(
                     #     Scalar[DType.int](current_index)
                     # )
-                    item._buf.ptr[self.dimension] = Scalar[DType.int](
+                    item._buf.ptr[unsafe_offset=self.dimension] = Scalar[DType.int](
                         current_index
                     )
 
             # (result._buf.ptr + offset).init_pointee_copy(
             #     self._buf[IndexMethods.get_1d_index(item, self.strides)]
             # )
-            result._buf.ptr[offset] = self._buf[
+            result._buf.ptr[unsafe_offset=offset] = self._buf[
                 self.offset + IndexMethods.get_1d_index(item, self.strides)
             ]
         return result^
@@ -6324,17 +6324,17 @@ struct _NDArrayIter[
 
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:
-                        (item._buf.ptr + i).init_pointee_copy(
+                        (item._buf.ptr + i).unsafe_write(
                             Scalar[DType.int](remainder % self.shape[i])
                         )
                         remainder = remainder // self.shape[i]
                     else:
-                        (item._buf.ptr + self.dimension).init_pointee_copy(
+                        (item._buf.ptr + self.dimension).unsafe_write(
                             Scalar[DType.int](index)
                         )
 
-                (result._buf.ptr + offset).init_pointee_copy(
-                    self._buf.ptr[
+                (result._buf.ptr + offset).unsafe_write(
+                    self._buf.ptr[unsafe_offset=
                         self.offset
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
@@ -6343,7 +6343,7 @@ struct _NDArrayIter[
 
         else:  # 0-D array
             var result: NDArray[Self.dtype] = creation._0darray[Self.dtype](
-                self._buf.ptr[self.offset + index]
+                self._buf.ptr[unsafe_offset=self.offset + index]
             )
             return result^
 
@@ -6456,19 +6456,19 @@ struct _NDAxisIter[
         self.strides_compatible = NDArrayStrides(
             ndim=self.ndim, initialized=True
         )
-        (self.strides_compatible._buf.ptr + axis).init_pointee_copy(1)
+        (self.strides_compatible._buf.ptr + axis).unsafe_write(1)
         temp = self.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:
-                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                    (self.strides_compatible._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](temp)
                     )
                     temp *= self.shape[i]
         else:
             for i in range(self.ndim):
                 if i != axis:
-                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                    (self.strides_compatible._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](temp)
                     )
                     temp *= self.shape[i]
@@ -6506,31 +6506,31 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf.ptr + i).init_pointee_copy(
+                    (item._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
                         )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).unsafe_write(0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf.ptr + i).init_pointee_copy(
+                    (item._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
                         )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).unsafe_write(0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
             # The memory layout is C-contiguous or F-contiguous
-            memcpy(
+            unsafe_memcpy(
                 dest=res._buf.ptr,
                 src=self.data.ptr
                 + self.offset
@@ -6540,8 +6540,8 @@ struct _NDAxisIter[
 
         else:
             for j in range(self.size_of_item):
-                (res._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[
+                (res._buf.ptr + j).unsafe_write(
+                    self.data.ptr[unsafe_offset=
                         self.offset
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
@@ -6579,31 +6579,31 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf.ptr + i).init_pointee_copy(
+                    (item._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
                         )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).unsafe_write(0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf.ptr + i).init_pointee_copy(
+                    (item._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
                         )
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr + i).init_pointee_copy(0)
+                    (item._buf.ptr + i).unsafe_write(0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
             # The memory layout is C-contiguous or F-contiguous
-            memcpy(
+            unsafe_memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
                 + self.offset
@@ -6612,8 +6612,8 @@ struct _NDAxisIter[
             )
         else:
             for j in range(self.size_of_item):
-                (elements._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[
+                (elements._buf.ptr + j).unsafe_write(
+                    self.data.ptr[unsafe_offset=
                         self.offset
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
@@ -6666,7 +6666,7 @@ struct _NDAxisIter[
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
             # The memory layout is C-contiguous
-            memcpy(
+            unsafe_memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
                 + self.offset
@@ -6675,7 +6675,7 @@ struct _NDAxisIter[
             )
             var begin_offset = IndexMethods.get_1d_index(item, new_strides)
             for j in range(self.size_of_item):
-                (offsets._buf.ptr + j).init_pointee_copy(
+                (offsets._buf.ptr + j).unsafe_write(
                     Scalar[DType.int](begin_offset + j)
                 )
 
@@ -6683,7 +6683,7 @@ struct _NDAxisIter[
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
         ):
             # The memory layout is F-contiguous
-            memcpy(
+            unsafe_memcpy(
                 dest=elements._buf.ptr,
                 src=self.data.ptr
                 + self.offset
@@ -6691,7 +6691,7 @@ struct _NDAxisIter[
                 count=self.size_of_item,
             )
             for j in range(self.size_of_item):
-                (offsets._buf.ptr + j).init_pointee_copy(
+                (offsets._buf.ptr + j).unsafe_write(
                     Scalar[DType.int](
                         IndexMethods.get_1d_index(item, new_strides)
                     )
@@ -6700,13 +6700,13 @@ struct _NDAxisIter[
 
         else:
             for j in range(self.size_of_item):
-                (offsets._buf.ptr + j).init_pointee_copy(
+                (offsets._buf.ptr + j).unsafe_write(
                     Scalar[DType.int](
                         IndexMethods.get_1d_index(item, new_strides)
                     )
                 )
-                (elements._buf.ptr + j).init_pointee_copy(
-                    self.data.ptr[
+                (elements._buf.ptr + j).unsafe_write(
+                    self.data.ptr[unsafe_offset=
                         self.offset
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
@@ -6753,19 +6753,19 @@ struct _NDIter[
         self.strides_compatible = NDArrayStrides(
             ndim=self.ndim, initialized=False
         )
-        (self.strides_compatible._buf.ptr + axis).init_pointee_copy(1)
+        (self.strides_compatible._buf.ptr + axis).unsafe_write(1)
         temp = a.shape[axis]
         if order == "C":
             for i in range(self.ndim - 1, -1, -1):
                 if i != axis:
-                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                    (self.strides_compatible._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](temp)
                     )
                     temp *= a.shape[i]
         else:
             for i in range(self.ndim):
                 if i != axis:
-                    (self.strides_compatible._buf.ptr + i).init_pointee_copy(
+                    (self.strides_compatible._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](temp)
                     )
                     temp *= a.shape[i]
@@ -6791,30 +6791,30 @@ struct _NDIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (indices._buf.ptr + i).init_pointee_copy(
+                    (indices._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible._buf[i]
                         )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(
+            (indices._buf.ptr + self.axis).unsafe_write(
                 Scalar[DType.int](remainder)
             )
 
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (indices._buf.ptr + i).init_pointee_copy(
+                    (indices._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible._buf[i]
                         )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(
+            (indices._buf.ptr + self.axis).unsafe_write(
                 Scalar[DType.int](remainder)
             )
 
-        return self.data.ptr[
+        return self.data.ptr[unsafe_offset=
             self.offset + IndexMethods.get_1d_index(indices, self.strides)
         ]
 
@@ -6843,28 +6843,28 @@ struct _NDIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (indices._buf.ptr + i).init_pointee_copy(
+                    (indices._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible._buf[i]
                         )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(
+            (indices._buf.ptr + self.axis).unsafe_write(
                 Scalar[DType.int](remainder)
             )
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (indices._buf.ptr + i).init_pointee_copy(
+                    (indices._buf.ptr + i).unsafe_write(
                         Scalar[DType.int](
                             remainder // self.strides_compatible._buf[i]
                         )
                     )
                     remainder %= Int(self.strides_compatible._buf[i])
-            (indices._buf.ptr + self.axis).init_pointee_copy(
+            (indices._buf.ptr + self.axis).unsafe_write(
                 Scalar[DType.int](remainder)
             )
 
-        return self.data.ptr[
+        return self.data.ptr[unsafe_offset=
             self.offset + IndexMethods.get_1d_index(indices, self.strides)
         ]

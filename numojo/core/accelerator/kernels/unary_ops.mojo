@@ -20,22 +20,22 @@ from .binary_ops import launch_config
 def neg_kernel[
     dtype: DType
 ](
-    result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    result: Pointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
 ):
     """GPU kernel: `result[i] = -a[i]` for contiguous buffers."""
     var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
     if i < size:
-        result[i] = -a[i]
+        result[unsafe_offset=i] = -a[unsafe_offset=i]
 
 
 def launch_neg[
     dtype: DType
 ](
     context: DeviceContext,
-    result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    result: Pointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
     sync: Bool = True,
 ) raises:

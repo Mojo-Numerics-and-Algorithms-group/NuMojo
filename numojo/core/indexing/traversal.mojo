@@ -53,7 +53,7 @@ struct TraverseMethods:
             )
             if current_dim >= shape.ndim - 1:
                 ptr.unsafe_write(Scalar[DType.int](current_sum))
-                ptr += 1
+                ptr = ptr.unsafe_offset(1)
             else:
                 Self.traverse_buffer_according_to_shape_and_strides(
                     ptr,

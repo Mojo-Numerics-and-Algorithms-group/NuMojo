@@ -52,7 +52,7 @@ def argmax_1d[
         if ptr[] > value:
             result = i
             value = ptr[]
-        ptr += 1
+        ptr = ptr.unsafe_offset(1)
 
     return Scalar[DType.int](result)
 
@@ -84,7 +84,7 @@ def argmin_1d[
         if ptr[] < value:
             result = i
             value = ptr[]
-        ptr += 1
+        ptr = ptr.unsafe_offset(1)
 
     return Scalar[DType.int](result)
 

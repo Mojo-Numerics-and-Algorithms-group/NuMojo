@@ -3578,7 +3578,7 @@ struct Matrix[
         """
         if self.is_c_contiguous():
             for i in range(self.size):
-                ((self._buf.ptr + self.offset).unsafe_offset(i)).unsafe_write(fill_value)
+                ((self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(i)).unsafe_write(fill_value)
         else:
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):

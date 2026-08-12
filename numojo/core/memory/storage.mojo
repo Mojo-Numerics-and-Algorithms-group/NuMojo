@@ -264,9 +264,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             offset: Number of elements to advance.
 
         Returns:
-            (`self.ptr + offset`.
+            `self.ptr + offset`.
         """
-        return self.ptr).unsafe_offset(offset)
+        return self.ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:

@@ -22,7 +22,7 @@ from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
 from std.memory import memcpy
-from std.gpu.host import DeviceBuffer, DeviceContext
+from max.gpu.host import DeviceBuffer, DeviceContext
 
 from numojo.core.accelerator import Device, DeviceHandle
 from numojo.core.accelerator.device import is_accelerator_available
@@ -313,7 +313,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """Store a SIMD vector of `width` elements starting at `offset`.
 
@@ -595,7 +595,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         Returns:
             An `UnsafePointer` to the first element on the device.
         """
-        return self.buffer.unsafe_ptr()
+        return self.buffer.unsafe_ptr().unsafe_mut_cast[True]().as_unsafe_any_origin()
 
     def share(self) raises -> DeviceStorage[Self.dtype, Self.device]:
         """Create a shallow handle sharing this device buffer."""
@@ -853,7 +853,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]) where (
         Self.device.type == "cpu"
     ):
@@ -988,7 +988,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             An `UnsafePointer` to the first element on the host.
         """
-        return self.host_storage.unsafe_value().unsafe_ptr()
+        return self.host_storage.unsafe_value().unsafe_ptr().as_unsafe_any_origin()
 
     def device_ptr(
         self,

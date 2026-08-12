@@ -10,8 +10,9 @@
 GPU kernel functions and launch helpers for full-array reduction ops.
 """
 
-from std.gpu import thread_idx, block_idx, block_dim, barrier
-from std.gpu.host import DeviceContext
+from std.gpu import thread_idx, block_idx, block_dim
+from max.gpu.sync import barrier
+from max.gpu.host import DeviceContext
 from std.memory import AddressSpace, stack_allocation, alloc
 
 from .binary_ops import launch_config

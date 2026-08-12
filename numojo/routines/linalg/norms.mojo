@@ -16,6 +16,7 @@ from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
 )
+from numojo.core.type_aliases import Shape
 
 
 def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:

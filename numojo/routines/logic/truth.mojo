@@ -10,7 +10,8 @@
 This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
 """
 
-from std.algorithm import vectorize, parallelize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.sys import simd_width_of
 
 from numojo.core.ndarray import NDArray

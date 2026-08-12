@@ -277,7 +277,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
         byte_offset: Byte offset from data pointer to first element.
     """
 
-    var data: UnsafePointer[NoneType, MutAnyOrigin]
+    var data: UnsafePointer[NoneType, MutUntrackedOrigin]
     """Opaque pointer to the tensor data."""
     var device: DLDevice
     """Device where the data resides."""
@@ -285,21 +285,21 @@ struct DLTensor(ImplicitlyCopyable, Movable):
     """Number of dimensions."""
     var dtype: DLDataType
     """Element data type."""
-    var shape: UnsafePointer[Int64, MutAnyOrigin]
+    var shape: UnsafePointer[Int64, MutUntrackedOrigin]
     """Shape array."""
-    var strides: UnsafePointer[Int64, MutAnyOrigin]
+    var strides: UnsafePointer[Int64, MutUntrackedOrigin]
     """Strides in elements."""
     var byte_offset: UInt64
     """Byte offset from data pointer to first element."""
 
     def __init__(
         out self,
-        data: UnsafePointer[NoneType, MutAnyOrigin],
+        data: UnsafePointer[NoneType, MutUntrackedOrigin],
         device: DLDevice,
         ndim: Int32,
         dtype: DLDataType,
-        shape: UnsafePointer[Int64, MutAnyOrigin],
-        strides: UnsafePointer[Int64, MutAnyOrigin],
+        shape: UnsafePointer[Int64, MutUntrackedOrigin],
+        strides: UnsafePointer[Int64, MutUntrackedOrigin],
         byte_offset: UInt64 = 0,
     ):
         self.data = data
@@ -312,7 +312,7 @@ struct DLTensor(ImplicitlyCopyable, Movable):
 
 
 comptime DLManagedTensorDeleter = def(
-    UnsafePointer[DLManagedTensor, MutAnyOrigin]
+    UnsafePointer[DLManagedTensor, MutUntrackedOrigin]
 ) capturing -> None
 
 
@@ -340,7 +340,7 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
 
     var dl_tensor: DLTensor
     """The underlying tensor."""
-    var manager_ctx: UnsafePointer[NoneType, MutAnyOrigin]
+    var manager_ctx: UnsafePointer[NoneType, MutUntrackedOrigin]
     """Context pointer for the deleter (stores metadata, refcount, etc.)."""
     var deleter: DLManagedTensorDeleter
     """Cleanup function called when consumer is done."""
@@ -348,7 +348,7 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
     def __init__(
         out self,
         dl_tensor: DLTensor,
-        manager_ctx: UnsafePointer[NoneType, MutAnyOrigin],
+        manager_ctx: UnsafePointer[NoneType, MutUntrackedOrigin],
         deleter: DLManagedTensorDeleter,
     ):
         self.dl_tensor = dl_tensor.copy()
@@ -379,15 +379,15 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
         data_container: Container managing the actual tensor data.
     """
 
-    var shape: UnsafePointer[Int64, MutAnyOrigin]
-    var strides: UnsafePointer[Int64, MutAnyOrigin]
+    var shape: UnsafePointer[Int64, MutUntrackedOrigin]
+    var strides: UnsafePointer[Int64, MutUntrackedOrigin]
     var ndim: Int
     var data_container: DataContainer[Self.dtype]
 
     def __init__(
         out self,
-        shape: UnsafePointer[Int64, MutAnyOrigin],
-        strides: UnsafePointer[Int64, MutAnyOrigin],
+        shape: UnsafePointer[Int64, MutUntrackedOrigin],
+        strides: UnsafePointer[Int64, MutUntrackedOrigin],
         ndim: Int,
         var data_container: DataContainer[Self.dtype],
     ):
@@ -419,7 +419,7 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
 def _dlpack_deleter_impl[
     dtype: DType
 ](
-    managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutAnyOrigin]
+    managed_tensor_ptr: UnsafePointer[DLManagedTensor, MutUntrackedOrigin]
 ) capturing -> None:
     """Type-specific deleter callback for DLManagedTensor."""
     if Int(managed_tensor_ptr) == 0:
@@ -441,7 +441,7 @@ def _dlpack_deleter_impl[
 
 def to_dlpack[
     dtype: DType
-](arr: NDArray[dtype]) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
+](arr: NDArray[dtype]) raises -> UnsafePointer[DLManagedTensor, MutUntrackedOrigin]:
     """Exports a NuMojo NDArray to a DLPack managed tensor for zero-copy sharing.
 
     This function converts a NuMojo NDArray into a DLPack-compatible managed
@@ -515,7 +515,7 @@ def to_dlpack[
 
 def _extract_dlpack_pointer(
     capsule: PythonObject,
-) raises -> UnsafePointer[DLManagedTensor, MutAnyOrigin]:
+) raises -> UnsafePointer[DLManagedTensor, MutUntrackedOrigin]:
     """Extracts the DLManagedTensor pointer from a PyCapsule.
 
     This function uses the Python C API to extract the raw pointer from a
@@ -553,7 +553,9 @@ def _extract_dlpack_pointer(
             " - capsule may be invalid or already consumed"
         )
 
-    return p.bitcast[DLManagedTensor]()
+    return p.bitcast[DLManagedTensor]().unsafe_origin_cast[
+        MutUntrackedOrigin
+    ]()
 
 
 def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:

@@ -12,7 +12,7 @@ on contiguous `AcceleratorNDArray` buffers.
 """
 
 from std.gpu import thread_idx, block_idx, block_dim
-from std.gpu.host import DeviceContext
+from max.gpu.host import DeviceContext
 
 from .binary_ops import launch_config
 

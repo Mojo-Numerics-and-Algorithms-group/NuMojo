@@ -11,7 +11,8 @@ This module provides functions for computing products of vectors and matrices, s
 """
 
 import std.math
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.sys import simd_width_of
 from std.memory import memcpy

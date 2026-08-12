@@ -344,7 +344,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """
         Store a SIMD vector of the specified width at the given offset.

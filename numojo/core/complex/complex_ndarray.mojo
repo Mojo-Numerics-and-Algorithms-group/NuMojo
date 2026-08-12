@@ -27,7 +27,8 @@ overloads, IO, trait, and iterator methods, as well as other utility functions.
 # ===----------------------------------------------------------------------===#
 # === Stdlib ===
 # ===----------------------------------------------------------------------===#
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
@@ -83,6 +84,10 @@ import numojo.routines.math.exponents as exponents
 import numojo.routines.math.misc as misc
 import numojo.routines.searching as searching
 from numojo.routines.manipulation import reshape
+from numojo.core.ndarray import NDArray
+from numojo.routines import math
+from numojo.routines import linalg
+from numojo.core.type_aliases import Shape
 
 
 # ===----------------------------------------------------------------------=== #

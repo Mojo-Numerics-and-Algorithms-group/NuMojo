@@ -11,7 +11,8 @@ Contains min/max helpers for NDArrays and Matrices, including axis-aware reducti
 and element-wise comparisons.
 """
 
-from std.algorithm import vectorize, parallelize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 import std.math.math as stdlib_math
 from std.math import max as builtin_max
 from std.math import min as builtin_min

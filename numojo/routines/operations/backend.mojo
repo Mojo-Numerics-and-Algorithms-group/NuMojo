@@ -10,7 +10,8 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from std.algorithm.functional import parallelize, vectorize
+from std.algorithm.functional import vectorize
+from max.algorithm import parallelize
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
 from std.builtin.simd import FastMathFlag
@@ -272,7 +273,7 @@ def _apply_ternary_chunk[
     while i < end:
         dst.store(
             i,
-            kernel(
+            kernel[dtype, 1](
                 src1.load[width=1](i),
                 src2.load[width=1](i),
                 src3.load[width=1](i),
@@ -310,7 +311,7 @@ def _apply_ternary_scalar_chunk[
     while i < end:
         dst.store(
             i,
-            kernel(
+            kernel[dtype, 1](
                 src1.load[width=1](i),
                 src2.load[width=1](i),
                 SIMD[dtype, 1](scalar),

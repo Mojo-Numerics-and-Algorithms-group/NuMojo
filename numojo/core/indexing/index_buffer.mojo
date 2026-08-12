@@ -92,24 +92,6 @@ struct IndexBuffer(
             Scalar[Self.element_type], Self._origin
         ].unsafe_dangling()
 
-    def __init__(out self, *values: Int):
-        """
-        Initialize an IndexBuffer with given Int values.
-
-        Args:
-            values: Variadic list of integer values.
-        """
-        self.ndim = len(values)
-        if self.ndim <= 0:
-            self.ptr = UnsafePointer[
-                Scalar[Self.element_type], Self._origin
-            ].unsafe_dangling()
-            return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
-        for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(
-                Scalar[Self.element_type](values[i])
-            )
 
     # NOTE: In future this will be equivalent to Int.
     def __init__(out self, *values: Scalar[Self.element_type]):
@@ -146,24 +128,6 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    def __init__(out self, values: List[Int]):
-        """
-        Initialize an IndexBuffer with a list of Int values.
-
-        Args:
-            values: List of integer values.
-        """
-        self.ndim = len(values)
-        if self.ndim <= 0:
-            self.ptr = UnsafePointer[
-                Scalar[Self.element_type], Self._origin
-            ].unsafe_dangling()
-            return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
-        for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(
-                Scalar[Self.element_type](values[i])
-            )
 
     def __init__(out self, values: VariadicList[Scalar[Self.element_type], _]):
         """
@@ -182,24 +146,6 @@ struct IndexBuffer(
         for i in range(self.ndim):
             (self.ptr + i).init_pointee_copy(values[i])
 
-    def __init__(out self, values: VariadicList[Int, _]):
-        """
-        Initialize an IndexBuffer with a range of values.
-
-        Args:
-            values: Range of integer values.
-        """
-        self.ndim = len(values)
-        if self.ndim <= 0:
-            self.ptr = UnsafePointer[
-                Scalar[Self.element_type], Self._origin
-            ].unsafe_dangling()
-            return
-        self.ptr = alloc[Scalar[Self.element_type]](self.ndim)
-        for i in range(self.ndim):
-            (self.ptr + i).init_pointee_copy(
-                Scalar[Self.element_type](values[i])
-            )
 
     def __init__(out self, *, copy: Self):
         """
@@ -255,26 +201,6 @@ struct IndexBuffer(
         """
         return self.ptr + offset
 
-    def __getitem__(self, idx: Int) raises -> Int:
-        """
-        Get the element at the given index.
-
-        Args:
-            idx: Index of the element.
-
-        Returns:
-            Element at the given index.
-        """
-        var index = idx if idx >= 0 else self.ndim + idx
-        if index < 0 or index >= self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="Index out of bounds",
-                    location="IndexBuffer.__getitem__(idx: Int)",
-                )
-            )
-        return Int(self.ptr[index])
 
     def __getitem__(
         self, idx: Scalar[Self.element_type]
@@ -330,24 +256,6 @@ struct IndexBuffer(
 
         return new_buffer^
 
-    def __setitem__(mut self, idx: Int, value: Int) raises:
-        """
-        Set the element at the given index.
-
-        Args:
-            idx: Index of the element.
-            value: Value to set.
-        """
-        var index = idx if idx >= 0 else self.ndim + idx
-        if index < 0 or index >= self.ndim:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="index out of bounds",
-                    location="IndexBuffer.__setitem__(idx: Int)",
-                )
-            )
-        self.ptr[index] = Scalar[Self.element_type](value)
 
     def __setitem__(
         mut self,
@@ -410,37 +318,7 @@ struct IndexBuffer(
             self.ptr[i] = value.ptr[idx]
             idx += 1
 
-    def unsafe_load[
-        width: Int = 1
-    ](self, idx: Int) -> SIMD[Self.element_type, width]:
-        """
-        Unsafely load a SIMD vector from the buffer at the given index.
 
-        Parameters:
-            width: Width of the SIMD vector.
-
-        Args:
-            idx: Index to load from.
-
-        Returns:
-            SIMD vector loaded from the buffer.
-        """
-        return self.ptr.load[width=width](idx)
-
-    def unsafe_store[
-        width: Int = 1
-    ](self, idx: Int, value: SIMD[Self.element_type, width]):
-        """
-        Unsafely store a SIMD vector to the buffer at the given index.
-
-        Parameters:
-            width: Width of the SIMD vector.
-
-        Args:
-            idx: Index to store to.
-            value: SIMD vector to store.
-        """
-        self.ptr.store[width=width](idx, value)
 
     def unsafe_load[
         width: Int = 1
@@ -957,21 +835,6 @@ struct IndexBuffer(
                 return True
         return False
 
-    # TODO: We can remove this overload once Mojo unified Scalar[DType.int] with Int
-    def __contains__(self, value: Int) -> Bool:
-        """
-        Check if the IndexBuffer contains the given value.
-
-        Args:
-            value: Value to check for.
-
-        Returns:
-            True if the value is in the IndexBuffer, False otherwise.
-        """
-        for i in range(self.ndim):
-            if self.ptr[i] == Scalar[Self.element_type](value):
-                return True
-        return False
 
     def __eq__(self, other: IndexBuffer) -> Bool:
         """

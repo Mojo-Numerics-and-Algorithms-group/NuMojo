@@ -14,7 +14,8 @@ SECTIONS OF THE FILE:
 2. Numojo.NDArray to other collections.
 3. Miscellaneous utility functions.
 """
-from std.algorithm.functional import vectorize, parallelize
+from std.algorithm.functional import vectorize
+from max.algorithm import parallelize
 from std.collections import Dict
 from std.memory import memcpy
 from std.memory import UnsafePointer

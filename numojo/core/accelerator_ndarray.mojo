@@ -11,7 +11,7 @@ Device-aware NDArray that stores data in `AcceleratorDataContainer`.
 """
 
 from std.memory import UnsafePointer
-from std.gpu.host import DeviceContext
+from max.gpu.host import DeviceContext
 from numojo.core.error import NumojoError
 from numojo.core.layout.flags import Flags
 from numojo.core.layout.ndshape import NDArrayShape
@@ -250,7 +250,11 @@ struct AcceleratorNDArray[
     ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
         Self.device.type == "cpu"
     ):
-        return self._buf.host_storage.unsafe_value().ptr + self.offset
+        return (
+            self._buf.host_storage.unsafe_value()
+            .ptr.unsafe_offset(self.offset)
+            .as_unsafe_any_origin()
+        )
 
     def unsafe_device_ptr(
         ref self,

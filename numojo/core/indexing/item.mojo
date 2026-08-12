@@ -523,18 +523,6 @@ struct Item(
         """
         return val in self._buf
 
-    @always_inline("nodebug")
-    def __contains__(self, val: Int) -> Bool:
-        """
-        Checks if the given value is present in the item.
-
-        Args:
-            val: The value to search for.
-
-        Returns:
-            True if the given value is present in the item.
-        """
-        return val in self._buf
 
     # ===----------------------------------------------------------------------=== #
     # Utility Methods

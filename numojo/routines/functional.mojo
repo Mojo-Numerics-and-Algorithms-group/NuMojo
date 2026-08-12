@@ -10,7 +10,8 @@
 This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
 """
 
-from std.algorithm.functional import vectorize, parallelize
+from std.algorithm.functional import vectorize
+from max.algorithm import parallelize
 from std.memory import memcpy
 from std.sys import simd_width_of
 

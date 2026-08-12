@@ -11,13 +11,17 @@ Provides sum reductions along axes for NDArrays and Matrices, covering both flat
 """
 
 from std.sys import simd_width_of
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.memory import UnsafePointer, memset_zero, memcpy
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.indexing import TraverseMethods
 from numojo.routines.creation import zeros
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.error import NumojoError
+from numojo.core.type_aliases import Shape
 
 
 def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:

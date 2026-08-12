@@ -19,7 +19,8 @@ Features:
 Use this module to create, manipulate, and analyze matrices with high performance and safety guarantees.
 """
 
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.memory import UnsafePointer, memcpy, memset_zero
 from std.random import random_float64
 from std.sys import simd_width_of
@@ -31,7 +32,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.indexing import Validator, InternalSlice
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
-from numojo.routines.manipulation import broadcast_to, reorder_layout
+from numojo.routines.manipulation import broadcast_to, reorder_layout, transpose
 from numojo.routines.linalg.misc import issymmetric
 import numojo.routines.statistics as stat
 import numojo.routines.linalg as linalg
@@ -41,6 +42,9 @@ import numojo.routines.math.extrema as extrema
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 import numojo.routines.sorting as sorting
+from numojo.core.indexing import IndexMethods
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.error import NumojoError
 
 
 # TODO: Currently the copyinit creates a ref counted view instead of a deep copy.
@@ -1826,7 +1830,7 @@ struct Matrix[
         Returns:
             A string showing the matrix contents, shape, strides, order, and ownership.
         """
-        return String.write(self)
+        return String(self)
 
     def write_to[W: Writer](self, mut writer: W):
         """

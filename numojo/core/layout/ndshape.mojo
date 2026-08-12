@@ -287,21 +287,6 @@ struct NDArrayShape(
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
 
-    @always_inline("nodebug")
-    def __getitem__(self, index: Int) raises -> Int:
-        """
-        Gets shape dimension at specified index.
-
-        Args:
-          index: Index to get the shape.
-
-        Returns:
-           Shape value at the given index.
-
-        Raises:
-           Error: Index out of bound.
-        """
-        return Int(self._buf[index])
 
     @always_inline("nodebug")
     def __getitem__(
@@ -349,19 +334,6 @@ struct NDArrayShape(
         """
         self._buf[index] = val
 
-    @always_inline("nodebug")
-    def __setitem__(mut self, index: Int, val: Int) raises:
-        """
-        Sets shape at specified index.
-
-        Args:
-          index: Index to set the shape.
-          val: Value to set at the given index.
-
-        Raises:
-           Error: Index out of bound.
-        """
-        self._buf[index] = val
 
     def load[
         width: Int = 1
@@ -815,18 +787,6 @@ struct NDArrayShape(
         """
         return not self.__eq__(other)
 
-    @always_inline("nodebug")
-    def __contains__(self, val: Int) -> Bool:
-        """
-        Checks if the given value is present in the shape dimensions.
-
-        Args:
-            val: The value to search for.
-
-        Returns:
-          True if the given value is present in the shape.
-        """
-        return val in self._buf
 
     @always_inline("nodebug")
     def __contains__(self, val: Scalar[Self.element_type]) -> Bool:

@@ -11,11 +11,12 @@ Implements gradient and trapezoidal integration helpers for numerical differenti
 """
 
 import std.math
-from std.algorithm import parallelize
+from max.algorithm import parallelize
 
 from numojo.routines.creation import arange
 from numojo.core.ndarray import NDArray
 from numojo.core.dtype.utility import is_inttype, is_floattype
+from numojo.core.layout.ndshape import NDArrayShape
 
 # TODO:
 # 1) add a Variant[NDArray, Scalar, ...] to include all possibilities

@@ -35,6 +35,7 @@ from numojo.routines.functional import (
     apply_along_axis_inplace,
     apply_along_axis_indices,
 )
+from numojo.routines.creation import arange
 
 
 # ===----------------------------------------------------------------------=== #

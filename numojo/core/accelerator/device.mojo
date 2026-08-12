@@ -15,7 +15,7 @@ from std.sys.info import (
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
 )
-from std.gpu.host import DeviceContext
+from max.gpu.host import DeviceContext
 
 from numojo.core.error import NumojoError
 

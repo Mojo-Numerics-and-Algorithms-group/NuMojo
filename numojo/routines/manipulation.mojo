@@ -25,6 +25,8 @@ from numojo.core.indexing import TraverseMethods
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
 )
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.error import NumojoError
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations

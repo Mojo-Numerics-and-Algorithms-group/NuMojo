@@ -12,6 +12,10 @@ This module implements element-wise logical operations for NDArray, ComplexNDArr
 
 from numojo.routines import HostExecutor
 from numojo.core.error import NumojoError
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
+from numojo.core.complex.complex_ndarray import ComplexNDArray
 
 # TODO: add `where` argument support to logical operations
 # FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.

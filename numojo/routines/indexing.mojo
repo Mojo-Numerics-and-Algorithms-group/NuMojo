@@ -23,6 +23,8 @@ from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing import IndexMethods
 import numojo.routines.manipulation as manipulation
 from numojo.routines.creation import array as _array_creation_from_list
+from numojo.core.type_aliases import Shape
+from numojo.core.indexing.item import Item
 
 # ===----------------------------------------------------------------------=== #
 # Generating index arrays

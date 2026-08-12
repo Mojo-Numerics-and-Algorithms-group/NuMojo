@@ -30,7 +30,8 @@ Iterators of `NDArray`:
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.sys.info import num_performance_cores
 import std.builtin.bool as builtin_bool
 import std.math as builtin_math
@@ -99,6 +100,9 @@ from numojo.routines.indexing import (
 from numojo.routines.math.misc import clip
 from numojo.routines.manipulation import reshape
 import numojo.routines.math as numojo_math
+from numojo.routines import math
+from numojo.routines.manipulation import ravel
+from numojo.routines.statistics import stddev
 
 comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
@@ -1680,7 +1684,9 @@ struct NDArray[dtype: DType = DType.float64](
                     self._read_block_from_self(
                         base=src_base,
                         axis_start=k,
-                        dst_ptr=result._buf.ptr + out_offset * size_per_item,
+                        dst_ptr=result._buf.ptr.unsafe_offset(
+                            out_offset * size_per_item
+                        ).as_unsafe_any_origin(),
                     )
                     out_offset += 1
 
@@ -3088,9 +3094,9 @@ struct NDArray[dtype: DType = DType.float64](
             var out_row = 0
             for i in range(mask_c.size):
                 if mask_c._buf.ptr.load[width=1](i):
-                    var src_ptr = val_c._buf.ptr + (
+                    var src_ptr = val_c._buf.ptr.unsafe_offset(
                         out_row * size_per_item if val_is_per_index else 0
-                    )
+                    ).as_unsafe_any_origin()
                     self._write_block_into_self(
                         base=self.offset + i * stride0,
                         axis_start=1,
@@ -3163,9 +3169,9 @@ struct NDArray[dtype: DType = DType.float64](
                     var lead = self.offset
                     for d in range(k):
                         lead += coords[d] * Int(self.strides.unsafe_load(d))
-                    var src_ptr = val_c._buf.ptr + (
+                    var src_ptr = val_c._buf.ptr.unsafe_offset(
                         out_row * size_per_item if val_is_per_index else 0
-                    )
+                    ).as_unsafe_any_origin()
                     self._write_block_into_self(
                         base=lead, axis_start=k, src_ptr=src_ptr
                     )
@@ -3379,7 +3385,7 @@ struct NDArray[dtype: DType = DType.float64](
         self._buf.ptr[self.offset + index] = val
 
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, index: Int, val: SIMD[Self.dtype, width]) raises:
         """Safely stores a SIMD element of size `width` at `index` of the
         underlying buffer.
@@ -5641,7 +5647,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The median of the array.
         """
-        return median[returned_dtype](self)
+        return statistics.median[returned_dtype](self)
 
     def median[
         returned_dtype: DType = DType.float64
@@ -5654,7 +5660,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return median[returned_dtype](self, axis)
+        return statistics.median[returned_dtype](self, axis)
 
     def min(self) raises -> Scalar[Self.dtype]:
         """Finds the min value of an array.
@@ -5932,7 +5938,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             A scalar.
         """
-        return sum(self)
+        return numojo_math.sum(self)
 
     def sum(self, axis: Int) raises -> Self:
         """Computes the sum of array elements over a given axis.
@@ -5943,7 +5949,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An NDArray.
         """
-        return sum(self, axis=axis)
+        return numojo_math.sum(self, axis=axis)
 
     def T(self, axes: List[Int]) raises -> Self:
         """Transposes the array of any number of dimensions according to an
@@ -6085,9 +6091,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             An unsafe pointer to the logical start of the data.
         """
-        return UnsafePointer[Scalar[Self.dtype], MutAnyOrigin](
-            self._buf.ptr + self.offset
-        )
+        return self._buf.ptr.unsafe_offset(self.offset).as_unsafe_any_origin()
 
     def variance[
         returned_dtype: DType = DType.float64
@@ -6103,7 +6107,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The variance of the array.
         """
-        return variance[returned_dtype](self, ddof=ddof)
+        return statistics.variance[returned_dtype](self, ddof=ddof)
 
     def variance[
         returned_dtype: DType = DType.float64
@@ -6121,7 +6125,7 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             The variance of the array along the axis.
         """
-        return variance[returned_dtype](self, axis=axis, ddof=ddof)
+        return statistics.variance[returned_dtype](self, axis=axis, ddof=ddof)
 
     def squeeze(mut self, axis: Int) raises:
         """Removes (squeezes) a single dimension of size 1 from the array shape.

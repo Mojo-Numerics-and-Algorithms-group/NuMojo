@@ -17,6 +17,7 @@ from std.memory import UnsafePointer
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing.offset import IndexMethods
 from numojo.core.error import NumojoError
+from numojo.core.ndarray import NDArray
 
 
 struct TraverseMethods:

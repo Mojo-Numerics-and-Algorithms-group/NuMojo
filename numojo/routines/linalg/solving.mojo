@@ -16,7 +16,7 @@ Provides:
     - Determinant.
 """
 
-from std.algorithm import parallelize
+from max.algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.indexing import Item
@@ -27,6 +27,7 @@ from numojo.routines.linalg.decompositions import (
     partial_pivoting,
     lu_decomposition,
 )
+from numojo.core.type_aliases import Shape
 
 
 def forward_substitution[

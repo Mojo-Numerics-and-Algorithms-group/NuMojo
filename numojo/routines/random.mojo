@@ -19,6 +19,8 @@ import std.math as mt
 from std.random import random as builtin_random
 
 from numojo.core.ndarray import NDArray
+from numojo.core.dtype.default_dtype import f64
+from numojo.core.layout.ndshape import NDArrayShape
 
 # ===----------------------------------------------------------------------=== #
 # Uniform distribution

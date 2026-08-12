@@ -11,7 +11,8 @@ This module provides miscellaneous linear algebra routines, such as extracting d
 """
 
 from std.sys import simd_width_of
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix

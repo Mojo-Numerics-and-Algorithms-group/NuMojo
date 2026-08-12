@@ -14,6 +14,8 @@ import std.math as mt
 from std.utils.numerics import isnan, isinf
 
 from numojo.core.dtype.utility import is_inttype, is_floattype
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.complex.complex_simd import ComplexSIMD
 
 comptime DEFAULT_PRECISION = 4
 comptime DEFAULT_SUPPRESS_SMALL = False

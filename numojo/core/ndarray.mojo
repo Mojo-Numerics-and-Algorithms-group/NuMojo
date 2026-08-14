@@ -4644,11 +4644,9 @@ struct NDArray[dtype: DType = DType.float64](
         for index_at_axis in offsets:
             indices._buf[current_axis] = index_at_axis
             if current_axis == shape.ndim - 1:
-                var val = (
-                    (self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(
-                        IndexMethods.get_1d_index(indices, strides)
-                    )
-                )[]
+                var val = self.unsafe_get(
+                    IndexMethods.get_1d_index(indices, strides)
+                )
                 if val < 0:
                     negative_sign = True
                 max_value = max(max_value, abs(val))
@@ -4909,8 +4907,8 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
             # Fast path: single memcpy from (possibly offset) contiguous data
             unsafe_memcpy(
-                dest=result._buf.ptr,
-                src=self._buf.ptr.unsafe_offset(self.offset),
+                dest=result.unsafe_ptr(),
+                src=self.unsafe_ptr(),
                 count=self.size,
             )
         elif self.ndim == 0:
@@ -4939,9 +4937,9 @@ struct NDArray[dtype: DType = DType.float64](
                     mut result, imm self, base_offset, dest_base, last_stride
                 }:
                     var simd_data = (
-                        (
-                            self._buf.ptr.unsafe_offset(base_offset)
-                        ).unsafe_offset(i * last_stride)
+                        self.unsafe_ptr().unsafe_offset(
+                            base_offset - self.offset + i * last_stride
+                        )
                     ).unsafe_strided_load[width=simd_w](last_stride)
                     result._buf.store[width=simd_w](dest_base + i, simd_data)
 
@@ -5320,9 +5318,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.is_c_contiguous():
             for i in range(self.size):
-                (
-                    (self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(i)
-                ).unsafe_write(val)
+                self.unsafe_set(i, val)
         else:
             for i in range(self.size):
                 var remainder = i
@@ -5842,12 +5838,12 @@ struct NDArray[dtype: DType = DType.float64](
         if shape.size() > self.size:
             var other = Self(shape=shape, order=order)
             unsafe_memcpy(
-                dest=other._buf.ptr,
-                src=self._buf.ptr.unsafe_offset(self.offset),
+                dest=other.unsafe_ptr(),
+                src=self.unsafe_ptr(),
                 count=self.size,
             )
             for i in range(self.size, other.size):
-                (other._buf.ptr.unsafe_offset(i)).unsafe_write(0)
+                other.unsafe_set(i, 0)
             self = other^
         else:
             self.shape = shape
@@ -6018,13 +6014,7 @@ struct NDArray[dtype: DType = DType.float64](
         var result = List[Scalar[Self.dtype]](capacity=self.size)
         if self.is_c_contiguous():
             for i in range(self.size):
-                result.append(
-                    (
-                        (
-                            self._buf.ptr.unsafe_offset(self.offset)
-                        ).unsafe_offset(i)
-                    )[]
-                )
+                result.append(self.unsafe_get(i))
         else:
             for i in range(self.size):
                 var remainder = i

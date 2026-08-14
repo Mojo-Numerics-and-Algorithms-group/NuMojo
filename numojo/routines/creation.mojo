@@ -1822,9 +1822,7 @@ def diag[
             for i in range(n - abs(k)):
                 result.unsafe_set(
                     m - abs(k) - 1 - i,
-                    v_c.unsafe_get(
-                        v_c.size - 1 - i * (v_c.shape[1] + 1) + k
-                    ),
+                    v_c.unsafe_get(v_c.size - 1 - i * (v_c.shape[1] + 1) + k),
                 )
         return result^
     else:

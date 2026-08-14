@@ -109,7 +109,6 @@ comptime IndexTypes = Variant[Int, NewAxis, EllipsisType, Slice]
 """IndexTypes is used to represent the different kinds of indices that can be used for indexing and slicing operations on the NDArray.
 """
 
-# TODO: MutAnyOrigin in unsafe_ptr() will lead to double free errors! gotta fix this!
 # TODO: Make internal fields (shape, strides, print_opts) private and add getters/setters as needed.
 
 
@@ -1698,9 +1697,9 @@ struct NDArray[dtype: DType = DType.float64](
                     self._read_block_from_self(
                         base=src_base,
                         axis_start=k,
-                        dst_ptr=result._buf.ptr.unsafe_offset(
+                        dst_ptr=result.unsafe_ptr().unsafe_offset(
                             out_offset * size_per_item
-                        ).as_unsafe_any_origin(),
+                        ),
                     )
                     out_offset += 1
 
@@ -3129,9 +3128,9 @@ struct NDArray[dtype: DType = DType.float64](
             var out_row = 0
             for i in range(mask_c.size):
                 if mask_c._buf.load[width=1](i):
-                    var src_ptr = val_c._buf.ptr.unsafe_offset(
+                    var src_ptr = val_c.unsafe_ptr().unsafe_offset(
                         out_row * size_per_item if val_is_per_index else 0
-                    ).as_unsafe_any_origin()
+                    )
                     self._write_block_into_self(
                         base=self.offset + i * stride0,
                         axis_start=1,
@@ -3204,9 +3203,9 @@ struct NDArray[dtype: DType = DType.float64](
                     var lead = self.offset
                     for d in range(k):
                         lead += coords[d] * Int(self.strides.unsafe_load(d))
-                    var src_ptr = val_c._buf.ptr.unsafe_offset(
+                    var src_ptr = val_c.unsafe_ptr().unsafe_offset(
                         out_row * size_per_item if val_is_per_index else 0
-                    ).as_unsafe_any_origin()
+                    )
                     self._write_block_into_self(
                         base=lead, axis_start=k, src_ptr=src_ptr
                     )
@@ -4419,11 +4418,15 @@ struct NDArray[dtype: DType = DType.float64](
             n *= Int(self.shape.unsafe_load(d))
         return n
 
-    def _write_block_into_self(
+    def _write_block_into_self[
+        src_mutable: Bool,
+        //,
+        src_origin: Origin[mut=src_mutable],
+    ](
         mut self,
         base: Int,
         axis_start: Int,
-        src_ptr: Pointer[Scalar[Self.dtype], MutAnyOrigin],
+        src_ptr: Pointer[Scalar[Self.dtype], src_origin],
     ) raises:
         """Writes a C-contiguous source block of `prod(shape[axis_start:])`
         elements into self at offset `base`, following `self.strides[axis_start:]`.
@@ -4490,11 +4493,14 @@ struct NDArray[dtype: DType = DType.float64](
             if d < 0:
                 break
 
-    def _read_block_from_self(
+    def _read_block_from_self[
+        dst_origin: Origin[mut=True],
+        //,
+    ](
         self,
         base: Int,
         axis_start: Int,
-        dst_ptr: Pointer[Scalar[Self.dtype], MutAnyOrigin],
+        dst_ptr: Pointer[Scalar[Self.dtype], dst_origin],
     ) raises:
         """Reads `prod(shape[axis_start:])` elements from self starting at
         offset `base` (following `self.strides[axis_start:]`) into the
@@ -6149,9 +6155,11 @@ struct NDArray[dtype: DType = DType.float64](
     #         strides=self.strides._flip(),
     #     )
 
-    def unsafe_ptr(
-        ref self,
-    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin]:
+    def unsafe_ptr[
+        mutable: Bool,
+        //,
+        org: Origin[mut=mutable],
+    ](ref[org] self) -> Pointer[Scalar[Self.dtype], org]:
         """Retrieves the pointer to the logical start of the array data.
 
         For views with a non-zero offset, this returns a pointer to
@@ -6159,9 +6167,9 @@ struct NDArray[dtype: DType = DType.float64](
         buffer.
 
         Returns:
-            An unsafe pointer to the logical start of the data.
+            A pointer whose origin is tied to this array.
         """
-        return self._buf.ptr.unsafe_offset(self.offset).as_unsafe_any_origin()
+        return self._buf.ptr.unsafe_offset(self.offset).mut_cast[mutable]().unsafe_origin_cast[org]()
 
     def variance[
         returned_dtype: DType = DType.float64

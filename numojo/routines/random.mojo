@@ -64,7 +64,7 @@ def rand[
         var temp: Scalar[dtype] = builtin_random.random_float64(0, 1).cast[
             dtype
         ]()
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(temp)
+        result.unsafe_set(i, temp)
 
     return result^
 
@@ -141,7 +141,8 @@ def rand[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     for i in range(result.size):
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(
+        result.unsafe_set(
+            i,
             builtin_random.random_float64(
                 min.cast[DType.float64](), max.cast[DType.float64]()
             ).cast[dtype]()
@@ -311,7 +312,7 @@ def randn[
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
     builtin_random.randn[dtype](
-        ptr=result._buf.ptr,
+        ptr=result.unsafe_ptr(),
         size=result.size,
     )
 
@@ -420,7 +421,7 @@ def exponential[
 
     for i in range(result.size):
         var u = builtin_random.random_float64().cast[dtype]()
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(-mt.log(u) / scale)
+        result.unsafe_set(i, -mt.log(u) / scale)
 
     return result^
 
@@ -492,7 +493,7 @@ def randbool(
 
     for i in range(result.size):
         var val = builtin_random.random_float64(0.0, 1.0) < p
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(val)
+        result.unsafe_set(i, val)
 
     return result^
 
@@ -538,7 +539,7 @@ def _int_rand_func[
         max: The maximum value of the random integers.
     """
     builtin_random.randint[dtype](
-        ptr=result._buf.ptr,
+        ptr=result.unsafe_ptr(),
         size=result.size,
         low=Int(min),
         high=Int(max),
@@ -565,4 +566,4 @@ def _float_rand_func[
         var temp: Scalar[dtype] = builtin_random.random_float64(
             min.cast[f64](), max.cast[f64]()
         ).cast[dtype]()
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(temp)
+        result.unsafe_set(i, temp)

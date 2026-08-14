@@ -10,10 +10,23 @@
 GPU kernel functions and launch helpers for elementwise unary operations
 on contiguous `AcceleratorNDArray` buffers.
 """
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.gpu import (
+    block_dim,
+    block_idx,
+    thread_idx,
+)
 
-from std.gpu import thread_idx, block_idx, block_dim
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
 from max.gpu.host import DeviceContext
 
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .binary_ops import launch_config
 
 

@@ -103,7 +103,7 @@ def all[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def closure[width: Int](i: Int) {mut res, imm A}:
-        res = (res & A._buf.ptr.unsafe_load[width=width](i)).reduce_and()
+        res = (res & A._buf.load[width=width](i)).reduce_and()
 
     vectorize[width](A.size, closure)
     return res
@@ -164,7 +164,7 @@ def any[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_and[width: Int](i: Int) {mut res, imm A}:
-        res = res | A._buf.ptr.unsafe_load[width=width](i).reduce_or()
+        res = res | A._buf.load[width=width](i).reduce_or()
 
     vectorize[width](A.size, cal_and)
     return res

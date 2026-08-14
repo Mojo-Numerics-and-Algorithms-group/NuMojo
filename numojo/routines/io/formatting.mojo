@@ -9,13 +9,26 @@
 ------------------------------------------
 This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
 """
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.math import pow
 import std.math as mt
-from std.utils.numerics import isnan, isinf
+from std.utils.numerics import (
+    isinf,
+    isnan,
+)
 
-from numojo.core.dtype.utility import is_inttype, is_floattype
-from numojo.core.dtype.complex_dtype import ComplexDType
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.dtype.utility import (
+    is_floattype,
+    is_inttype,
+)
+
 
 comptime DEFAULT_PRECISION = 4
 comptime DEFAULT_SUPPRESS_SMALL = False

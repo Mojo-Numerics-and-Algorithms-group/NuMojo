@@ -74,10 +74,10 @@ def clip[
     var result = a.contiguous()  # Owned, C-contiguous copy
 
     for i in range(result.size):
-        if result._buf.ptr[unsafe_offset=i] < a_min:
-            result._buf.ptr[unsafe_offset=i] = a_min
-        if result._buf.ptr[unsafe_offset=i] > a_max:
-            result._buf.ptr[unsafe_offset=i] = a_max
+        if result.unsafe_get(i) < a_min:
+            result.unsafe_set(i, a_min)
+        if result.unsafe_get(i) > a_max:
+            result.unsafe_set(i, a_max)
 
     return result^
 

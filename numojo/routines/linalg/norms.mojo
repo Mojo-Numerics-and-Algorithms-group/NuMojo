@@ -9,14 +9,16 @@
 ------------------------------------------------------
 This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
 """
-
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
 from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
 )
-from numojo.core.type_aliases import Shape
 
 
 def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -124,10 +126,9 @@ def trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result._buf.ptr.unsafe_store(
+        result.unsafe_store[width=1](
             0,
-            result._buf.ptr.unsafe_load(0)
-            + array._buf.ptr[unsafe_offset=row * cols + col],
+            result.unsafe_load[width=1](0) + array.unsafe_get(row * cols + col),
         )
 
     return result^

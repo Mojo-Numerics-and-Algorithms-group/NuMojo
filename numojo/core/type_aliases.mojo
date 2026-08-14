@@ -10,8 +10,13 @@ Type aliases for commonly used data types in NuMojo.
 This module provides convenient, user-friendly aliases for core types such as shapes,
 strides, and complex scalars, as well as a symbolic constant for the imaginary unit.
 """
-
-from numojo.core.complex.complex_simd import ComplexSIMD, ImaginaryUnit
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
+from numojo.core.complex.complex_simd import (
+    ComplexSIMD,
+    ImaginaryUnit,
+)
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 

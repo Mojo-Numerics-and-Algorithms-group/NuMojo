@@ -11,12 +11,13 @@ Functions to traverse a multi-dimensional array.
 This module provides both recursive and iterative traversal methods,
 which can be used for various indexing and slicing operations in NuMojo.
 """
-
-from std.memory import UnsafePointer
-
-from numojo.core.layout import NDArrayShape, NDArrayStrides
-from numojo.core.indexing.offset import IndexMethods
-from numojo.core.error import NumojoError
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
+from numojo.core.layout import (
+    NDArrayShape,
+    NDArrayStrides,
+)
 from numojo.core.ndarray import NDArray
 
 
@@ -106,8 +107,9 @@ struct TraverseMethods:
             if narr_idx - narr.offset >= total_elements:
                 raise Error("Invalid index: index out of bound")
 
-            narr._buf.ptr.unsafe_store(
-                narr_idx, orig._buf.ptr.unsafe_load[width=1](orig_idx)
+            narr.unsafe_store[width=1](
+                narr_idx - narr.offset,
+                orig.unsafe_load[width=1](orig_idx - orig.offset),
             )
 
             for d in range(ndim.__len__() - 1, -1, -1):
@@ -157,8 +159,9 @@ struct TraverseMethods:
             for i in range(len(index)):
                 narr_idx += index[i] * coefficients[i]
 
-            narr._buf.ptr.unsafe_store(
-                narr_idx, orig._buf.ptr.unsafe_load[width=1](orig_idx)
+            narr.unsafe_store[width=1](
+                narr_idx - narr.offset,
+                orig.unsafe_load[width=1](orig_idx - orig.offset),
             )
 
             for d in range(ndim.__len__() - 1, -1, -1):

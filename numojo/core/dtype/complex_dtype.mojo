@@ -12,11 +12,13 @@
 ----------------------------------------------
 ComplexDType and related utilities for working with complex data types in NuMojo.
 """
-
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.hashlib.hasher import Hasher
 from std.os import abort
-from std.sys import CompilationTarget
-from std.sys.info import bit_width_of, size_of
+from std.sys.info import size_of
+
 
 comptime _mIsSigned = UInt8(1)
 comptime _mIsInteger = UInt8(1 << 7)

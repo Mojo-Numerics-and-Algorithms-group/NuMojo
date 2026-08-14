@@ -9,7 +9,13 @@
 ---------------------------
 Low-level memory/storage utilities used by NuMojo core containers.
 """
-
-from .storage import HostStorage, DeviceStorage, AcceleratorDataContainer
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .data_container import DataContainer
 from .dlpack import from_dlpack
+from .storage import (
+    AcceleratorDataContainer,
+    DeviceStorage,
+    HostStorage,
+)

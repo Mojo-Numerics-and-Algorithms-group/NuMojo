@@ -4696,9 +4696,7 @@ struct NDArray[dtype: DType = DType.float64](
             simd_width: Int
         ](idx: Int) {mut result, imm a} -> None:
             result = result and builtin_bool.all(
-                (
-                    (a._buf.ptr.unsafe_offset(a.offset)).unsafe_offset(idx)
-                ).unsafe_strided_load[width=simd_width](1)
+                a.unsafe_load[width=simd_width](idx)
             )
 
         vectorize[a.width](a.size, vectorized_all)
@@ -4724,9 +4722,7 @@ struct NDArray[dtype: DType = DType.float64](
             simd_width: Int
         ](idx: Int) {mut result, imm a} -> None:
             result = result or builtin_bool.any(
-                (
-                    (a._buf.ptr.unsafe_offset(a.offset)).unsafe_offset(idx)
-                ).unsafe_strided_load[width=simd_width](1)
+                a.unsafe_load[width=simd_width](idx)
             )
 
         vectorize[a.width](a.size, vectorized_any)

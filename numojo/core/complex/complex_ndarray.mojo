@@ -501,16 +501,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """Stride-safe logical flat load."""
         var off = self._flat_offset(flat_index)
         return ComplexSIMD[Self.cdtype](
-            self._re._buf.ptr[unsafe_offset=off],
-            self._im._buf.ptr[unsafe_offset=off],
+            self._re._buf[off],
+            self._im._buf[off],
         )
 
     @always_inline("nodebug")
     def _flat_store(mut self, flat_index: Int, value: ComplexSIMD[Self.cdtype]):
         """Stride-safe logical flat store."""
         var off = self._flat_offset(flat_index)
-        self._re._buf.ptr[unsafe_offset=off] = value.re
-        self._im._buf.ptr[unsafe_offset=off] = value.im
+        self._re._buf[off] = value.re
+        self._im._buf[off] = value.im
 
     @always_inline("nodebug")
     def _lex_less(
@@ -633,8 +633,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         return ComplexSIMD[Self.cdtype](
-            re=self._re._buf.ptr[unsafe_offset=index_of_buffer],
-            im=self._im._buf.ptr[unsafe_offset=index_of_buffer],
+            re=self._re._buf[index_of_buffer],
+            im=self._im._buf[index_of_buffer],
         )
 
     def _getitem(self, indices: List[Int]) -> ComplexScalar[Self.cdtype]:
@@ -663,8 +663,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
         return ComplexSIMD[Self.cdtype](
-            re=self._re._buf.ptr[unsafe_offset=index_of_buffer],
-            im=self._im._buf.ptr[unsafe_offset=index_of_buffer],
+            re=self._re._buf[index_of_buffer],
+            im=self._im._buf[index_of_buffer],
         )
 
     def __getitem__(self) raises -> ComplexSIMD[Self.cdtype, 1]:
@@ -752,8 +752,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
         return ComplexSIMD[Self.cdtype](
-            re=self._re._buf.ptr.unsafe_load[width=1](idx),
-            im=self._im._buf.ptr.unsafe_load[width=1](idx),
+            re=self._re._buf.load[width=1](idx),
+            im=self._im._buf.load[width=1](idx),
         )
 
     def __getitem__(self, idx: Int) raises -> Self:
@@ -825,8 +825,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.ndim == 1:
             return creation._0darray[Self.cdtype](
                 ComplexSIMD[Self.cdtype](
-                    re=self._re._buf.ptr[unsafe_offset=norm],
-                    im=self._im._buf.ptr[unsafe_offset=norm],
+                    re=self._re._buf[norm],
+                    im=self._im._buf[norm],
                 )
             )
 
@@ -1257,10 +1257,10 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             for i in range(mask.size):
                 if mask.item(i):
                     (result._re._buf.ptr.unsafe_offset(offset)).unsafe_write(
-                        self._re._buf.ptr[unsafe_offset=i]
+                        self._re._buf[i]
                     )
                     (result._im._buf.ptr.unsafe_offset(offset)).unsafe_write(
-                        self._im._buf.ptr[unsafe_offset=i]
+                        self._im._buf[i]
                     )
                     offset += 1
 
@@ -1547,8 +1547,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
 
         return ComplexSIMD[Self.cdtype](
-            re=self._re._buf.ptr[unsafe_offset=index],
-            im=self._im._buf.ptr[unsafe_offset=index],
+            re=self._re._buf[index],
+            im=self._im._buf[index],
         )
 
     def load[
@@ -1583,8 +1583,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             )
 
         return ComplexSIMD[Self.cdtype, width](
-            re=self._re._buf.ptr.unsafe_load[width=1](index),
-            im=self._im._buf.ptr.unsafe_load[width=1](index),
+            re=self._re._buf.load[width=1](index),
+            im=self._im._buf.load[width=1](index),
         )
 
     def load[
@@ -1649,8 +1649,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
         return ComplexSIMD[Self.cdtype, width=width](
-            re=self._re._buf.ptr.unsafe_load[width=width](idx),
-            im=self._im._buf.ptr.unsafe_load[width=width](idx),
+            re=self._re._buf.load[width=width](idx),
+            im=self._im._buf.load[width=width](idx),
         )
 
     def _adjust_slice(self, slice_list: List[Slice]) raises -> List[Slice]:
@@ -1828,11 +1828,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         ),
                     )
                 )
-            self._re._buf.ptr.unsafe_store(
-                norm, val._re._buf.ptr.unsafe_load[width=1](0)
+            self._re._buf.store[width=1](
+                norm, val._re._buf.load[width=1](0)
             )
-            self._im._buf.ptr.unsafe_store(
-                norm, val._im._buf.ptr.unsafe_load[width=1](0)
+            self._im._buf.store[width=1](
+                norm, val._im._buf.load[width=1](0)
             )
             return
 
@@ -1923,8 +1923,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             index[i] = self.normalize(index[i], self.shape[i])
 
         var idx: Int = IndexMethods.get_1d_index(index, self.strides)
-        self._re._buf.ptr.unsafe_store(idx, val.re)
-        self._im._buf.ptr.unsafe_store(idx, val.im)
+        self._re._buf.store[width=1](idx, val.re)
+        self._im._buf.store[width=1](idx, val.im)
 
     def __setitem__(
         mut self, mask: NDArray[DType.bool], value: ComplexSIMD[Self.cdtype]
@@ -1948,7 +1948,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var mask_c = mask.contiguous()
         for i in range(mask_c.size):
-            if mask_c._buf.ptr.unsafe_load[width=1](i):
+            if mask_c._buf.load[width=1](i):
                 self.itemset(i, value)
 
     def __setitem__(
@@ -2149,7 +2149,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         var mask_c = mask.contiguous()
         for i in range(mask_c.size):
-            if mask_c._buf.ptr.unsafe_load[width=1](i):
+            if mask_c._buf.load[width=1](i):
                 self.itemset(i, val.item(i))
 
     def __pos__(self) raises -> Self:
@@ -3256,8 +3256,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
             )
 
-        self._re._buf.ptr.unsafe_store(index, val.re)
-        self._im._buf.ptr.unsafe_store(index, val.im)
+        self._re._buf.store[width=1](index, val.re)
+        self._im._buf.store[width=1](index, val.im)
 
     def store[
         width: Int = 1
@@ -3300,8 +3300,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 )
 
         var idx: Int = IndexMethods.get_1d_index(indices, self.strides)
-        self._re._buf.ptr.unsafe_store(idx, val.re)
-        self._im._buf.ptr.unsafe_store(idx, val.im)
+        self._re._buf.store[width=1](idx, val.re)
+        self._im._buf.store[width=1](idx, val.im)
 
     def reshape(self, shape: NDArrayShape, order: String = "C") raises -> Self:
         """
@@ -3397,21 +3397,21 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     var coordinate = norm_idx // c_stride[i]
                     norm_idx = norm_idx - c_stride[i] * coordinate
                     c_coordinates.append(coordinate)
-                self._re._buf.ptr.unsafe_store(
+                self._re._buf.store[width=1](
                     self._re.offset
                     + IndexMethods.get_1d_index(c_coordinates, self.strides),
                     item.re,
                 )
-                self._im._buf.ptr.unsafe_store(
+                self._im._buf.store[width=1](
                     self._im.offset
                     + IndexMethods.get_1d_index(c_coordinates, self.strides),
                     item.im,
                 )
             else:
-                self._re._buf.ptr.unsafe_store(
+                self._re._buf.store[width=1](
                     self._re.offset + norm_idx, item.re
                 )
-                self._im._buf.ptr.unsafe_store(
+                self._im._buf.store[width=1](
                     self._im.offset + norm_idx, item.im
                 )
         else:
@@ -3498,11 +3498,11 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     )
                 )
             indices[i] = norm_idx
-        self._re._buf.ptr.unsafe_store(
+        self._re._buf.store[width=1](
             self._re.offset + IndexMethods.get_1d_index(indices, self.strides),
             item.re,
         )
-        self._im._buf.ptr.unsafe_store(
+        self._im._buf.store[width=1](
             self._im.offset + IndexMethods.get_1d_index(indices, self.strides),
             item.im,
         )
@@ -3880,7 +3880,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 if self._lex_greater(z, best):
                     best = z
                     best_rel = k
-            result._buf.ptr[unsafe_offset=o] = Scalar[DType.int](best_rel)
+            result._buf[o] = Scalar[DType.int](best_rel)
             # result.itemset(o, Scalar[DType.int](best_rel))
         return result^
 
@@ -3929,7 +3929,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 if self._lex_less(z, best):
                     best = z
                     best_rel = k
-            result._buf.ptr[unsafe_offset=o] = Scalar[DType.int](best_rel)
+            result._buf[o] = Scalar[DType.int](best_rel)
             # result.itemset(o, Scalar[DType.int](best_rel))
         return result^
 
@@ -4145,26 +4145,26 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var result = Self(self.shape)
 
         for i in range(self.size):
-            var re = self._re._buf.ptr.unsafe_load(i)
-            var im = self._im._buf.ptr.unsafe_load(i)
+            var re = self._re._buf.load[width=1](i)
+            var im = self._im._buf.load[width=1](i)
             var mag_sq = re * re + im * im
             var mag_val = sqrt(mag_sq)
 
             if mag_val < a_min:
                 if mag_val > 0:
                     var scale = a_min / mag_val
-                    result._re._buf.ptr.unsafe_store(i, re * scale)
-                    result._im._buf.ptr.unsafe_store(i, im * scale)
+                    result._re._buf.store[width=1](i, re * scale)
+                    result._im._buf.store[width=1](i, im * scale)
                 else:
-                    result._re._buf.ptr.unsafe_store(i, a_min)
-                    result._im._buf.ptr.unsafe_store(i, 0.0)
+                    result._re._buf.store[width=1](i, a_min)
+                    result._im._buf.store[width=1](i, 0.0)
             elif mag_val > a_max:
                 var scale = a_max / mag_val
-                result._re._buf.ptr.unsafe_store(i, re * scale)
-                result._im._buf.ptr.unsafe_store(i, im * scale)
+                result._re._buf.store[width=1](i, re * scale)
+                result._im._buf.store[width=1](i, im * scale)
             else:
-                result._re._buf.ptr.unsafe_store(i, re)
-                result._im._buf.ptr.unsafe_store(i, im)
+                result._re._buf.store[width=1](i, re)
+                result._im._buf.store[width=1](i, im)
 
         return result^
 

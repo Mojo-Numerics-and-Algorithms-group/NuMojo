@@ -94,7 +94,7 @@ def arange[
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
-        result._buf[idx] = start + step * Scalar[dtype](idx)
+        result.unsafe_set(idx, start + step * Scalar[dtype](idx))
 
     return result^
 
@@ -300,12 +300,12 @@ def _linspace_serial[
     if endpoint:
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num - 1)
         for i in range(num):
-            result._buf[i] = start + step * Scalar[dtype](i)
+            result.unsafe_set(i, start + step * Scalar[dtype](i))
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num)
         for i in range(num):
-            result._buf[i] = start + step * Scalar[dtype](i)
+            result.unsafe_set(i, start + step * Scalar[dtype](i))
 
     return result^
 
@@ -339,7 +339,7 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace(idx: Int) -> None:
-            result._buf[idx] = start + step * Scalar[dtype](idx)
+            result.unsafe_set(idx, start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_linspace](num)
 
@@ -348,7 +348,7 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace1(idx: Int) -> None:
-            result._buf[idx] = start + step * Scalar[dtype](idx)
+            result.unsafe_set(idx, start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_linspace1](num)
 
@@ -620,11 +620,11 @@ def _logspace_serial[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num - 1)
         for i in range(num):
-            result._buf[i] = base ** (start + step * Scalar[dtype](i))
+            result.unsafe_set(i, base ** (start + step * Scalar[dtype](i)))
     else:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num)
         for i in range(num):
-            result._buf[i] = base ** (start + step * Scalar[dtype](i))
+            result.unsafe_set(i, base ** (start + step * Scalar[dtype](i)))
     return result^
 
 
@@ -660,7 +660,7 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace(idx: Int) -> None:
-            result._buf[idx] = base ** (start + step * Scalar[dtype](idx))
+            result.unsafe_set(idx, base ** (start + step * Scalar[dtype](idx)))
 
         parallelize[parallelized_logspace](num)
 
@@ -669,7 +669,7 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace1(idx: Int) -> None:
-            result._buf[idx] = base ** (start + step * Scalar[dtype](idx))
+            result.unsafe_set(idx, base ** (start + step * Scalar[dtype](idx)))
 
         parallelize[parallelized_logspace1](num)
 
@@ -901,7 +901,7 @@ def geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf[i] = a * r**i
+            result.unsafe_set(i, a * r**i)
         return result^
 
     else:
@@ -910,7 +910,7 @@ def geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf[i] = a * r**i
+            result.unsafe_set(i, a * r**i)
         return result^
 
 
@@ -1570,7 +1570,7 @@ def full[
 
     var A = NDArray[dtype](shape=shape, order=order)
     for i in range(A.size):
-        A._buf[i] = fill_value
+        A.unsafe_set(i, fill_value)
     return A^
 
 
@@ -1675,8 +1675,8 @@ def full[
     """
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.store[width=1](i, fill_value.re)
-        A._im._buf.store[width=1](i, fill_value.im)
+        A._re.unsafe_store[width=1](i, fill_value.re)
+        A._im.unsafe_store[width=1](i, fill_value.im)
     return A^
 
 
@@ -2139,7 +2139,7 @@ def vander[
     var n_cols = N.value() if N else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
-        var x_i = x._buf[i]
+        var x_i = x.unsafe_get(i)
         if increasing:
             for j in range(n_cols):
                 result.store(i, j, val=x_i**j)
@@ -2470,7 +2470,7 @@ def array[
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(result.size):
-        result._buf[i] = data[i]
+        result.unsafe_set(i, data[i])
     return result^
 
 
@@ -2517,8 +2517,8 @@ def array[
         )
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf[i] = data[i].re
-        A._im._buf[i] = data[i].im
+        A._re.unsafe_set(i, data[i].re)
+        A._im.unsafe_set(i, data[i].im)
     return A^
 
 
@@ -2763,7 +2763,7 @@ def meshgrid[
                     var idx = (
                         outer * dim_size * inner_size + k * inner_size + inner
                     )
-                    grid._buf[idx] = arrays[i]._buf[k]
+                    grid.unsafe_set(idx, arrays[i].unsafe_get(k))
 
         parallelize[closure](outer_size, outer_size)
         grids.append(grid^)

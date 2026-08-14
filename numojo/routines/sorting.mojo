@@ -287,7 +287,7 @@ def argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
     """
     var I = Matrix[DType.int](shape=(1, A.size), order=A.order())
     for i in range(I.size):
-        I._buf[i] = Scalar[DType.int](i)
+        I.unsafe_set(i, Scalar[DType.int](i))
     var B: Matrix[dtype]
     if A.order() == "C":
         B = A.flatten()
@@ -691,39 +691,33 @@ def _quick_sort_partition(
             ).format(left, right, pivot_index, A.size)
         )
 
-    var pivot_value = A._buf[pivot_index]
+    var pivot_value = A.unsafe_get(pivot_index)
 
-    A._buf[pivot_index], A._buf[right] = (
-        A._buf[right],
-        A._buf[pivot_index],
-    )
-    I._buf[pivot_index], I._buf[right] = (
-        I._buf[right],
-        I._buf[pivot_index],
-    )
+    var pivot = A.unsafe_get(pivot_index)
+    A.unsafe_set(pivot_index, A.unsafe_get(right))
+    A.unsafe_set(right, pivot)
+    var pivot_i = I.unsafe_get(pivot_index)
+    I.unsafe_set(pivot_index, I.unsafe_get(right))
+    I.unsafe_set(right, pivot_i)
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf[i] < pivot_value:
-            A._buf[store_index], A._buf[i] = (
-                A._buf[i],
-                A._buf[store_index],
-            )
-            I._buf[store_index], I._buf[i] = (
-                I._buf[i],
-                I._buf[store_index],
-            )
+        if A.unsafe_get(i) < pivot_value:
+            var value = A.unsafe_get(store_index)
+            A.unsafe_set(store_index, A.unsafe_get(i))
+            A.unsafe_set(i, value)
+            var index = I.unsafe_get(store_index)
+            I.unsafe_set(store_index, I.unsafe_get(i))
+            I.unsafe_set(i, index)
             store_index = store_index + 1
 
-    A._buf[store_index], A._buf[right] = (
-        A._buf[right],
-        A._buf[store_index],
-    )
-    I._buf[store_index], I._buf[right] = (
-        I._buf[right],
-        I._buf[store_index],
-    )
+    var value = A.unsafe_get(store_index)
+    A.unsafe_set(store_index, A.unsafe_get(right))
+    A.unsafe_set(right, value)
+    var index = I.unsafe_get(store_index)
+    I.unsafe_set(store_index, I.unsafe_get(right))
+    I.unsafe_set(right, index)
 
     return store_index
 

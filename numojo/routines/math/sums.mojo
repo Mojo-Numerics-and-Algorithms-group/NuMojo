@@ -52,7 +52,7 @@ def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     def cal_vec[width: Int](i: Int) {mut result, A}:
-        result += A._buf.load[width=width](i).reduce_add()
+        result += A.unsafe_load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return result
@@ -250,7 +250,7 @@ def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf[i + 1] += B._buf[i]
+            B.unsafe_set(i + 1, B.unsafe_get(i + 1) + B.unsafe_get(i))
         return B^
 
     else:
@@ -295,7 +295,9 @@ def cumsum[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf[Int(I._buf[i + j + 1])] += B._buf[Int(I._buf[i + j])]
+            var next = Int(I.unsafe_get(i + j + 1))
+            var current = Int(I.unsafe_get(i + j))
+            B.unsafe_set(next, B.unsafe_get(next) + B.unsafe_get(current))
 
     return B^
 

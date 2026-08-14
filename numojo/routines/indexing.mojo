@@ -52,7 +52,7 @@ def `where`[
     var mask_c = mask.contiguous()
 
     for i in range(x.size):
-        if mask_c._buf[i] == True:
+        if mask_c.unsafe_get(i) == True:
             x.itemset(i, scalar)
 
 
@@ -82,8 +82,8 @@ def `where`[
     var y_c = y.contiguous()
 
     for i in range(x.size):
-        if mask_c._buf[i] == True:
-            x.itemset(i, y_c._buf[i])
+        if mask_c.unsafe_get(i) == True:
+            x.itemset(i, y_c.unsafe_get(i))
 
 
 def `where`[
@@ -155,10 +155,10 @@ def `where`[
 
     var result = NDArray[dtype](cond_c.shape)
     for i in range(result.size):
-        if cond_c._buf[i]:
-            result._buf[i] = x_c._buf[i]
+        if cond_c.unsafe_get(i):
+            result.unsafe_set(i, x_c.unsafe_get(i))
         else:
-            result._buf[i] = y_c._buf[i]
+            result.unsafe_set(i, y_c.unsafe_get(i))
     return result^
 
 
@@ -204,7 +204,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf[i] = x_c._buf[i] if cond_c._buf[i] else y
+        result.unsafe_set(i, x_c.unsafe_get(i) if cond_c.unsafe_get(i) else y)
     return result^
 
 
@@ -250,7 +250,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf[i] = x if cond_c._buf[i] else y_c._buf[i]
+        result.unsafe_set(i, x if cond_c.unsafe_get(i) else y_c.unsafe_get(i))
     return result^
 
 

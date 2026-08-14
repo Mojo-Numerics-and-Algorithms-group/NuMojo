@@ -102,10 +102,10 @@ def dot[
         def vectorized_dot[
             simd_width: Int
         ](idx: Int) {mut result, imm array1, imm array2} -> None:
-            result._buf.store[width=simd_width](
+            result.unsafe_store[width=simd_width](
                 idx,
-                array1._buf.load[width=simd_width](idx)
-                * array2._buf.load[width=simd_width](idx),
+                array1.unsafe_load[width=simd_width](idx)
+                * array2.unsafe_load[width=simd_width](idx),
             )
 
         vectorize[width](array1.size, vectorized_dot)
@@ -165,13 +165,13 @@ def matmul_tiled_unrolled_parallelized[
                     imm m,
                     imm k,
                 } -> None:
-                    result._buf.store[width=simd_width](
+                    result.unsafe_store[width=simd_width](
                         m * t2 + (n + x),
-                        value=result._buf.load[width=simd_width](
+                        val=result.unsafe_load[width=simd_width](
                             m * t2 + (n + x)
                         )
-                        + A._buf.load[width=1](m * t1 + k)
-                        * B._buf.load[width=simd_width](k * t2 + (n + x)),
+                        + A.unsafe_load[width=1](m * t1 + k)
+                        * B.unsafe_load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 comptime unroll_factor = tile_x // width
@@ -288,11 +288,11 @@ def matmul_2darray[
             ](n: Int) {
                 mut result, imm A, imm B, imm t2, imm t1, imm k, imm m
             } -> None:
-                result._buf.store[width=simd_width](
+                result.unsafe_store[width=simd_width](
                     m * t2 + n,
-                    value=result._buf.load[width=simd_width](m * t2 + n)
-                    + A._buf.load[width=simd_width](m * t1 + k)
-                    * B._buf.load[width=simd_width](k * t2 + n),
+                    val=result.unsafe_load[width=simd_width](m * t2 + n)
+                    + A.unsafe_load[width=simd_width](m * t1 + k)
+                    * B.unsafe_load[width=simd_width](k * t2 + n),
                 )
 
             vectorize[width](t2, dot)

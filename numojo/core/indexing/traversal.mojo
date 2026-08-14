@@ -107,7 +107,8 @@ struct TraverseMethods:
                 raise Error("Invalid index: index out of bound")
 
             narr.unsafe_store[width=1](
-                narr_idx, orig.unsafe_load[width=1](orig_idx)
+                narr_idx - narr.offset,
+                orig.unsafe_load[width=1](orig_idx - orig.offset),
             )
 
             for d in range(ndim.__len__() - 1, -1, -1):
@@ -158,7 +159,8 @@ struct TraverseMethods:
                 narr_idx += index[i] * coefficients[i]
 
             narr.unsafe_store[width=1](
-                narr_idx, orig.unsafe_load[width=1](orig_idx)
+                narr_idx - narr.offset,
+                orig.unsafe_load[width=1](orig_idx - orig.offset),
             )
 
             for d in range(ndim.__len__() - 1, -1, -1):

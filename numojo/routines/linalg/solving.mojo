@@ -16,18 +16,26 @@ Provides:
     - Determinant.
 """
 
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
 from max.algorithm import parallelize
 
-from numojo.core.ndarray import NDArray
-from numojo.core.indexing import Item
-import numojo.core.matrix as matrix
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.matrix import Matrix
-from numojo.routines.creation import zeros, eye, full
-from numojo.routines.linalg.decompositions import (
-    partial_pivoting,
-    lu_decomposition,
-)
+from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import (
+    eye,
+    full,
+    zeros,
+)
+from numojo.routines.linalg.decompositions import (
+    lu_decomposition,
+    partial_pivoting,
+)
 
 
 def forward_substitution[

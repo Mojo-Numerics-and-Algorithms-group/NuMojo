@@ -9,8 +9,28 @@
 ------------------------------------------------
 This module provides functions for linear algebra operations, including matrix decompositions, norms, products, and solving linear systems etc.
 """
-from .decompositions import lu_decomposition, qr, eig
-from .norms import det, trace
-from .products import cross, dot, matmul
-from .solving import inv, solve, lstsq
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
+from .decompositions import (
+    eig,
+    lu_decomposition,
+    qr,
+)
 from .misc import diagonal
+from .norms import (
+    det,
+    trace,
+)
+from .products import (
+    cross,
+    dot,
+    matmul,
+)
+from .solving import (
+    inv,
+    lstsq,
+    solve,
+)
+
+

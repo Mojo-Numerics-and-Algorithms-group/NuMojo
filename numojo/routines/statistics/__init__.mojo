@@ -10,12 +10,17 @@
 Aggregates averages, modes, and dispersion helpers for NDArrays and Matrices.
 """
 
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .averages import (
-    mean,
     max,
+    mean,
+    median,
     min,
     mode,
-    median,
-    variance,
     stddev,
+    variance,
 )
+
+

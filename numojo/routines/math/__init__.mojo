@@ -10,46 +10,88 @@
 Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
 """
 
-from .arithmetic import add, sub, mod, mul, div, floor_div, fma, remainder
-from .differences import gradient, diff
-from .exponents import exp, exp2, expm1, log, log2, log10, log1p
-from .extrema import max, min, minimum, maximum
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
+from .arithmetic import (
+    add,
+    div,
+    floor_div,
+    fma,
+    mod,
+    mul,
+    remainder,
+    sub,
+)
+from .differences import (
+    diff,
+    gradient,
+)
+from .exponents import (
+    exp,
+    exp2,
+    expm1,
+    log,
+    log10,
+    log1p,
+    log2,
+)
+from .extrema import (
+    max,
+    maximum,
+    min,
+    minimum,
+)
 from .floating import copysign
 from .hyper import (
-    arccosh,
     acosh,
+    arccosh,
     arcsinh,
-    asinh,
     arctanh,
+    asinh,
     atanh,
     cosh,
     sinh,
     tanh,
 )
-from .misc import cbrt, clip, rsqrt, sqrt, scalb
-from .products import prod, cumprod
-from .rounding import (
-    round,
-    tabs,
-    tfloor,
-    tceil,
-    ttrunc,
-    tround,
-    roundeven,
-    nextafter,
+from .misc import (
+    cbrt,
+    clip,
+    rsqrt,
+    scalb,
+    sqrt,
 )
-from .sums import sum, cumsum
+from .products import (
+    cumprod,
+    prod,
+)
+from .rounding import (
+    nextafter,
+    round,
+    roundeven,
+    tabs,
+    tceil,
+    tfloor,
+    tround,
+    ttrunc,
+)
+from .sums import (
+    cumsum,
+    sum,
+)
 from .trig import (
-    arccos,
     acos,
+    arccos,
     arcsin,
-    asin,
     arctan,
+    asin,
     atan,
     atan2,
     cos,
-    sin,
-    tan,
     hypot,
     hypot_fma,
+    sin,
+    tan,
 )
+
+

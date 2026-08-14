@@ -9,23 +9,36 @@
 
 This module provides a collection of logic routines for numerical computations, including comparison operations, content checks, and truth evaluations.
 """
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .comparison import (
+    allclose,
+    array_equal,
+    equal,
     greater,
     greater_equal,
+    isclose,
     less,
     less_equal,
-    equal,
     not_equal,
-    allclose,
-    isclose,
-    array_equal,
 )
 from .contents import (
-    isinf,
     isfinite,
+    isinf,
     isnan,
     isneginf,
     isposinf,
 )
-from .logical_ops import logical_and, logical_or, logical_not, logical_xor
-from .truth import any, all
+from .logical_ops import (
+    logical_and,
+    logical_not,
+    logical_or,
+    logical_xor,
+)
+from .truth import (
+    all,
+    any,
+)
+
+

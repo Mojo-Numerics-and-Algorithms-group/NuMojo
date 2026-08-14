@@ -10,15 +10,24 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
-from std.builtin.simd import FastMathFlag
 
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
+
 
 comptime MIN_SIMD_WIDTHS_PER_TASK = 8
 """Minimum number of SIMD-widths of work each parallel task should get before

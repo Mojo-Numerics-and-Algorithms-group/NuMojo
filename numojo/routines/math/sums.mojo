@@ -10,18 +10,28 @@
 Provides sum reductions along axes for NDArrays and Matrices, covering both flattened and axis-aware workflows.
 """
 
-from std.sys import simd_width_of
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.algorithm import vectorize
-from max.algorithm import parallelize
-from std.memory import UnsafePointer, unsafe_memset_zero, unsafe_memcpy
+from std.memory import unsafe_memcpy
+from std.sys import simd_width_of
 
-from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
-from numojo.core.indexing import TraverseMethods
-from numojo.routines.creation import zeros
-from numojo.core.layout.ndshape import NDArrayShape
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
+from numojo.core.indexing import TraverseMethods
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import zeros
 
 
 def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:

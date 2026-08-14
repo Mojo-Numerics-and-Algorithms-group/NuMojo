@@ -10,18 +10,27 @@
 Implements product and cumulative product reductions for NDArrays and Matrices.
 """
 
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
+from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 
-from numojo.core.ndarray import NDArray
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.indexing import TraverseMethods
-from numojo.routines.creation import ones
 from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import ones
 
 
 def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:

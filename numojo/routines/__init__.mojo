@@ -22,173 +22,180 @@ Notes / conventions:
   stable and widely used.
 """
 
-from . import linalg
-from . import logic
-from . import math
-from . import statistics
-from . import bitwise
-from . import creation
-from . import indexing
-from . import manipulation
-from . import random
-from . import sorting
-from . import searching
-from . import functional
-from . import operations
-
-from .io import (
-    loadtxt,
-    savetxt,
-    load,
-    save,
-    set_printoptions,
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
+from . import (
+    bitwise,
+    creation,
+    functional,
+    indexing,
+    linalg,
+    logic,
+    manipulation,
+    math,
+    operations,
+    random,
+    searching,
+    sorting,
+    statistics,
 )
-
-from .linalg.misc import diagonal
-
-from .logic import (
-    greater,
-    greater_equal,
-    less,
-    less_equal,
-    equal,
-    not_equal,
-    isinf,
-    isfinite,
-    isnan,
-    any,
-    all,
-)
-
-from .math import (
-    add,
-    sub,
-    mod,
-    mul,
-    div,
-    floor_div,
-    fma,
-    remainder,
-    gradient,
-    diff,
-    exp,
-    exp2,
-    expm1,
-    log,
-    log2,
-    log10,
-    log1p,
-    max,
-    min,
-    minimum,
-    maximum,
-    copysign,
-    arccosh,
-    acosh,
-    arcsinh,
-    asinh,
-    arctanh,
-    atanh,
-    cosh,
-    sinh,
-    tanh,
-    cbrt,
-    clip,
-    rsqrt,
-    sqrt,
-    scalb,
-    prod,
-    cumprod,
-    tabs,
-    tfloor,
-    tceil,
-    ttrunc,
-    tround,
-    roundeven,
-    nextafter,
-    sum,
-    cumsum,
-    arccos,
-    acos,
-    arcsin,
-    asin,
-    arctan,
-    atan,
-    atan2,
-    cos,
-    sin,
-    tan,
-    hypot,
-    hypot_fma,
-)
-
-from .statistics import mean, mode, median, variance, stddev
-
 from .bitwise import invert
-
 from .creation import (
     arange,
-    linspace,
-    logspace,
-    geomspace,
+    array,
+    diag,
+    diagflat,
     empty,
     empty_like,
     eye,
-    identity,
-    ones,
-    ones_like,
-    zeros,
-    zeros_like,
+    fromstring,
     full,
     full_like,
-    diag,
-    diagflat,
+    geomspace,
+    identity,
+    linspace,
+    logspace,
+    ones,
+    ones_like,
     tri,
     tril,
     triu,
     vander,
-    fromstring,
-    array,
+    zeros,
+    zeros_like,
 )
-
-from .indexing import (
-    `where`,
-    compress,
-    take_along_axis,
-    take,
-    nonzero,
-    unravel_index,
-    ravel_multi_index,
-    flatnonzero,
-    fancy_index,
-)
-
 from .functional import (
+    apply_along_axis_indices,
+    apply_along_axis_inplace,
+    apply_along_axis_preserve,
     apply_along_axis_reduce,
     apply_along_axis_reduce_to_int,
     apply_along_axis_reduce_with_dtype,
-    apply_along_axis_preserve,
-    apply_along_axis_inplace,
-    apply_along_axis_indices,
 )
-
+from .indexing import (
+    compress,
+    fancy_index,
+    flatnonzero,
+    nonzero,
+    ravel_multi_index,
+    take,
+    take_along_axis,
+    unravel_index,
+    `where`,
+)
+from .io import (
+    load,
+    loadtxt,
+    save,
+    savetxt,
+    set_printoptions,
+)
+from .linalg.misc import diagonal
+from .logic import (
+    all,
+    any,
+    equal,
+    greater,
+    greater_equal,
+    isfinite,
+    isinf,
+    isnan,
+    less,
+    less_equal,
+    not_equal,
+)
 from .manipulation import (
+    broadcast_to,
+    column_stack,
+    concatenate,
+    flip,
+    hstack,
     ndim,
+    ravel,
+    reshape,
+    row_stack,
     shape,
     size,
-    reshape,
-    ravel,
     transpose,
-    broadcast_to,
-    flip,
-    concatenate,
-    column_stack,
-    row_stack,
-    hstack,
     vstack,
 )
-
-from .sorting import sort, argsort
-from .searching import argmax, argmin
-
+from .math import (
+    acos,
+    acosh,
+    add,
+    arccos,
+    arccosh,
+    arcsin,
+    arcsinh,
+    arctan,
+    arctanh,
+    asin,
+    asinh,
+    atan,
+    atan2,
+    atanh,
+    cbrt,
+    clip,
+    copysign,
+    cos,
+    cosh,
+    cumprod,
+    cumsum,
+    diff,
+    div,
+    exp,
+    exp2,
+    expm1,
+    floor_div,
+    fma,
+    gradient,
+    hypot,
+    hypot_fma,
+    log,
+    log10,
+    log1p,
+    log2,
+    max,
+    maximum,
+    min,
+    minimum,
+    mod,
+    mul,
+    nextafter,
+    prod,
+    remainder,
+    roundeven,
+    rsqrt,
+    scalb,
+    sin,
+    sinh,
+    sqrt,
+    sub,
+    sum,
+    tabs,
+    tan,
+    tanh,
+    tceil,
+    tfloor,
+    tround,
+    ttrunc,
+)
 from .operations import HostExecutor
+from .searching import (
+    argmax,
+    argmin,
+)
+from .sorting import (
+    argsort,
+    sort,
+)
+from .statistics import (
+    mean,
+    median,
+    mode,
+    stddev,
+    variance,
+)
+
+

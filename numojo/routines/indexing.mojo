@@ -502,11 +502,10 @@ def compress[
                         )
                         remainder %= res_strides.unsafe_load(j)
 
-                (
-                    result._buf.ptr.unsafe_offset(
-                        IndexMethods.get_1d_index(item, result.strides)
-                    )
-                ).unsafe_write(current_slice._buf[offset])
+                result.unsafe_set(
+                    IndexMethods.get_1d_index(item, result.strides),
+                    current_slice.unsafe_get(offset),
+                )
 
                 count += 1
 
@@ -658,15 +657,12 @@ def take_along_axis[
                 indices_slice
             ]
             unsafe_memcpy(
-                dest=result._buf.ptr.unsafe_offset(
+                dest=result.unsafe_ptr().unsafe_offset(
                     i * result.shape[normalized_axis]
                 ),
-                src=arr_slice_after_applying_indices._buf.ptr,
+                src=arr_slice_after_applying_indices.unsafe_ptr(),
                 count=result.shape[normalized_axis],
             )
-            # `DataContainer.origin` is untracked, so the raw pointer above does
-            # not keep `arr_slice_after_applying_indices` alive; hold it until the copy has finished.
-            _ = arr_slice_after_applying_indices^
     else:
         # If axis is not the last axis, the data is not contiguous.
         for i in range(length_of_iterator):
@@ -680,9 +676,10 @@ def take_along_axis[
             var arr_slice = arr_iterator.ith(i)
             var arr_slice_after_applying_indices = arr_slice[indices_slice]
             for j in range(arr_slice_after_applying_indices.size):
-                (
-                    result._buf.ptr.unsafe_offset(Int(indices_slice_offsets[j]))
-                ).unsafe_write(arr_slice_after_applying_indices._buf[j])
+                result.unsafe_set(
+                    Int(indices_slice_offsets[j]),
+                    arr_slice_after_applying_indices.unsafe_get(j),
+                )
 
     return result^
 
@@ -791,14 +788,10 @@ def take[
             )
             var dst_base = outer * n_idx * inner_size + i * inner_size
             unsafe_memcpy(
-                dest=result._buf.ptr.unsafe_offset(dst_base),
-                src=a_c._buf.ptr.unsafe_offset(src_base),
+                dest=result.unsafe_ptr().unsafe_offset(dst_base),
+                src=a_c.unsafe_ptr().unsafe_offset(src_base),
                 count=inner_size,
             )
-
-    # `DataContainer.origin` is untracked, so the raw pointers above do not
-    # keep `a_c` alive; hold it until the loops are done.
-    _ = a_c^
 
     return result^
 

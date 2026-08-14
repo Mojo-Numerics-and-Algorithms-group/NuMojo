@@ -4134,12 +4134,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             if mag_val < a_min:
                 if mag_val > 0:
                     var scale = a_min / mag_val
-                    result._flat_store(i, ComplexSIMD[Self.cdtype](re * scale, im * scale))
+                    result._flat_store(
+                        i, ComplexSIMD[Self.cdtype](re * scale, im * scale)
+                    )
                 else:
                     result._flat_store(i, ComplexSIMD[Self.cdtype](a_min, 0.0))
             elif mag_val > a_max:
                 var scale = a_max / mag_val
-                result._flat_store(i, ComplexSIMD[Self.cdtype](re * scale, im * scale))
+                result._flat_store(
+                    i, ComplexSIMD[Self.cdtype](re * scale, im * scale)
+                )
             else:
                 result._flat_store(i, ComplexSIMD[Self.cdtype](re, im))
 

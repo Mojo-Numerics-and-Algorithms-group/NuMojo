@@ -14,5 +14,3 @@ Complex number support (SIMD complex types and complex NDArray).
 # ===----------------------------------------------------------------------===#
 from .complex_ndarray import ComplexNDArray
 from .complex_simd import ComplexSIMD
-
-

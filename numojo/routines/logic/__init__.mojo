@@ -40,5 +40,3 @@ from .truth import (
     all,
     any,
 )
-
-

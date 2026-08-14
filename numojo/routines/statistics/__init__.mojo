@@ -21,5 +21,3 @@ from .averages import (
     stddev,
     variance,
 )
-
-

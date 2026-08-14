@@ -16,5 +16,3 @@ from .array_methods import newaxis
 from .flags import Flags
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides
-
-

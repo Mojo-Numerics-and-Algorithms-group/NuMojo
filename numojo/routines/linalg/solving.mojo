@@ -192,9 +192,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m):  # row of L
             var _temp = Y.unsafe_load[width=1](i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L.unsafe_load[width=1](i * m + j) * Z.unsafe_load[
-                    width=1
-                ](j * m + col)
+                _temp = _temp - L.unsafe_load[width=1](
+                    i * m + j
+                ) * Z.unsafe_load[width=1](j * m + col)
             _temp = _temp / L.unsafe_load[width=1](i * m + i)
             Z.unsafe_store[width=1](i * m + col, _temp)
 
@@ -202,9 +202,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m - 1, -1, -1):
             var _temp2 = Z.unsafe_load[width=1](i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U.unsafe_load[width=1](i * m + j) * X.unsafe_load[
-                    width=1
-                ](j * m + col)
+                _temp2 = _temp2 - U.unsafe_load[width=1](
+                    i * m + j
+                ) * X.unsafe_load[width=1](j * m + col)
             _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
             X.unsafe_store[width=1](i * m + col, _temp2)
 
@@ -335,9 +335,9 @@ def solve[
         for i in range(m):  # row of L
             var _temp = Y.unsafe_load[width=1](i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L.unsafe_load[width=1](i * m + j) * Z.unsafe_load[
-                    width=1
-                ](j * n + col)
+                _temp = _temp - L.unsafe_load[width=1](
+                    i * m + j
+                ) * Z.unsafe_load[width=1](j * n + col)
             _temp = _temp / L.unsafe_load[width=1](i * m + i)
             Z.unsafe_store[width=1](i * n + col, _temp)
 
@@ -345,9 +345,9 @@ def solve[
         for i in range(m - 1, -1, -1):
             var _temp2 = Z.unsafe_load[width=1](i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U.unsafe_load[width=1](i * m + j) * X.unsafe_load[
-                    width=1
-                ](j * n + col)
+                _temp2 = _temp2 - U.unsafe_load[width=1](
+                    i * m + j
+                ) * X.unsafe_load[width=1](j * n + col)
             _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
             X.unsafe_store[width=1](i * n + col, _temp2)
 

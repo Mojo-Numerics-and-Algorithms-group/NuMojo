@@ -124,10 +124,10 @@ def trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result._buf.ptr.unsafe_store(
+        result._buf.store[width=1](
             0,
-            result._buf.ptr.unsafe_load(0)
-            + array._buf.ptr[unsafe_offset=row * cols + col],
+            result._buf.load[width=1](0)
+            + array._buf[row * cols + col],
         )
 
     return result^

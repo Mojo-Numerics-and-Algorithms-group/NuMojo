@@ -53,7 +53,7 @@ def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res *= A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
+        res *= A._buf.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -112,7 +112,7 @@ def prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res * A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
+        res = res * A._buf.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -192,7 +192,7 @@ def cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf.ptr[unsafe_offset=i + 1] *= B._buf.ptr[unsafe_offset=i]
+            B._buf[i + 1] *= B._buf[i]
         return B^
 
     else:
@@ -236,9 +236,9 @@ def cumprod[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[
-                unsafe_offset=I._buf.ptr[unsafe_offset=i + j + 1]
-            ] *= B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
+            B._buf[
+                I._buf[i + j + 1]
+            ] *= B._buf[I._buf[i + j]]
 
     return B^
 
@@ -270,7 +270,7 @@ def cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
                 result[i, j] = A[i, j]
 
     for i in range(1, A.size):
-        result._buf.ptr[unsafe_offset=i] *= result._buf.ptr[unsafe_offset=i - 1]
+        result._buf[i] *= result._buf[i - 1]
 
     result.resize(shape=(1, result.size))
     return result^

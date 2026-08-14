@@ -31,8 +31,8 @@ def round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
         return round(A.contiguous(), decimals)
     var res = Matrix.zeros[dtype](A.shape)
     for i in range(A.size):
-        res._buf.ptr[unsafe_offset=i] = builtin_math.round(
-            A._buf.ptr[unsafe_offset=i], ndigits=decimals
+        res._buf[i] = builtin_math.round(
+            A._buf[i], ndigits=decimals
         )
     return res^
 

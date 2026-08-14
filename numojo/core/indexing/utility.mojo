@@ -175,7 +175,6 @@ def to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             0
         ].unsafe_get_as_pointer[dtype]()
         unsafe_memcpy(dest=pointer_d, src=array.unsafe_ptr(), count=array.size)
-        _ = array
 
         return numpyarray^
 

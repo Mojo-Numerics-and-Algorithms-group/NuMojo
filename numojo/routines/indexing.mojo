@@ -987,7 +987,7 @@ def put[
     var indices_c = indices.contiguous()
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf[i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
                 String(
@@ -1094,7 +1094,7 @@ def unravel_index(
         result.append(NDArray[DType.int](indices.shape))
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf[i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < 0 or raw >= size:
             raise Error(
                 String(
@@ -1473,14 +1473,14 @@ def searchsorted[
     if side == "left":
         while lo < hi:
             var mid = (lo + hi) // 2
-            if a_c._buf[mid] < v:
+            if a_c.unsafe_get(mid) < v:
                 lo = mid + 1
             else:
                 hi = mid
     else:
         while lo < hi:
             var mid = (lo + hi) // 2
-            if a_c._buf[mid] <= v:
+            if a_c.unsafe_get(mid) <= v:
                 lo = mid + 1
             else:
                 hi = mid

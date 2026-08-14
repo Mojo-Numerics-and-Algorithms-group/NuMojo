@@ -1888,12 +1888,12 @@ def diagflat[
     )
     if k >= 0:
         for i in range(n):
-            result.store((n + k + 1) * i + k, v._buf[i])
+            result.store((n + k + 1) * i + k, v.unsafe_get(i))
     else:
         for i in range(n):
             result.store(
                 result.size - 1 - (n + abs(k) + 1) * i + k,
-                v._buf[v.size - 1 - i],
+                v.unsafe_get(v.size - 1 - i),
             )
     return result^
 
@@ -2077,7 +2077,7 @@ def triu[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
-                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
+                result.unsafe_set(i * m.shape[1] + j, Scalar[dtype](0))
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2086,9 +2086,10 @@ def triu[
         for offset in range(initial_offset):
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
-                    result._buf[
-                        offset * final_offset + j + i * m.shape[-1]
-                    ] = Scalar[dtype](0)
+                    result.unsafe_set(
+                        offset * final_offset + j + i * m.shape[-1],
+                        Scalar[dtype](0),
+                    )
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."

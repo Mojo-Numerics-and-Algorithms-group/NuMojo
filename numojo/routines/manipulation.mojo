@@ -268,7 +268,7 @@ def _set_values_according_to_shape_and_strides(
             previous_sum + index_of_axis * new_strides[current_dim]
         )
         if current_dim >= new_shape.ndim - 1:
-            I._buf[index] = Scalar[DType.int](current_sum)
+            I.unsafe_set(index, Scalar[DType.int](current_sum))
             index = index + 1
         else:
             _set_values_according_to_shape_and_strides(
@@ -335,14 +335,14 @@ def transpose[
 
     var array_order: String = "C" if A.is_c_contiguous() else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)
-    var ptr = I._buf.get_ptr()
+    var ptr = I.unsafe_ptr()
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
         ptr, new_shape, new_strides
     )
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B.unsafe_set(i, A.unsafe_get(Int(I._buf[i])))
+        B.unsafe_set(i, A.unsafe_get(Int(I.unsafe_get(i))))
     return B^
 
 

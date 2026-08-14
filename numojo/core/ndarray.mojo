@@ -1945,6 +1945,16 @@ struct NDArray[dtype: DType = DType.float64](
         """Store a scalar at a logical flat index without bounds checks."""
         self._buf[self.offset + index] = value
 
+    @always_inline
+    def unsafe_get(self, index: Int) -> Scalar[Self.dtype]:
+        """Return the scalar at a logical flat index without bounds checks."""
+        return self._buf[self.offset + index]
+
+    @always_inline
+    def unsafe_set(mut self, index: Int, value: Scalar[Self.dtype]):
+        """Store a scalar at a logical flat index without bounds checks."""
+        self._buf[self.offset + index] = value
+
     def unsafe_load[
         width: Int = 1
     ](self, index: Int) -> SIMD[Self.dtype, width]:

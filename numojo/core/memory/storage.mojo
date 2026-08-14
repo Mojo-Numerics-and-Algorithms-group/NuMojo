@@ -266,7 +266,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
         return self.ptr.unsafe_offset(offset)
 
     @always_inline
-    def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
+    def __getitem__(self, idx: Int) -> Scalar[Self.dtype]:
         """Return the element at index `idx`.
 
         No bounds checking is performed.
@@ -280,7 +280,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
         return self.ptr[unsafe_offset=idx]
 
     @always_inline
-    def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
+    def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]):
         """Set the element at index `idx` to `val`.
 
         No bounds checking is performed.

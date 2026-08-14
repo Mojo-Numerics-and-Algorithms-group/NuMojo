@@ -95,9 +95,9 @@ def bool_to_numeric[
     for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            result._buf.ptr[unsafe_offset=i] = 1
+            result._buf[i] = 1
         else:
-            result._buf.ptr[unsafe_offset=i] = 0
+            result._buf[i] = 0
     return result^
 
 

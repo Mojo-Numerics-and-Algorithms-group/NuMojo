@@ -225,7 +225,7 @@ def cumprod[
         )
 
     var I = NDArray[DType.int](Shape(A.size))
-    var ptr = I._buf.ptr
+    var ptr = I.unsafe_ptr()
 
     var _shape = B.shape.move_axis_to_end(axis)
     var _strides = B.strides.move_axis_to_end(axis)

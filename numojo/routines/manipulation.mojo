@@ -33,7 +33,7 @@ from numojo.core.error import NumojoError
 # ===----------------------------------------------------------------------=== #
 
 
-def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
+def copy_to[dtype: DType](mut dst: NDArray[dtype], src: NDArray[dtype]) raises:
     """
     Copies the array from src to dst.
 
@@ -52,8 +52,8 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
 
     if dst.is_c_contiguous() and src.is_c_contiguous():
         unsafe_memcpy(
-            dest=dst._buf.ptr.unsafe_offset(dst.offset),
-            src=src._buf.ptr.unsafe_offset(src.offset),
+            dest=dst.unsafe_ptr(),
+            src=src.unsafe_ptr(),
             count=src.size,
         )
     else:
@@ -66,7 +66,7 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
                 remainder = remainder // dst.shape[dim]
                 src_offset += coord * src.strides[dim]
                 dst_offset += coord * dst.strides[dim]
-            dst._buf.ptr[unsafe_offset=dst_offset] = src._buf[src_offset]
+            dst.unsafe_set(dst_offset - dst.offset, src.unsafe_get(src_offset - src.offset))
 
 
 def ndim[dtype: DType](array: NDArray[dtype]) -> Int:
@@ -190,14 +190,11 @@ def reshape[
     if array_order != order:
         var temp: NDArray[dtype] = ravel(A, order=order)
         B = NDArray[dtype](shape=shape, order=order)
-        unsafe_memcpy(dest=B._buf.ptr, src=temp._buf.ptr, count=A.size)
-        # `DataContainer.origin` is untracked, so the raw pointer above does
-        # not keep `temp` alive; hold it until the copy has finished.
-        _ = temp^
+        unsafe_memcpy(dest=B.unsafe_ptr(), src=temp.unsafe_ptr(), count=A.size)
     else:
         # Write in this order into the new array
         B = NDArray[dtype](shape=shape, order=order)
-        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=B.unsafe_ptr(), src=A.unsafe_ptr(), count=A.size)
 
     return B^
 
@@ -237,13 +234,10 @@ def ravel[
     for i in range(length_of_iterator):
         var sub = iterator.ith(i)
         unsafe_memcpy(
-            dest=res._buf.ptr.unsafe_offset(i * length_of_elements),
-            src=sub._buf.ptr.unsafe_offset(sub.offset),
+            dest=res.unsafe_ptr().unsafe_offset(i * length_of_elements),
+            src=sub.unsafe_ptr(),
             count=length_of_elements,
         )
-        # `DataContainer.origin` is untracked, so the raw pointer above does
-        # not keep `sub` alive; hold it until the copy has finished.
-        _ = sub^
 
     return res^
 
@@ -346,9 +340,7 @@ def transpose[
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf[i] = (A._buf.ptr.unsafe_offset(A.offset))[
-            unsafe_offset=Int(I._buf[i])
-        ]
+        B.unsafe_set(i, A.unsafe_get(Int(I._buf[i])))
     return B^
 
 
@@ -368,7 +360,7 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         var array_order = "C" if A.is_c_contiguous() else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+            unsafe_memcpy(dest=B.unsafe_ptr(), src=A.unsafe_ptr(), count=A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
@@ -670,7 +662,7 @@ def flip[
         )
 
     var I = NDArray[DType.int](Shape(A.size))
-    var ptr = I._buf.ptr
+    var ptr = I.unsafe_ptr()
 
     TraverseMethods.traverse_buffer_according_to_shape_and_strides(
         ptr, A.shape.move_axis_to_end(axis), A.strides.move_axis_to_end(axis)

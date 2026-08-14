@@ -340,7 +340,7 @@ def fancy_index[
     for i in range(out_size):
         var coords = List[Int](capacity=n_idx)
         for k in range(n_idx):
-            var raw = Int(bc_indices[k]._buf[i])
+            var raw = Int(bc_indices[k].unsafe_get(i))
             var ax_size = a.shape[k]
             if raw < -ax_size or raw >= ax_size:
                 raise Error(
@@ -352,7 +352,7 @@ def fancy_index[
             if raw < 0:
                 raw += ax_size
             coords.append(raw)
-        result._buf[i] = a._getitem(coords)
+        result.unsafe_set(i, a._getitem(coords))
 
     return result^
 
@@ -460,7 +460,7 @@ def compress[
 
     var number_of_true: Int = 0
     for i in range(condition.size):
-        number_of_true += Int(condition._buf[i])
+        number_of_true += Int(condition.unsafe_get(i))
 
     var shape_of_res: NDArrayShape = a.shape
     shape_of_res[normalized_axis] = number_of_true
@@ -771,7 +771,7 @@ def take[
 
     for outer in range(outer_size):
         for i in range(n_idx):
-            var raw = Int(indices_c._buf[i])
+            var raw = Int(indices_c.unsafe_get(i))
             if raw < -axis_size or raw >= axis_size:
                 raise Error(
                     String(
@@ -930,7 +930,7 @@ def put[
     var values_c = values.contiguous()
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf[i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
                 String(
@@ -942,7 +942,7 @@ def put[
         if norm_idx < 0:
             norm_idx += a.size
 
-        a.itemset(norm_idx, values_c._buf[i % values_c.size])
+        a.itemset(norm_idx, values_c.unsafe_get(i % values_c.size))
 
 
 def put[
@@ -1200,7 +1200,7 @@ def ravel_multi_index(
         var flat = 0
         if order == "C":
             for d in range(shape.ndim):
-                var coord = Int(bc_indices[d]._buf[i])
+                var coord = Int(bc_indices[d].unsafe_get(i))
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
@@ -1213,7 +1213,7 @@ def ravel_multi_index(
         elif order == "F":
             var stride = 1
             for d in range(shape.ndim):
-                var coord = Int(bc_indices[d]._buf[i])
+                var coord = Int(bc_indices[d].unsafe_get(i))
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
@@ -1225,7 +1225,7 @@ def ravel_multi_index(
                 flat += coord * stride
                 stride *= dim
 
-        result._buf[i] = Scalar[DType.int](flat)
+        result.unsafe_set(i, Scalar[DType.int](flat))
 
     return result^
 
@@ -1258,14 +1258,14 @@ def flatnonzero[
 
     var count: Int = 0
     for i in range(a_c.size):
-        if a_c._buf[i] != 0:
+        if a_c.unsafe_get(i) != 0:
             count += 1
 
     var result = NDArray[DType.int](NDArrayShape(count))
     var out_idx = 0
     for i in range(a_c.size):
-        if a_c._buf[i] != 0:
-            result._buf[out_idx] = Scalar[DType.int](i)
+        if a_c.unsafe_get(i) != 0:
+            result.unsafe_set(out_idx, Scalar[DType.int](i))
             out_idx += 1
 
     return result^
@@ -1309,7 +1309,7 @@ def nonzero[
 
     var count: Int = 0
     for i in range(a_c.size):
-        if a_c._buf[i] != 0:
+        if a_c.unsafe_get(i) != 0:
             count += 1
 
     var result = List[NDArray[DType.int]]()
@@ -1318,7 +1318,7 @@ def nonzero[
 
     var out_idx = 0
     for flat in range(a_c.size):
-        if a_c._buf[flat] != 0:
+        if a_c.unsafe_get(flat) != 0:
             var rem = flat
             for d in range(a.ndim - 1, -1, -1):
                 var coord = rem % a.shape[d]
@@ -1394,24 +1394,24 @@ def searchsorted[
     var result = NDArray[DType.int](Shape(v_c.shape))
 
     for i in range(v_c.size):
-        var target = v_c._buf[i]
+        var target = v_c.unsafe_get(i)
         var lo = 0
         var hi = n
         if side == "left":
             while lo < hi:
                 var mid = (lo + hi) // 2
-                if a_c._buf[mid] < target:
+                if a_c.unsafe_get(mid) < target:
                     lo = mid + 1
                 else:
                     hi = mid
         else:
             while lo < hi:
                 var mid = (lo + hi) // 2
-                if a_c._buf[mid] <= target:
+                if a_c.unsafe_get(mid) <= target:
                     lo = mid + 1
                 else:
                     hi = mid
-        result._buf[i] = Scalar[DType.int](lo)
+        result.unsafe_set(i, Scalar[DType.int](lo))
 
     return result^
 

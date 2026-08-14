@@ -2276,7 +2276,9 @@ struct NDArray[dtype: DType = DType.float64](
                 var c = coords[d]
                 dst_off += c * stride_dst
                 src_off += c * stride_src
-            dst.unsafe_set(dst_off - dst.offset, src.unsafe_get(src_off - src.offset))
+            dst.unsafe_set(
+                dst_off - dst.offset, src.unsafe_get(src_off - src.offset)
+            )
 
     def __setitem__(mut self, var index: Item, val: Scalar[Self.dtype]) raises:
         """Sets the value at the index list.
@@ -2994,7 +2996,6 @@ struct NDArray[dtype: DType = DType.float64](
                     count=per_slice_size,
                 )
                 self.__setitem__(idx=idx, val=slice)
-
 
     def set(
         mut self, mask: NDArray[DType.bool], *, val: NDArray[Self.dtype]

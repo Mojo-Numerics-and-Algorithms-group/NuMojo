@@ -231,7 +231,9 @@ def apply_along_axis_reduce_with_dtype[
         @parameter
         def parallelized_func(i: Int):
             try:
-                res.unsafe_set(i, func1d[dtype, returned_dtype](iterator.ith(i)))
+                res.unsafe_set(
+                    i, func1d[dtype, returned_dtype](iterator.ith(i))
+                )
             except e:
                 print("Error in parallelized_func", e)
 

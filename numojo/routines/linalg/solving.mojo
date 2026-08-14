@@ -183,23 +183,23 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y._buf.load[width=1](i * m + col)
+            var _temp = Y.unsafe_load[width=1](i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.load[width=1](i * m + j) * Z._buf.load[
+                _temp = _temp - L.unsafe_load[width=1](i * m + j) * Z.unsafe_load[
                     width=1
                 ](j * m + col)
-            _temp = _temp / L._buf.load[width=1](i * m + i)
-            Z._buf.store[width=1](i * m + col, _temp)
+            _temp = _temp / L.unsafe_load[width=1](i * m + i)
+            Z.unsafe_store[width=1](i * m + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z._buf.load[width=1](i * m + col)
+            var _temp2 = Z.unsafe_load[width=1](i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.load[width=1](i * m + j) * X._buf.load[
+                _temp2 = _temp2 - U.unsafe_load[width=1](i * m + j) * X.unsafe_load[
                     width=1
                 ](j * m + col)
-            _temp2 = _temp2 / U._buf.load[width=1](i * m + i)
-            X._buf.store[width=1](i * m + col, _temp2)
+            _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
+            X.unsafe_store[width=1](i * m + col, _temp2)
 
     parallelize[calculate_X](m, m)
 
@@ -326,23 +326,23 @@ def solve[
     def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y._buf.load[width=1](i * n + col)
+            var _temp = Y.unsafe_load[width=1](i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.load[width=1](i * m + j) * Z._buf.load[
+                _temp = _temp - L.unsafe_load[width=1](i * m + j) * Z.unsafe_load[
                     width=1
                 ](j * n + col)
-            _temp = _temp / L._buf.load[width=1](i * m + i)
-            Z._buf.store[width=1](i * n + col, _temp)
+            _temp = _temp / L.unsafe_load[width=1](i * m + i)
+            Z.unsafe_store[width=1](i * n + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z._buf.load[width=1](i * n + col)
+            var _temp2 = Z.unsafe_load[width=1](i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.load[width=1](i * m + j) * X._buf.load[
+                _temp2 = _temp2 - U.unsafe_load[width=1](i * m + j) * X.unsafe_load[
                     width=1
                 ](j * n + col)
-            _temp2 = _temp2 / U._buf.load[width=1](i * m + i)
-            X._buf.store[width=1](i * n + col, _temp2)
+            _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
+            X.unsafe_store[width=1](i * n + col, _temp2)
 
     parallelize[calculate_X](n, n)
 

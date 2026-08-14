@@ -1851,9 +1851,7 @@ struct NDArray[dtype: DType = DType.float64](
         var item = Item(ndim=self.ndim)
 
         for i in range(self.ndim - 1, -1, -1):
-            item.unsafe_set(
-                i, Scalar[DType.int](remainder % self.shape[i])
-            )
+            item.unsafe_set(i, Scalar[DType.int](remainder % self.shape[i]))
             remainder = remainder // self.shape[i]
 
         return self._buf[
@@ -6606,9 +6604,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item.unsafe_set(
-                    self.axis, item.unsafe_get(self.axis) + 1
-                )
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return res^
 
@@ -6682,9 +6678,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item.unsafe_set(
-                    self.axis, item.unsafe_get(self.axis) + 1
-                )
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return elements^
 
@@ -6762,9 +6756,7 @@ struct _NDAxisIter[
                         IndexMethods.get_1d_index(item, new_strides)
                     )
                 )
-                item.unsafe_set(
-                    self.axis, item.unsafe_get(self.axis) + 1
-                )
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         else:
             for j in range(self.size_of_item):
@@ -6779,9 +6771,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item.unsafe_set(
-                    self.axis, item.unsafe_get(self.axis) + 1
-                )
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return Tuple(offsets^, elements^)
 

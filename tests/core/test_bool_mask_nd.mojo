@@ -324,7 +324,6 @@ def test_setitem_ndarray_2d_mask_on_3d_f_order_per_index() raises:
         assert_equal(Int(a.item(1, 2, k)), 20 + k)
     # Untouched position untouched.
     assert_equal(Int(a.item(0, 1, 0)), v_010)
-    _ = v_120
 
 
 def test_setitem_scalar_1d_mask_on_3d_f_order() raises:

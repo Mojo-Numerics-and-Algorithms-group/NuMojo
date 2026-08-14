@@ -4431,7 +4431,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         return idx_t.T(inv_axes)
 
     def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
-        _ = stable
         if self.ndim == 0:
             return
         var normalized_axis = self._normalize_axis(axis)

@@ -259,7 +259,7 @@ def `where`[
 # ===----------------------------------------------------------------------=== #
 
 
-def fancy_index[
+def _legacy_fancy_index[
     dtype: DType,
     //,
 ](a: NDArray[dtype], index_arrays: List[NDArray[DType.int]]) raises -> NDArray[
@@ -357,7 +357,7 @@ def fancy_index[
     return result^
 
 
-def fancy_index[
+def _legacy_fancy_index_variadic[
     dtype: DType,
     //,
 ](a: NDArray[dtype], *index_arrays: NDArray[DType.int]) raises -> NDArray[

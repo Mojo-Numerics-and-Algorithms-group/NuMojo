@@ -185,9 +185,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m):  # row of L
             var _temp = Y._buf.load[width=1](i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.load[width=1](
-                    i * m + j
-                ) * Z._buf.load[width=1](j * m + col)
+                _temp = _temp - L._buf.load[width=1](i * m + j) * Z._buf.load[
+                    width=1
+                ](j * m + col)
             _temp = _temp / L._buf.load[width=1](i * m + i)
             Z._buf.store[width=1](i * m + col, _temp)
 
@@ -195,9 +195,9 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._buf.load[width=1](i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.load[width=1](
-                    i * m + j
-                ) * X._buf.load[width=1](j * m + col)
+                _temp2 = _temp2 - U._buf.load[width=1](i * m + j) * X._buf.load[
+                    width=1
+                ](j * m + col)
             _temp2 = _temp2 / U._buf.load[width=1](i * m + i)
             X._buf.store[width=1](i * m + col, _temp2)
 
@@ -328,9 +328,9 @@ def solve[
         for i in range(m):  # row of L
             var _temp = Y._buf.load[width=1](i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.load[width=1](
-                    i * m + j
-                ) * Z._buf.load[width=1](j * n + col)
+                _temp = _temp - L._buf.load[width=1](i * m + j) * Z._buf.load[
+                    width=1
+                ](j * n + col)
             _temp = _temp / L._buf.load[width=1](i * m + i)
             Z._buf.store[width=1](i * n + col, _temp)
 
@@ -338,9 +338,9 @@ def solve[
         for i in range(m - 1, -1, -1):
             var _temp2 = Z._buf.load[width=1](i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.load[width=1](
-                    i * m + j
-                ) * X._buf.load[width=1](j * n + col)
+                _temp2 = _temp2 - U._buf.load[width=1](i * m + j) * X._buf.load[
+                    width=1
+                ](j * n + col)
             _temp2 = _temp2 / U._buf.load[width=1](i * m + i)
             X._buf.store[width=1](i * n + col, _temp2)
 

@@ -3488,9 +3488,7 @@ struct Matrix[
             shape=(src.shape[0], src.shape[1]), order=src.order()
         )
         for i in range(src.size):
-            casted_matrix._buf[i] = src._buf[
-                i
-            ].cast[asdtype]()
+            casted_matrix._buf[i] = src._buf[i].cast[asdtype]()
         return casted_matrix^
 
     def cumprod(self) raises -> Matrix[Self.dtype]:
@@ -3940,8 +3938,7 @@ struct Matrix[
                     var dest_row = Int(k // shape[1])
                     var dest_col = k % shape[1]
                     res._buf[
-                        dest_row * res.strides[0]
-                        + dest_col * res.strides[1]
+                        dest_row * res.strides[0] + dest_col * res.strides[1]
                     ] = val
                     k += 1
         else:
@@ -3992,9 +3989,7 @@ struct Matrix[
 
                 for j in range(min_cols):
                     for i in range(min_rows):
-                        other._buf[
-                            i + j * shape[0]
-                        ] = self._buf[
+                        other._buf[i + j * shape[0]] = self._buf[
                             self.offset + i + j * self.shape[0]
                         ]
                     for i in range(min_rows, shape[0]):
@@ -4603,9 +4598,7 @@ struct Matrix[
 
         var result = Matrix[datatype](shape=(1, num_elements), order=order)
         for i in range(num_elements):
-            result._buf[i] = (
-                start + Scalar[datatype](i) * step
-            )
+            result._buf[i] = start + Scalar[datatype](i) * step
 
         return result^
 
@@ -4655,9 +4648,7 @@ struct Matrix[
         var step = (stop - start) / Scalar[datatype](num - 1)
 
         for i in range(num):
-            result._buf[i] = (
-                start + Scalar[datatype](i) * step
-            )
+            result._buf[i] = start + Scalar[datatype](i) * step
 
         return result^
 
@@ -4712,8 +4703,7 @@ struct Matrix[
             var result = Matrix[datatype](shape=(1, size), order=order)
             for i in range(size):
                 result._buf[i] = diagonal._buf[
-                    i * diagonal.strides[0]
-                    + i * diagonal.strides[1]
+                    i * diagonal.strides[0] + i * diagonal.strides[1]
                 ]
             return result^
 

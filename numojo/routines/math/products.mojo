@@ -236,9 +236,7 @@ def cumprod[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf[
-                I._buf[i + j + 1]
-            ] *= B._buf[I._buf[i + j]]
+            B._buf[I._buf[i + j + 1]] *= B._buf[I._buf[i + j]]
 
     return B^
 

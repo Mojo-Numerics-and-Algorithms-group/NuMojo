@@ -145,7 +145,7 @@ def rand[
             i,
             builtin_random.random_float64(
                 min.cast[DType.float64](), max.cast[DType.float64]()
-            ).cast[dtype]()
+            ).cast[dtype](),
         )
 
     return result^

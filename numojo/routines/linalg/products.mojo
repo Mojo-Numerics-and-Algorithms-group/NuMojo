@@ -171,9 +171,7 @@ def matmul_tiled_unrolled_parallelized[
                             m * t2 + (n + x)
                         )
                         + A._buf.load[width=1](m * t1 + k)
-                        * B._buf.load[width=simd_width](
-                            k * t2 + (n + x)
-                        ),
+                        * B._buf.load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 comptime unroll_factor = tile_x // width
@@ -292,9 +290,7 @@ def matmul_2darray[
             } -> None:
                 result._buf.store[width=simd_width](
                     m * t2 + n,
-                    value=result._buf.load[width=simd_width](
-                        m * t2 + n
-                    )
+                    value=result._buf.load[width=simd_width](m * t2 + n)
                     + A._buf.load[width=simd_width](m * t1 + k)
                     * B._buf.load[width=simd_width](k * t2 + n),
                 )
@@ -393,9 +389,7 @@ def matmul[
         )
         result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         unsafe_memcpy(
-            dest=result.unsafe_ptr().unsafe_offset(
-                i * result_sub_matrix.size
-            ),
+            dest=result.unsafe_ptr().unsafe_offset(i * result_sub_matrix.size),
             src=result_sub_matrix.unsafe_ptr(),
             count=result_sub_matrix.size,
         )

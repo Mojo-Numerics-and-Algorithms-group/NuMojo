@@ -204,9 +204,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf[i] = x_c._buf[
-            i
-        ] if cond_c._buf[i] else y
+        result._buf[i] = x_c._buf[i] if cond_c._buf[i] else y
     return result^
 
 
@@ -252,9 +250,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf[i] = x if cond_c._buf[
-            i
-        ] else y_c._buf[i]
+        result._buf[i] = x if cond_c._buf[i] else y_c._buf[i]
     return result^
 
 
@@ -686,9 +682,7 @@ def take_along_axis[
             for j in range(arr_slice_after_applying_indices.size):
                 (
                     result._buf.ptr.unsafe_offset(Int(indices_slice_offsets[j]))
-                ).unsafe_write(
-                    arr_slice_after_applying_indices._buf[j]
-                )
+                ).unsafe_write(arr_slice_after_applying_indices._buf[j])
 
     return result^
 

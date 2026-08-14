@@ -675,9 +675,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # 1-D -> scalar (0-D array wrapper)
         if self.ndim == 1:
-            return creation._0darray[Self.dtype](
-                self._buf[self.offset + norm]
-            )
+            return creation._0darray[Self.dtype](self._buf[self.offset + norm])
 
         var out_shape = self.shape[1:]
         var alloc_order: String = "C"
@@ -728,9 +726,7 @@ struct NDArray[dtype: DType = DType.float64](
             var dst_off = dst.offset
             for d in range(out_ndim):
                 dst_off += coords[d] * Int(dst.strides.unsafe_load(d))
-            dst._buf[dst_off] = src._buf[
-                off
-            ]
+            dst._buf[dst_off] = src._buf[off]
 
     def __getitem__(self, var *slices: Slice) raises -> Self:
         """Retrieves a slice or sub-array from the current array using variadic
@@ -1842,8 +1838,7 @@ struct NDArray[dtype: DType = DType.float64](
             remainder = remainder // self.shape[i]
 
         return self._buf[
-            self.offset
-            + IndexMethods.get_1d_index(item, self.strides)
+            self.offset + IndexMethods.get_1d_index(item, self.strides)
         ]
 
     def item(self, *index: Int) raises -> Scalar[Self.dtype]:
@@ -3043,9 +3038,7 @@ struct NDArray[dtype: DType = DType.float64](
                 return
 
             if val_c.size == 1:
-                var scalar_val = val_c._buf.load[width=1](
-                    val_c.offset
-                )
+                var scalar_val = val_c._buf.load[width=1](val_c.offset)
                 for i in range(mask_c.size):
                     if mask_c._buf.load[width=1](i):
                         self.itemset(i, scalar_val)
@@ -3816,9 +3809,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf[idx] = func[Self.dtype, 1](
-                    self._buf[idx], other
-                )
+                self._buf[idx] = func[Self.dtype, 1](self._buf[idx], other)
 
     def _inplace_array_op[
         func: def[type: DType, simd_w: Int](
@@ -4011,9 +4002,7 @@ struct NDArray[dtype: DType = DType.float64](
         var src = self.contiguous()
         var result: Self = Self(shape=self.shape, order="C")
         for i in range(src.size):
-            result._buf[i] = src._buf[
-                i
-            ].__pow__(rhs)
+            result._buf[i] = src._buf[i].__pow__(rhs)
         return result^
 
     def __pow__(self, p: Self) raises -> Self:
@@ -4065,9 +4054,7 @@ struct NDArray[dtype: DType = DType.float64](
                     var coord = remainder % dim_size
                     remainder //= dim_size
                     idx += coord * Int(self.strides.unsafe_load(dim))
-                self._buf[idx] = builtin_math.pow(
-                    self._buf[idx], p
-                )
+                self._buf[idx] = builtin_math.pow(self._buf[idx], p)
 
     def _elementwise_pow(self, p: Int) raises -> Self:
         var src = self.contiguous()
@@ -4077,9 +4064,7 @@ struct NDArray[dtype: DType = DType.float64](
         ](index: Int) {mut src, imm p} -> None:
             src._buf.store[width=simd_width](
                 index,
-                builtin_math.pow(
-                    src._buf.load[width=simd_width](index), p
-                ),
+                builtin_math.pow(src._buf.load[width=simd_width](index), p),
             )
 
         vectorize[self.width](self.size, array_scalar_vectorize)
@@ -4935,9 +4920,7 @@ struct NDArray[dtype: DType = DType.float64](
                 count=self.size,
             )
         elif self.ndim == 0:
-            result._buf[0] = self._buf[
-                self.offset
-            ]
+            result._buf[0] = self._buf[self.offset]
         else:
             # Stride-aware copy for non-contiguous views.
             var last_dim = self.ndim - 1
@@ -5000,9 +4983,7 @@ struct NDArray[dtype: DType = DType.float64](
                 + i * Int(self.strides[0])
                 + id * Int(self.strides[1])
             )
-            buffer._buf[i] = self._buf[
-                src_idx
-            ]
+            buffer._buf[i] = self._buf[src_idx]
         return buffer^
 
     def cumprod(self) raises -> NDArray[Self.dtype]:
@@ -5923,9 +5904,7 @@ struct NDArray[dtype: DType = DType.float64](
                 + id * Int(self.strides[0])
                 + i * Int(self.strides[1])
             )
-            buffer._buf[i] = self._buf[
-                src_idx
-            ]
+            buffer._buf[i] = self._buf[src_idx]
         return buffer^
 
     def sort(mut self, axis: Int = -1, stable: Bool = False) raises:
@@ -6152,7 +6131,11 @@ struct NDArray[dtype: DType = DType.float64](
         Returns:
             A pointer whose origin is tied to this array.
         """
-        return self._buf.ptr.unsafe_offset(self.offset).mut_cast[mutable]().unsafe_origin_cast[org]()
+        return (
+            self._buf.ptr.unsafe_offset(self.offset)
+            .mut_cast[mutable]()
+            .unsafe_origin_cast[org]()
+        )
 
     def variance[
         returned_dtype: DType = DType.float64
@@ -6324,17 +6307,13 @@ struct _NDArrayIter[
                     # (item._buf.ptr + i).init_pointee_copy(
                     #     Scalar[DType.int](remainder % self.shape[i])
                     # )
-                    item._buf[i] = Scalar[DType.int](
-                        remainder % self.shape[i]
-                    )
+                    item._buf[i] = Scalar[DType.int](remainder % self.shape[i])
                     remainder = remainder // self.shape[i]
                 else:
                     # (item._buf.ptr + self.dimension).init_pointee_copy(
                     #     Scalar[DType.int](current_index)
                     # )
-                    item._buf[self.dimension] = Scalar[
-                        DType.int
-                    ](current_index)
+                    item._buf[self.dimension] = Scalar[DType.int](current_index)
 
             # (result._buf.ptr + offset).init_pointee_copy(
             #     self._buf[IndexMethods.get_1d_index(item, self.strides)]

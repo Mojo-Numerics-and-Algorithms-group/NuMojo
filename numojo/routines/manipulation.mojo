@@ -66,7 +66,9 @@ def copy_to[dtype: DType](mut dst: NDArray[dtype], src: NDArray[dtype]) raises:
                 remainder = remainder // dst.shape[dim]
                 src_offset += coord * src.strides[dim]
                 dst_offset += coord * dst.strides[dim]
-            dst.unsafe_set(dst_offset - dst.offset, src.unsafe_get(src_offset - src.offset))
+            dst.unsafe_set(
+                dst_offset - dst.offset, src.unsafe_get(src_offset - src.offset)
+            )
 
 
 def ndim[dtype: DType](array: NDArray[dtype]) -> Int:
@@ -671,18 +673,8 @@ def flip[
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
             var temp = A._buf[I._buf[i + j]]
-            A._buf[
-                I._buf[i + j]
-            ] = A._buf[
-                I._buf[
-                    i + A.shape[axis] - 1 - j
-                ]
-            ]
-            A._buf[
-                I._buf[
-                    i + A.shape[axis] - 1 - j
-                ]
-            ] = temp
+            A._buf[I._buf[i + j]] = A._buf[I._buf[i + A.shape[axis] - 1 - j]]
+            A._buf[I._buf[i + A.shape[axis] - 1 - j]] = temp
 
     return A^
 
@@ -802,9 +794,7 @@ def _concatenate_list[
         # Adjust the coordinate along the concat axis to be local.
         nd_index[ax] = coord_along_axis - boundaries[src_idx]
 
-        result._buf[flat_idx] = arrays[src_idx]._getitem(
-            nd_index
-        )
+        result._buf[flat_idx] = arrays[src_idx]._getitem(nd_index)
 
     return result^
 

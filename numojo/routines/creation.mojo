@@ -339,9 +339,7 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace(idx: Int) -> None:
-            result._buf[idx] = start + step * Scalar[dtype](
-                idx
-            )
+            result._buf[idx] = start + step * Scalar[dtype](idx)
 
         parallelize[parallelized_linspace](num)
 
@@ -350,9 +348,7 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace1(idx: Int) -> None:
-            result._buf[idx] = start + step * Scalar[dtype](
-                idx
-            )
+            result._buf[idx] = start + step * Scalar[dtype](idx)
 
         parallelize[parallelized_linspace1](num)
 
@@ -624,15 +620,11 @@ def _logspace_serial[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num - 1)
         for i in range(num):
-            result._buf[i] = base ** (
-                start + step * Scalar[dtype](i)
-            )
+            result._buf[i] = base ** (start + step * Scalar[dtype](i))
     else:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num)
         for i in range(num):
-            result._buf[i] = base ** (
-                start + step * Scalar[dtype](i)
-            )
+            result._buf[i] = base ** (start + step * Scalar[dtype](i))
     return result^
 
 
@@ -668,9 +660,7 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace(idx: Int) -> None:
-            result._buf[idx] = base ** (
-                start + step * Scalar[dtype](idx)
-            )
+            result._buf[idx] = base ** (start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_logspace](num)
 
@@ -679,9 +669,7 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace1(idx: Int) -> None:
-            result._buf[idx] = base ** (
-                start + step * Scalar[dtype](idx)
-            )
+            result._buf[idx] = base ** (start + step * Scalar[dtype](idx))
 
         parallelize[parallelized_logspace1](num)
 
@@ -1813,17 +1801,12 @@ def diag[
         )
         if k >= 0:
             for i in range(n):
-                result._buf[
-                    i * (n + abs(k) + 1) + k
-                ] = v_c._buf[i]
+                result._buf[i * (n + abs(k) + 1) + k] = v_c._buf[i]
             return result^
         else:
             for i in range(n):
                 result._buf[
-                    result.size
-                    - 1
-                    - i * (result.shape[1] + 1)
-                    + k
+                    result.size - 1 - i * (result.shape[1] + 1) + k
                 ] = v_c._buf[n - 1 - i]
         return result^
     elif v.ndim == 2:
@@ -1833,14 +1816,10 @@ def diag[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
-                result._buf[i] = v_c._buf[
-                    i * (n + 1) + k
-                ]
+                result._buf[i] = v_c._buf[i * (n + 1) + k]
         else:
             for i in range(n - abs(k)):
-                result._buf[
-                    m - abs(k) - 1 - i
-                ] = v_c._buf[
+                result._buf[m - abs(k) - 1 - i] = v_c._buf[
                     v_c.size - 1 - i * (v_c.shape[1] + 1) + k
                 ]
         return result^
@@ -2030,9 +2009,7 @@ def tril[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
-                result._buf[i * m.shape[1] + j] = Scalar[
-                    dtype
-                ](0)
+                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2042,9 +2019,7 @@ def tril[
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
                     result._buf[
-                        offset * final_offset
-                        + j
-                        + i * m.shape[-1]
+                        offset * final_offset + j + i * m.shape[-1]
                     ] = Scalar[dtype](0)
     else:
         raise Error(
@@ -2097,9 +2072,7 @@ def triu[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
-                result._buf[i * m.shape[1] + j] = Scalar[
-                    dtype
-                ](0)
+                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2109,9 +2082,7 @@ def triu[
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
                     result._buf[
-                        offset * final_offset
-                        + j
-                        + i * m.shape[-1]
+                        offset * final_offset + j + i * m.shape[-1]
                     ] = Scalar[dtype](0)
     else:
         raise Error(
@@ -2262,9 +2233,7 @@ def astype[
             ](idx: Int) {mut result, imm a} -> None:
                 result._buf.store[width=simd_width](
                     idx,
-                    a._buf.load[width=simd_width](idx).cast[
-                        target
-                    ](),
+                    a._buf.load[width=simd_width](idx).cast[target](),
                 )
 
             vectorize[a.width](a.size, vectorized_astypenb)
@@ -2794,9 +2763,7 @@ def meshgrid[
                     var idx = (
                         outer * dim_size * inner_size + k * inner_size + inner
                     )
-                    grid._buf[idx] = arrays[i]._buf[
-                        k
-                    ]
+                    grid._buf[idx] = arrays[i]._buf[k]
 
         parallelize[closure](outer_size, outer_size)
         grids.append(grid^)

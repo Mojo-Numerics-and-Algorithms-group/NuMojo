@@ -359,10 +359,7 @@ def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
         for i in range(1, end):
-            if (
-                result.unsafe_get(i - 1)
-                > result.unsafe_get(i)
-            ):
+            if result.unsafe_get(i - 1) > result.unsafe_get(i):
                 var temp = result.unsafe_get(i - 1)
                 result.unsafe_set(i - 1, result.unsafe_get(i))
                 result.unsafe_set(i, temp)
@@ -443,9 +440,9 @@ def bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
     for i in range(length):
         for j in range(length - i - 1):
-            if result.unsafe_load[width=1](
-                j
-            ) > result.unsafe_load[width=1](j + 1):
+            if result.unsafe_load[width=1](j) > result.unsafe_load[width=1](
+                j + 1
+            ):
                 var temp = result.unsafe_load[width=1](j)
                 result.unsafe_store[width=1](
                     j, result.unsafe_load[width=1](j + 1)
@@ -581,7 +578,9 @@ def argsort_quick_sort_1d[
     return indices^
 
 
-def _unsafe_swap[dtype: DType](mut array: NDArray[dtype], left: Int, right: Int):
+def _unsafe_swap[
+    dtype: DType
+](mut array: NDArray[dtype], left: Int, right: Int):
     """Swap two logical flat elements without bounds checks."""
     var value = array.unsafe_get(left)
     array.unsafe_set(left, array.unsafe_get(right))

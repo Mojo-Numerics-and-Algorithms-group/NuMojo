@@ -3503,7 +3503,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 self.shape
             )
             unsafe_memcpy(
-                dest=result.unsafe_ptr(), src=self._re.unsafe_ptr(), count=self.size
+                dest=result.unsafe_ptr(),
+                src=self._re.unsafe_ptr(),
+                count=self.size,
             )
             return result^
         elif type == "im":
@@ -3511,7 +3513,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 self.shape
             )
             unsafe_memcpy(
-                dest=result.unsafe_ptr(), src=self._im.unsafe_ptr(), count=self.size
+                dest=result.unsafe_ptr(),
+                src=self._im.unsafe_ptr(),
+                count=self.size,
             )
             return result^
         else:

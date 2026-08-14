@@ -11,7 +11,7 @@ Implements element-wise exponential and logarithmic transformations for NDArrays
 """
 
 import std.math as math
-from std.algorithm import parallelize
+from max.algorithm import parallelize
 from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.utils import Variant
 

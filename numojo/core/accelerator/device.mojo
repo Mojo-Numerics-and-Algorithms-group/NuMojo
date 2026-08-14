@@ -15,7 +15,7 @@ from std.sys.info import (
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
 )
-from std.gpu.host import DeviceContext
+from max.gpu.host import DeviceContext
 
 from numojo.core.error import NumojoError
 
@@ -160,8 +160,8 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
     def __init__(out self, *, copy: Self):
         self.context = copy.context.copy()
 
-    def __init__(out self, *, deinit take: Self):
-        self.context = take.context^
+    def __init__(out self, *, deinit move: Self):
+        self.context = move.context^
 
     def __str__(self) -> String:
         return "DeviceHandle(" + Self.device.device_name() + ", context=True)"

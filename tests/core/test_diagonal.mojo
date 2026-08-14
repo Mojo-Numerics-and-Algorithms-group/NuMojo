@@ -67,7 +67,7 @@ def test_diagonal_not_2d_no_longer_errors_for_3d() raises:
 
 
 def test_diagonal_1d_raises() raises:
-    """diagonal on a 1-D array raises (fewer than 2 dims)."""
+    """Diagonal on a 1-D array raises (fewer than 2 dims)."""
     var a = nm.arange[nm.i32](0, 5)
     var raised = False
     try:
@@ -78,7 +78,7 @@ def test_diagonal_1d_raises() raises:
 
 
 def test_diagonal_same_axis_raises() raises:
-    """diagonal with axis1 == axis2 raises."""
+    """Diagonal with axis1 == axis2 raises."""
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
     var raised = False
     try:

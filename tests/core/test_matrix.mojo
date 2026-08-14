@@ -238,8 +238,8 @@ def test_qr_decomposition() raises:
     var np = Python.import_module("numpy")
 
     var Q_R = nm.linalg.qr(A)
-    Q = Q_R[0].copy()
-    R = Q_R[1].copy()
+    var Q = Q_R[0].copy()
+    var R = Q_R[1].copy()
 
     # Check if Q^T Q is close to the identity matrix, i.e Q is orthonormal
     var id = Q.transpose() @ Q
@@ -265,8 +265,8 @@ def test_qr_decomposition_asym_reduced() raises:
     var np = Python.import_module("numpy")
     var A = Matrix.rand[f64]((12, 5), order=order)
     var Q_R = nm.linalg.qr(A, mode="reduced")
-    Q = Q_R[0].copy()
-    R = Q_R[1].copy()
+    var Q = Q_R[0].copy()
+    var R = Q_R[1].copy()
 
     assert_true(
         Q.shape[0] == 12 and Q.shape[1] == 5,
@@ -383,9 +383,9 @@ def test_eigen_decomposition() raises:
     var Lambda = Q_Lambda[1].copy()
 
     # Use NumPy for comparison
-    namedtuple = np.linalg.eig(Anp)
+    var namedtuple = np.linalg.eig(Anp)
 
-    np_eigenvalues = namedtuple.eigenvalues
+    var np_eigenvalues = namedtuple.eigenvalues
 
     # Sort eigenvalues and eigenvectors for comparison (numpy doesn't guarantee order)
     var np_sorted_eigenvalues = np.sort(np_eigenvalues)

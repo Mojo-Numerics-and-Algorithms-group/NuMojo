@@ -17,7 +17,6 @@ from std.hashlib.hasher import Hasher
 from std.os import abort
 from std.sys import CompilationTarget
 from std.sys.info import bit_width_of, size_of
-from std.sys.intrinsics import _type_is_eq
 
 comptime _mIsSigned = UInt8(1)
 comptime _mIsInteger = UInt8(1 << 7)
@@ -268,7 +267,7 @@ struct ComplexDType(
             The name of the ComplexDType.
         """
 
-        return String.write(self)
+        return String(self)
 
     @no_inline
     def write_to[W: Writer](self, mut writer: W):
@@ -335,7 +334,7 @@ struct ComplexDType(
         Returns:
             The representation of the ComplexDType.
         """
-        return String.write("ComplexDType.", self)
+        return String("ComplexDType.", self)
 
     def write_repr_to[W: Writer](self, mut writer: W):
         """Write the string representation to a writer.
@@ -591,7 +590,7 @@ struct ComplexDType(
         elif self is ComplexDType.float64:
             return size_of[DType.float64]()
 
-        return size_of[DType.invalid]()
+        return 0
 
     @always_inline
     def bitwidth(self) -> Int:

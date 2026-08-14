@@ -13,7 +13,7 @@ The NDArrayShape provides methods for element access, shape transformations (e.g
 and properties like size and rank.
 """
 
-from std.memory import memcpy, memcmp, UnsafePointer
+from std.memory import unsafe_memcpy, unsafe_memcmp, UnsafePointer
 
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
@@ -208,7 +208,7 @@ struct NDArrayShape(
         """
         self.ndim = shape.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
+        unsafe_memcpy(dest=self._buf.ptr, src=shape._buf.ptr, count=shape.ndim)
 
     @always_inline("nodebug")
     def __init__(
@@ -277,7 +277,7 @@ struct NDArrayShape(
             self._buf.init_value(0, 0)
         else:
             self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr,
                 src=copy._buf.ptr,
                 count=copy.ndim,
@@ -286,22 +286,6 @@ struct NDArrayShape(
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
-
-    @always_inline("nodebug")
-    def __getitem__(self, index: Int) raises -> Int:
-        """
-        Gets shape dimension at specified index.
-
-        Args:
-          index: Index to get the shape.
-
-        Returns:
-           Shape value at the given index.
-
-        Raises:
-           Error: Index out of bound.
-        """
-        return Int(self._buf[index])
 
     @always_inline("nodebug")
     def __getitem__(
@@ -349,20 +333,6 @@ struct NDArrayShape(
         """
         self._buf[index] = val
 
-    @always_inline("nodebug")
-    def __setitem__(mut self, index: Int, val: Int) raises:
-        """
-        Sets shape at specified index.
-
-        Args:
-          index: Index to set the shape.
-          val: Value to set at the given index.
-
-        Raises:
-           Error: Index out of bound.
-        """
-        self._buf[index] = val
-
     def load[
         width: Int = 1
     ](self, idx: Int) raises -> SIMD[Self.element_type, width]:
@@ -393,7 +363,7 @@ struct NDArrayShape(
                     location="Shape.load",
                 )
             )
-        return self._buf.ptr.load[width=width](idx)
+        return self._buf.ptr.unsafe_load[width=width](idx)
 
     def store[
         width: Int = 1
@@ -423,7 +393,7 @@ struct NDArrayShape(
                     location="Shape.store",
                 )
             )
-        self._buf.ptr.store[width=width](idx, value)
+        self._buf.ptr.unsafe_store[width=width](idx, value)
 
     def unsafe_load[
         width: Int = 1
@@ -775,7 +745,7 @@ struct NDArrayShape(
         """
         var result: String = "("
         for i in range(self.ndim):
-            result += String(self._buf.ptr[i])
+            result += String(self._buf.ptr[unsafe_offset=i])
             if i < self.ndim - 1:
                 result += ", "
         result += ")"
@@ -814,19 +784,6 @@ struct NDArrayShape(
            True if both shapes do not have identical dimensions or values.
         """
         return not self.__eq__(other)
-
-    @always_inline("nodebug")
-    def __contains__(self, val: Int) -> Bool:
-        """
-        Checks if the given value is present in the shape dimensions.
-
-        Args:
-            val: The value to search for.
-
-        Returns:
-          True if the given value is present in the shape.
-        """
-        return val in self._buf
 
     @always_inline("nodebug")
     def __contains__(self, val: Scalar[Self.element_type]) -> Bool:
@@ -905,7 +862,7 @@ struct NDArrayShape(
 # NDArrayShape Iterator
 # ===----------------------------------------------------------------------=== #
 struct _ShapeIter[
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayShape.

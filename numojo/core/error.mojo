@@ -62,7 +62,7 @@ struct NumojoError(Writable):
         message: StringLiteral,
         location: StringLiteral,
     ):
-        err_dict = materialize[Self.ErrorDict]()
+        var err_dict = materialize[Self.ErrorDict]()
         try:
             self.category = err_dict[category]
         except:
@@ -76,7 +76,7 @@ struct NumojoError(Writable):
         message: String,
         location: Optional[String] = None,
     ):
-        err_dict = materialize[Self.ErrorDict]()
+        var err_dict = materialize[Self.ErrorDict]()
         try:
             self.category = err_dict[category]
         except:
@@ -90,7 +90,7 @@ struct NumojoError(Writable):
         message: TString,
         location: StringLiteral,
     ):
-        err_dict = materialize[Self.ErrorDict]()
+        var err_dict = materialize[Self.ErrorDict]()
         try:
             self.category = err_dict[category]
         except:

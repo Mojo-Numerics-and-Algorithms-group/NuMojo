@@ -26,12 +26,17 @@ overload for each function. This makes maintenance easier. Example:
 If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
 """
 
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 from std.math import pow
 from std.collections import Dict
 from std.collections.optional import Optional
-from std.memory import UnsafePointer, memset_zero, memset, memcpy
-from std.algorithm.memory import parallel_memcpy
+from std.memory import (
+    UnsafePointer,
+    unsafe_memset_zero,
+    unsafe_memset,
+    unsafe_memcpy,
+)
 from std.python import PythonObject, Python
 from std.sys import simd_width_of
 
@@ -39,9 +44,14 @@ from std.sys import simd_width_of
 from numojo.core.layout import Flags
 from numojo.core.layout import Flags
 from numojo.core.ndarray import NDArray
+from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.dtype.complex_dtype import ComplexDType
 from numojo.core.type_aliases import ComplexScalar
 from numojo.core.layout import NDArrayShape
 from numojo.core.memory import DataContainer
+from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.type_aliases import Shape
 
 
 # ===------------------------------------------------------------------------===#
@@ -85,7 +95,7 @@ def arange[
     var num: Int = ((stop - start) / step).__int__()
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(num))
     for idx in range(num):
-        result._buf.ptr[idx] = start + step * Scalar[dtype](idx)
+        result._buf.ptr[unsafe_offset=idx] = start + step * Scalar[dtype](idx)
 
     return result^
 
@@ -119,7 +129,7 @@ def arange[
     var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
-        (result._buf.ptr + i).init_pointee_copy(Scalar[dtype](i))
+        (result._buf.ptr.unsafe_offset(i)).unsafe_write(Scalar[dtype](i))
 
     return result^
 
@@ -291,12 +301,12 @@ def _linspace_serial[
     if endpoint:
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num - 1)
         for i in range(num):
-            result._buf.ptr[i] = start + step * Scalar[dtype](i)
+            result._buf.ptr[unsafe_offset=i] = start + step * Scalar[dtype](i)
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num)
         for i in range(num):
-            result._buf.ptr[i] = start + step * Scalar[dtype](i)
+            result._buf.ptr[unsafe_offset=i] = start + step * Scalar[dtype](i)
 
     return result^
 
@@ -330,7 +340,9 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace(idx: Int) -> None:
-            result._buf.ptr[idx] = start + step * Scalar[dtype](idx)
+            result._buf.ptr[unsafe_offset=idx] = start + step * Scalar[dtype](
+                idx
+            )
 
         parallelize[parallelized_linspace](num)
 
@@ -339,7 +351,9 @@ def _linspace_parallel[
 
         @parameter
         def parallelized_linspace1(idx: Int) -> None:
-            result._buf.ptr[idx] = start + step * Scalar[dtype](idx)
+            result._buf.ptr[unsafe_offset=idx] = start + step * Scalar[dtype](
+                idx
+            )
 
         parallelize[parallelized_linspace1](num)
 
@@ -611,11 +625,15 @@ def _logspace_serial[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num - 1)
         for i in range(num):
-            result._buf.ptr[i] = base ** (start + step * Scalar[dtype](i))
+            result._buf.ptr[unsafe_offset=i] = base ** (
+                start + step * Scalar[dtype](i)
+            )
     else:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num)
         for i in range(num):
-            result._buf.ptr[i] = base ** (start + step * Scalar[dtype](i))
+            result._buf.ptr[unsafe_offset=i] = base ** (
+                start + step * Scalar[dtype](i)
+            )
     return result^
 
 
@@ -651,7 +669,9 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace(idx: Int) -> None:
-            result._buf.ptr[idx] = base ** (start + step * Scalar[dtype](idx))
+            result._buf.ptr[unsafe_offset=idx] = base ** (
+                start + step * Scalar[dtype](idx)
+            )
 
         parallelize[parallelized_logspace](num)
 
@@ -660,7 +680,9 @@ def _logspace_parallel[
 
         @parameter
         def parallelized_logspace1(idx: Int) -> None:
-            result._buf.ptr[idx] = base ** (start + step * Scalar[dtype](idx))
+            result._buf.ptr[unsafe_offset=idx] = base ** (
+                start + step * Scalar[dtype](idx)
+            )
 
         parallelize[parallelized_logspace1](num)
 
@@ -892,7 +914,7 @@ def geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf.ptr[i] = a * r**i
+            result._buf.ptr[unsafe_offset=i] = a * r**i
         return result^
 
     else:
@@ -901,7 +923,7 @@ def geomspace[
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
         var r: Scalar[dtype] = base**power
         for i in range(num):
-            result._buf.ptr[i] = a * r**i
+            result._buf.ptr[unsafe_offset=i] = a * r**i
         return result^
 
 
@@ -1561,7 +1583,7 @@ def full[
 
     var A = NDArray[dtype](shape=shape, order=order)
     for i in range(A.size):
-        A._buf.ptr[i] = fill_value
+        A._buf.ptr[unsafe_offset=i] = fill_value
     return A^
 
 
@@ -1666,8 +1688,8 @@ def full[
     """
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.ptr.store(i, fill_value.re)
-        A._im._buf.ptr.store(i, fill_value.im)
+        A._re._buf.ptr.unsafe_store(i, fill_value.re)
+        A._im._buf.ptr.unsafe_store(i, fill_value.im)
     return A^
 
 
@@ -1792,13 +1814,18 @@ def diag[
         )
         if k >= 0:
             for i in range(n):
-                result._buf.ptr[i * (n + abs(k) + 1) + k] = v_c._buf.ptr[i]
+                result._buf.ptr[
+                    unsafe_offset=i * (n + abs(k) + 1) + k
+                ] = v_c._buf.ptr[unsafe_offset=i]
             return result^
         else:
             for i in range(n):
                 result._buf.ptr[
-                    result.size - 1 - i * (result.shape[1] + 1) + k
-                ] = v_c._buf.ptr[n - 1 - i]
+                    unsafe_offset=result.size
+                    - 1
+                    - i * (result.shape[1] + 1)
+                    + k
+                ] = v_c._buf.ptr[unsafe_offset=n - 1 - i]
         return result^
     elif v.ndim == 2:
         var v_c = v.contiguous()
@@ -1807,11 +1834,15 @@ def diag[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
-                result._buf.ptr[i] = v_c._buf.ptr[i * (n + 1) + k]
+                result._buf.ptr[unsafe_offset=i] = v_c._buf.ptr[
+                    unsafe_offset=i * (n + 1) + k
+                ]
         else:
             for i in range(n - abs(k)):
-                result._buf.ptr[m - abs(k) - 1 - i] = v_c._buf.ptr[
-                    v_c.size - 1 - i * (v_c.shape[1] + 1) + k
+                result._buf.ptr[
+                    unsafe_offset=m - abs(k) - 1 - i
+                ] = v_c._buf.ptr[
+                    unsafe_offset=v_c.size - 1 - i * (v_c.shape[1] + 1) + k
                 ]
         return result^
     else:
@@ -1875,12 +1906,12 @@ def diagflat[
     )
     if k >= 0:
         for i in range(n):
-            result.store((n + k + 1) * i + k, v._buf.ptr[i])
+            result.store((n + k + 1) * i + k, v._buf.ptr[unsafe_offset=i])
     else:
         for i in range(n):
             result.store(
                 result.size - 1 - (n + abs(k) + 1) * i + k,
-                v._buf.ptr[v.size - 1 - i],
+                v._buf.ptr[unsafe_offset=v.size - 1 - i],
             )
     return result^
 
@@ -2000,7 +2031,9 @@ def tril[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
-                result._buf.ptr[i * m.shape[1] + j] = Scalar[dtype](0)
+                result._buf.ptr[unsafe_offset=i * m.shape[1] + j] = Scalar[
+                    dtype
+                ](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2010,7 +2043,9 @@ def tril[
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
                     result._buf.ptr[
-                        offset * final_offset + j + i * m.shape[-1]
+                        unsafe_offset=offset * final_offset
+                        + j
+                        + i * m.shape[-1]
                     ] = Scalar[dtype](0)
     else:
         raise Error(
@@ -2063,7 +2098,9 @@ def triu[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(0, i + k):
-                result._buf.ptr[i * m.shape[1] + j] = Scalar[dtype](0)
+                result._buf.ptr[unsafe_offset=i * m.shape[1] + j] = Scalar[
+                    dtype
+                ](0)
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2073,7 +2110,9 @@ def triu[
             for i in range(m.shape[-2]):
                 for j in range(0, i + k):
                     result._buf.ptr[
-                        offset * final_offset + j + i * m.shape[-1]
+                        unsafe_offset=offset * final_offset
+                        + j
+                        + i * m.shape[-1]
                     ] = Scalar[dtype](0)
     else:
         raise Error(
@@ -2130,7 +2169,7 @@ def vander[
     var n_cols = N.value() if N else n_rows
     var result: NDArray[dtype] = ones[dtype](NDArrayShape(n_rows, n_cols))
     for i in range(n_rows):
-        var x_i = x._buf.ptr[i]
+        var x_i = x._buf.ptr[unsafe_offset=i]
         if increasing:
             for j in range(n_cols):
                 result.store(i, j, val=x_i**j)
@@ -2197,10 +2236,10 @@ def astype[
 
         def vectorized_astype[
             simd_width: Int
-        ](idx: Int) {mut result, read a} -> None:
-            (result.unsafe_ptr() + idx).strided_store[width=simd_width](
-                a._buf.ptr.load[width=simd_width](idx).cast[target](), 1
-            )
+        ](idx: Int) {mut result, imm a} -> None:
+            (result.unsafe_ptr().unsafe_offset(idx)).unsafe_strided_store[
+                width=simd_width
+            ](a._buf.ptr.unsafe_load[width=simd_width](idx).cast[target](), 1)
 
         vectorize[a.width](a.size, vectorized_astype)
 
@@ -2209,11 +2248,11 @@ def astype[
 
             def vectorized_astypenb_from_b[
                 simd_width: Int
-            ](idx: Int) {mut result, read a} -> None:
-                result._buf.ptr.store(
+            ](idx: Int) {mut result, imm a} -> None:
+                result._buf.ptr.unsafe_store(
                     idx,
-                    (a._buf.ptr + idx)
-                    .strided_load[width=simd_width](1)
+                    (a._buf.ptr.unsafe_offset(idx))
+                    .unsafe_strided_load[width=simd_width](1)
                     .cast[target](),
                 )
 
@@ -2223,9 +2262,12 @@ def astype[
 
             def vectorized_astypenb[
                 simd_width: Int
-            ](idx: Int) {mut result, read a} -> None:
-                result._buf.ptr.store(
-                    idx, a._buf.ptr.load[width=simd_width](idx).cast[target]()
+            ](idx: Int) {mut result, imm a} -> None:
+                result._buf.ptr.unsafe_store(
+                    idx,
+                    a._buf.ptr.unsafe_load[width=simd_width](idx).cast[
+                        target
+                    ](),
                 )
 
             vectorize[a.width](a.size, vectorized_astypenb)
@@ -2465,7 +2507,7 @@ def array[
     """
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(shape), order)
     for i in range(result.size):
-        result._buf.ptr[i] = data[i]
+        result._buf.ptr[unsafe_offset=i] = data[i]
     return result^
 
 
@@ -2510,10 +2552,10 @@ def array[
         raise Error(
             "Error in array: Real and imaginary data must have the same length!"
         )
-    A = ComplexNDArray[cdtype](shape=shape, order=order)
+    var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
-        A._re._buf.ptr[i] = data[i].re
-        A._im._buf.ptr[i] = data[i].im
+        A._re._buf.ptr[unsafe_offset=i] = data[i].re
+        A._im._buf.ptr[unsafe_offset=i] = data[i].im
     return A^
 
 
@@ -2586,7 +2628,7 @@ def array[
         0
     ].unsafe_get_as_pointer[dtype]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
-    memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
+    unsafe_memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
     return A^
 
 
@@ -2673,8 +2715,10 @@ def array[
         0
     ].unsafe_get_as_pointer[dtype]()
     var A: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](array_shape, order)
-    memcpy[Scalar[dtype]](dest=A._re._buf.ptr, src=pointer, count=A._re.size)
-    memcpy[Scalar[dtype]](
+    unsafe_memcpy[Scalar[dtype]](
+        dest=A._re._buf.ptr, src=pointer, count=A._re.size
+    )
+    unsafe_memcpy[Scalar[dtype]](
         dest=A._im._buf.ptr, src=pointer_imag, count=A._im.size
     )
     return A^
@@ -2756,7 +2800,9 @@ def meshgrid[
                     var idx = (
                         outer * dim_size * inner_size + k * inner_size + inner
                     )
-                    grid._buf.ptr[idx] = arrays[i]._buf.ptr[k]
+                    grid._buf.ptr[unsafe_offset=idx] = arrays[i]._buf.ptr[
+                        unsafe_offset=k
+                    ]
 
         parallelize[closure](outer_size, outer_size)
         grids.append(grid^)
@@ -2790,7 +2836,7 @@ def _0darray[
         ),
     )
     b._buf = DataContainer[dtype](1)
-    b._buf.ptr.init_pointee_copy(val)
+    b._buf.ptr.unsafe_write(val)
     b.flags.OWNDATA = True
     return b^
 
@@ -2818,7 +2864,7 @@ def _0darray[
     # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
     b._re._buf = DataContainer[cdtype.dtype](1)
     b._im._buf = DataContainer[cdtype.dtype](1)
-    b._re._buf.ptr.init_pointee_copy(val.re)
-    b._im._buf.ptr.init_pointee_copy(val.im)
+    b._re._buf.ptr.unsafe_write(val.re)
+    b._im._buf.ptr.unsafe_write(val.im)
     b.flags.OWNDATA = True
     return b^

@@ -10,14 +10,18 @@
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """
 from std.sys import simd_width_of
-from std.algorithm import parallelize, vectorize
-from std.memory import UnsafePointer, memcpy, memset_zero
+from std.algorithm import vectorize
+from max.algorithm import parallelize
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 import std.math as builtin_math
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
 from numojo.core.matrix.base import issymmetric
 from numojo.routines.creation import zeros, eye, full
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.indexing.item import Item
+from numojo.routines.creation import identity
 
 
 @always_inline
@@ -28,7 +32,7 @@ def _compute_householder[
     comptime sqrt2: Scalar[dtype] = 1.4142135623730951
     var rRows = R.shape[0]
 
-    def load_store_vec[n_elements: Int](i: Int) {mut H, mut R, read work_index}:
+    def load_store_vec[n_elements: Int](i: Int) {mut H, mut R, imm work_index}:
         var r_value = R._load[n_elements](i + work_index, work_index)
         H._store[n_elements](i + work_index, work_index, r_value)
         R._store[n_elements](i + work_index, work_index, 0.0)
@@ -37,14 +41,14 @@ def _compute_householder[
 
     var norm = Scalar[dtype](0)
 
-    def calculate_norm[width: Int](i: Int) {mut norm, read H, read work_index}:
+    def calculate_norm[width: Int](i: Int) {mut norm, imm H, imm work_index}:
         norm += (H._load[width=width](i, work_index) ** 2).reduce_add()
 
     vectorize[simd_width](rRows, calculate_norm)
 
     norm = builtin_math.sqrt(norm)
     if work_index == rRows - 1 or norm == 0:
-        first_element = H._load(work_index, work_index)
+        var first_element = H._load(work_index, work_index)
         R._store(work_index, work_index, -first_element)
         H._store(work_index, work_index, sqrt2)
         return
@@ -57,21 +61,21 @@ def _compute_householder[
 
     def scaling_factor_vec[
         simd_width: Int
-    ](i: Int) {mut H, read work_index, read scaling_factor}:
+    ](i: Int) {mut H, imm work_index, imm scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
 
     vectorize[simd_width](rRows, scaling_factor_vec)
 
-    increment = H._load(work_index, work_index) + 1.0
+    var increment = H._load(work_index, work_index) + 1.0
     H._store(work_index, work_index, increment)
 
     scaling_factor = builtin_math.sqrt(1.0 / increment)
 
     def scaling_factor_increment_vec[
         simd_width: Int
-    ](i: Int) {mut H, read work_index, read scaling_factor}:
+    ](i: Int) {mut H, imm work_index, imm scaling_factor}:
         H._store[simd_width](
             i, work_index, H._load[simd_width](i, work_index) * scaling_factor
         )
@@ -97,7 +101,7 @@ def _apply_householder[
 
         def calculate_norm[
             width: Int
-        ](i: Int) {mut dot, read H, read A, read work_index, read j}:
+        ](i: Int) {mut dot, imm H, imm A, imm work_index, imm j}:
             dot += (
                 H._load[width=width](i, work_index) * A._load[width=width](i, j)
             ).reduce_add()
@@ -106,8 +110,8 @@ def _apply_householder[
 
         def closure[
             width: Int
-        ](i: Int) {mut A, read H, read work_index, read j, read dot}:
-            val = A._load[width](i, j) - H._load[width](i, work_index) * dot
+        ](i: Int) {mut A, imm H, imm work_index, imm j, imm dot}:
+            var val = A._load[width](i, j) - H._load[width](i, work_index) * dot
             A._store(i, j, val)
 
         vectorize[simdwidth](aRows, closure)

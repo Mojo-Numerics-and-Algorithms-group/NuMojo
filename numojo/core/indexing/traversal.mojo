@@ -17,6 +17,7 @@ from std.memory import UnsafePointer
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.indexing.offset import IndexMethods
 from numojo.core.error import NumojoError
+from numojo.core.ndarray import NDArray
 
 
 struct TraverseMethods:
@@ -24,7 +25,7 @@ struct TraverseMethods:
     def traverse_buffer_according_to_shape_and_strides[
         origin: MutOrigin
     ](
-        mut ptr: UnsafePointer[Scalar[DType.int], origin=origin],
+        mut ptr: Pointer[Scalar[DType.int], origin=origin],
         shape: NDArrayShape,
         strides: NDArrayStrides,
         current_dim: Int = 0,
@@ -51,8 +52,8 @@ struct TraverseMethods:
                 strides[current_dim]
             )
             if current_dim >= shape.ndim - 1:
-                ptr.init_pointee_copy(Scalar[DType.int](current_sum))
-                ptr += 1
+                ptr.unsafe_write(Scalar[DType.int](current_sum))
+                ptr = ptr.unsafe_offset(1)
             else:
                 Self.traverse_buffer_according_to_shape_and_strides(
                     ptr,
@@ -105,7 +106,9 @@ struct TraverseMethods:
             if narr_idx - narr.offset >= total_elements:
                 raise Error("Invalid index: index out of bound")
 
-            narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
+            narr._buf.ptr.unsafe_store(
+                narr_idx, orig._buf.ptr.unsafe_load[width=1](orig_idx)
+            )
 
             for d in range(ndim.__len__() - 1, -1, -1):
                 index[d] += 1
@@ -154,7 +157,9 @@ struct TraverseMethods:
             for i in range(len(index)):
                 narr_idx += index[i] * coefficients[i]
 
-            narr._buf.ptr.store(narr_idx, orig._buf.ptr.load[width=1](orig_idx))
+            narr._buf.ptr.unsafe_store(
+                narr_idx, orig._buf.ptr.unsafe_load[width=1](orig_idx)
+            )
 
             for d in range(ndim.__len__() - 1, -1, -1):
                 index[d] += 1

@@ -11,7 +11,8 @@ This module provides miscellaneous linear algebra routines, such as extracting d
 """
 
 from std.sys import simd_width_of
-from std.algorithm import parallelize, vectorize
+from std.algorithm import vectorize
+from max.algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.matrix import Matrix
@@ -125,8 +126,8 @@ def diagonal[
     if a.ndim == 2 and norm_axis1 == 0 and norm_axis2 == 1:
         var result2d = NDArray[dtype](Shape(diag_len))
         for i in range(diag_len):
-            result2d._buf.ptr[i] = a._buf.ptr[
-                (i + start_row) * n + (i + start_col)
+            result2d._buf.ptr[unsafe_offset=i] = a._buf.ptr[
+                unsafe_offset=(i + start_row) * n + (i + start_col)
             ]
         return result2d^
 
@@ -174,7 +175,9 @@ def diagonal[
                 + (i + start_row) * a_strides[norm_axis1]
                 + (i + start_col) * a_strides[norm_axis2]
             )
-            result._buf.ptr[outer * diag_len + i] = a._buf.ptr[src_offset]
+            result._buf.ptr[unsafe_offset=outer * diag_len + i] = a._buf.ptr[
+                unsafe_offset=src_offset
+            ]
 
     return result^
 

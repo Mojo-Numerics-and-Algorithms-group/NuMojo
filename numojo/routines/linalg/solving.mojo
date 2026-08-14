@@ -16,7 +16,7 @@ Provides:
     - Determinant.
 """
 
-from std.algorithm import parallelize
+from max.algorithm import parallelize
 
 from numojo.core.ndarray import NDArray
 from numojo.core.indexing import Item
@@ -27,6 +27,7 @@ from numojo.routines.linalg.decompositions import (
     partial_pivoting,
     lu_decomposition,
 )
+from numojo.core.type_aliases import Shape
 
 
 def forward_substitution[
@@ -182,23 +183,23 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y._buf.ptr.load(i * m + col)
+            var _temp = Y._buf.ptr.unsafe_load(i * m + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.ptr.load(i * m + j) * Z._buf.ptr.load(
-                    j * m + col
-                )
-            _temp = _temp / L._buf.ptr.load(i * m + i)
-            Z._buf.ptr.store(i * m + col, _temp)
+                _temp = _temp - L._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * Z._buf.ptr.unsafe_load(j * m + col)
+            _temp = _temp / L._buf.ptr.unsafe_load(i * m + i)
+            Z._buf.ptr.unsafe_store(i * m + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z._buf.ptr.load(i * m + col)
+            var _temp2 = Z._buf.ptr.unsafe_load(i * m + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.ptr.load(i * m + j) * X._buf.ptr.load(
-                    j * m + col
-                )
-            _temp2 = _temp2 / U._buf.ptr.load(i * m + i)
-            X._buf.ptr.store(i * m + col, _temp2)
+                _temp2 = _temp2 - U._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * X._buf.ptr.unsafe_load(j * m + col)
+            _temp2 = _temp2 / U._buf.ptr.unsafe_load(i * m + i)
+            X._buf.ptr.unsafe_store(i * m + col, _temp2)
 
     parallelize[calculate_X](m, m)
 
@@ -325,23 +326,23 @@ def solve[
     def calculate_X(col: Int) -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
-            var _temp = Y._buf.ptr.load(i * n + col)
+            var _temp = Y._buf.ptr.unsafe_load(i * n + col)
             for j in range(i):  # col of L
-                _temp = _temp - L._buf.ptr.load(i * m + j) * Z._buf.ptr.load(
-                    j * n + col
-                )
-            _temp = _temp / L._buf.ptr.load(i * m + i)
-            Z._buf.ptr.store(i * n + col, _temp)
+                _temp = _temp - L._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * Z._buf.ptr.unsafe_load(j * n + col)
+            _temp = _temp / L._buf.ptr.unsafe_load(i * m + i)
+            Z._buf.ptr.unsafe_store(i * n + col, _temp)
 
         # Solve `UZ = Z` for `X` for each col
         for i in range(m - 1, -1, -1):
-            var _temp2 = Z._buf.ptr.load(i * n + col)
+            var _temp2 = Z._buf.ptr.unsafe_load(i * n + col)
             for j in range(i + 1, m):
-                _temp2 = _temp2 - U._buf.ptr.load(i * m + j) * X._buf.ptr.load(
-                    j * n + col
-                )
-            _temp2 = _temp2 / U._buf.ptr.load(i * m + i)
-            X._buf.ptr.store(i * n + col, _temp2)
+                _temp2 = _temp2 - U._buf.ptr.unsafe_load(
+                    i * m + j
+                ) * X._buf.ptr.unsafe_load(j * n + col)
+            _temp2 = _temp2 / U._buf.ptr.unsafe_load(i * m + i)
+            X._buf.ptr.unsafe_store(i * n + col, _temp2)
 
     parallelize[calculate_X](n, n)
 

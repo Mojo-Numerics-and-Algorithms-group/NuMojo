@@ -6,7 +6,7 @@ from numojo.prelude import *
 
 
 def test_nonzero_1d() raises:
-    """nonzero on a 1-D array returns flat positions of non-zero entries."""
+    """Nonzero on a 1-D array returns flat positions of non-zero entries."""
     var a = nm.array[nm.i32]("[3, 0, 5, 0, 2]")
     var idx = a.nonzero()
     assert_equal(len(idx), 1)
@@ -17,7 +17,7 @@ def test_nonzero_1d() raises:
 
 
 def test_nonzero_2d() raises:
-    """nonzero on a 2-D array returns one coordinate array per dimension."""
+    """Nonzero on a 2-D array returns one coordinate array per dimension."""
     var b = nm.array[nm.i32]("[[1, 0], [0, 4]]")
     var idx2 = b.nonzero()
     assert_equal(len(idx2), 2)

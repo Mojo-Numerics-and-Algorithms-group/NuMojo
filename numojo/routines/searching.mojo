@@ -45,7 +45,7 @@ def argmax_1d[
     if not a.is_c_contiguous():
         return argmax_1d(a.contiguous())
 
-    var ptr = a._buf.ptr
+    var ptr = a.unsafe_ptr()
     var value = ptr[]
     var result: Int = 0
 
@@ -77,7 +77,7 @@ def argmin_1d[
     if not a.is_c_contiguous():
         return argmin_1d(a.contiguous())
 
-    var ptr = a._buf.ptr
+    var ptr = a.unsafe_ptr()
     var value = ptr[]
     var result: Int = 0
 

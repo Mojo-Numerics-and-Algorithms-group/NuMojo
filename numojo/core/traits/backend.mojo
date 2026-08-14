@@ -6,7 +6,7 @@
 from numojo.core.ndarray import NDArray
 
 
-trait Backend(ImplicitlyDestructible):
+trait Backend(Deinitable):
     """
     A trait that defines backends for calculations in the rest of the library.
     """

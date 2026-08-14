@@ -11,7 +11,7 @@ Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDAr
 which is used to calculate the memory offset for each dimension when indexing into the array.
 """
 
-from std.memory import memcmp, memcpy, UnsafePointer
+from std.memory import unsafe_memcmp, unsafe_memcpy, UnsafePointer
 
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndshape import NDArrayShape
@@ -172,7 +172,7 @@ struct NDArrayStrides(
         """
         self.ndim = strides.ndim
         self._buf = IndexBuffer(size=self.ndim)
-        memcpy(
+        unsafe_memcpy(
             dest=self._buf.ptr,
             src=strides._buf.ptr,
             count=strides.ndim,
@@ -336,7 +336,7 @@ struct NDArrayStrides(
             self._buf.init_value(0, 0)
         else:
             self._buf = IndexBuffer(size=copy.ndim)
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr,
                 src=copy._buf.ptr,
                 count=copy.ndim,
@@ -345,19 +345,6 @@ struct NDArrayStrides(
     # ===----------------------------------------------------------------------=== #
     # Element Access Methods
     # ===----------------------------------------------------------------------=== #
-
-    @always_inline("nodebug")
-    def __getitem__(self, index: Int) raises -> Int:
-        """
-        Gets stride at specified index.
-
-        Args:
-          index: Index to get the stride.
-
-        Returns:
-           Stride value at the given index.
-        """
-        return Int(self._buf[index])
 
     @always_inline("nodebug")
     def __getitem__(
@@ -404,20 +391,6 @@ struct NDArrayStrides(
            Error: Index out of bound.
         """
         self._buf[Int(index)] = Int(val)
-
-    @always_inline("nodebug")
-    def __setitem__(mut self, index: Int, val: Int) raises:
-        """
-        Sets stride at specified index.
-
-        Args:
-          index: Index to set the shape.
-          val: Value to set at the given index.
-
-        Raises:
-           Error: Index out of bound.
-        """
-        self._buf[index] = val
 
     def load[
         width: Int = 1
@@ -787,19 +760,6 @@ struct NDArrayStrides(
         return not self.__eq__(other)
 
     @always_inline("nodebug")
-    def __contains__(self, val: Int) -> Bool:
-        """
-        Checks if the given value is present in the strides.
-
-        Args:
-            val: The value to search for.
-
-        Returns:
-          True if the given value is present in the strides.
-        """
-        return val in self._buf
-
-    @always_inline("nodebug")
     def __contains__(self, val: Scalar[Self.element_type]) -> Bool:
         """
         Check if the NDArrayStrides contains the given value.
@@ -917,7 +877,7 @@ struct NDArrayStrides(
 
 
 struct _StrideIter[
-    origin: ImmutOrigin = ImmutUntrackedOrigin,
+    origin: ImmOrigin = ImmUntrackedOrigin,
     forward: Bool = True,
 ](ImplicitlyCopyable, Movable):
     """Iterator for NDArrayStrides.

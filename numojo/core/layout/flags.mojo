@@ -12,6 +12,7 @@ Implements Flags type to represent the memory layout information of NuMojo array
 
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.error import NumojoError
 
 
 struct Flags(ImplicitlyCopyable, RegisterPassable):

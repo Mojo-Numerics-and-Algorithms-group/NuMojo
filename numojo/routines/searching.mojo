@@ -23,6 +23,7 @@ from numojo.core.dtype.utility import is_inttype, is_floattype
 from numojo.routines.sorting import binary_sort
 from numojo.routines.math.extrema import _max, _min
 from numojo.routines.functional import apply_along_axis_reduce_to_int
+from numojo.routines.manipulation import ravel
 
 
 def argmax_1d[
@@ -52,7 +53,7 @@ def argmax_1d[
         if ptr[] > value:
             result = i
             value = ptr[]
-        ptr += 1
+        ptr = ptr.unsafe_offset(1)
 
     return Scalar[DType.int](result)
 
@@ -84,7 +85,7 @@ def argmin_1d[
         if ptr[] < value:
             result = i
             value = ptr[]
-        ptr += 1
+        ptr = ptr.unsafe_offset(1)
 
     return Scalar[DType.int](result)
 

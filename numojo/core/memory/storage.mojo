@@ -21,8 +21,9 @@ from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 from std.collections.optional import Optional
 from std.sys.info import has_accelerator
-from std.memory import memcpy
-from std.gpu.host import DeviceBuffer, DeviceContext
+from std.memory import unsafe_memcpy
+from std.memory.alloc import unsafe_alloc
+from max.gpu.host import DeviceBuffer, DeviceContext
 
 from numojo.core.accelerator import Device, DeviceHandle
 from numojo.core.accelerator.device import is_accelerator_available
@@ -35,7 +36,7 @@ from numojo.core.error import NumojoError
 # ===----------------------------------------------------------------------=== #
 
 
-struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
+struct HostStorage[dtype: DType](Copyable & Sized & Writable):
     """Reference-counted host (CPU) memory container.
 
     Manages a contiguous buffer of `Scalar[dtype]` elements with two ownership
@@ -54,10 +55,10 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     comptime origin = MutUntrackedOrigin
     """Memory origin for the allocation."""
 
-    var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
+    var ptr: Pointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: UnsafePointer[Atomic[DType.uint64], Self.origin]
+    var _refcount: Pointer[Atomic[DType.uint64], Self.origin]
     """Pointer to the atomic reference count (null for external containers)."""
 
     var ownership: Ownership
@@ -74,10 +75,8 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
-        self.ptr = UnsafePointer[
-            Scalar[Self.dtype], Self.origin
-        ].unsafe_dangling()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
         self.size = 0
@@ -96,21 +95,21 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("HostStorage: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
 
     @always_inline
     def __init__(
         out self,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
         copy: Bool = False,
     ):
@@ -131,13 +130,13 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
+            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
             self._refcount[] = Atomic[DType.uint64](1)
-            self.ptr = alloc[Scalar[Self.dtype]](size)
-            memcpy(dest=self.ptr, src=ptr, count=size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
+            unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[
+            self._refcount = Pointer[
                 Atomic[DType.uint64], Self.origin
             ].unsafe_dangling()
             self.ptr = ptr
@@ -147,9 +146,9 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     def __init__(
         out self,
         *,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        refcount: Pointer[Atomic[DType.uint64], Self.origin],
         ownership: Ownership,
     ):
         """Create a HostStorage that shares an existing buffer and refcount.
@@ -181,32 +180,32 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         if copy.size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
-            memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](copy.size)
+            unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers all fields without touching the reference count.
 
         Args:
-            take: The source container (consumed).
+            move: The source container (consumed).
         """
-        self.ptr = take.ptr
-        self._refcount = take._refcount
-        self.ownership = take.ownership
-        self.size = take.size
+        self.ptr = move.ptr
+        self._refcount = move._refcount
+        self.ownership = move.ownership
+        self.size = move.size
 
     @always_inline
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """Destructor.
 
         For managed containers the reference count is atomically
@@ -226,8 +225,8 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
 
         fence[ordering=Ordering.ACQUIRE]()
         if self.size > 0:
-            self.ptr.free()
-        self._refcount.free()
+            self.ptr.unsafe_free()
+        self._refcount.unsafe_free()
 
     # ===----------------------------------------------------------------------===#
     # Data Access
@@ -236,7 +235,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def unsafe_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] Pointer[Scalar[Self.dtype], Self.origin]:
         """Return a reference to the raw data pointer.
 
         Returns:
@@ -247,7 +246,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def get_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] Pointer[Scalar[Self.dtype], Self.origin]:
         """Return a reference to the raw data pointer.
 
         This mirrors `DataContainer.get_ptr()`.
@@ -255,9 +254,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr
 
     @always_inline
-    def offset(
-        self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    def offset(self, offset: Int) -> Pointer[Scalar[Self.dtype], Self.origin]:
         """Return a pointer advanced by `offset` elements.
 
         Args:
@@ -266,7 +263,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             `self.ptr + offset`.
         """
-        return self.ptr + offset
+        return self.ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
@@ -280,7 +277,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             The scalar value at `idx`.
         """
-        return self.ptr[idx]
+        return self.ptr[unsafe_offset=idx]
 
     @always_inline
     def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
@@ -292,7 +289,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             idx: Element index.
             val: Value to store.
         """
-        self.ptr[idx] = val
+        self.ptr[unsafe_offset=idx] = val
 
     @always_inline
     def load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
@@ -309,11 +306,11 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             A SIMD vector of the requested width.
         """
-        return self.ptr.load[width=width](offset)
+        return self.ptr.unsafe_load[width=width](offset)
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """Store a SIMD vector of `width` elements starting at `offset`.
 
@@ -326,7 +323,7 @@ struct HostStorage[dtype: DType](Copyable & Movable & Sized & Writable):
             offset: Element index of the first lane.
             value: The SIMD vector to write.
         """
-        self.ptr.store[width=width](offset, value)
+        self.ptr.unsafe_store[width=width](offset, value)
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -524,17 +521,17 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             abort("DeviceStorage: deep copy failed: " + String(e))
         self.size = copy.size
 
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers the buffer handle without copying.
 
         Args:
-            take: The source storage (consumed).
+            move: The source storage (consumed).
         """
-        self.handle = take.handle^
-        self.buffer = take.buffer^
-        self.size = take.size
+        self.handle = move.handle^
+        self.buffer = move.buffer^
+        self.size = move.size
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -589,13 +586,17 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
         """
         return self.buffer
 
-    def unsafe_ptr(ref self) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin]:
+    def unsafe_ptr(ref self) -> Pointer[Scalar[Self.dtype], MutAnyOrigin]:
         """Return the raw device pointer to the buffer's data.
 
         Returns:
             An `UnsafePointer` to the first element on the device.
         """
-        return self.buffer.unsafe_ptr()
+        return (
+            self.buffer.unsafe_ptr()
+            .unsafe_mut_cast[True]()
+            .as_unsafe_any_origin()
+        )
 
     def share(self) raises -> DeviceStorage[Self.dtype, Self.device]:
         """Create a shallow handle sharing this device buffer."""
@@ -609,7 +610,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
 
 
 struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
-    Copyable & Movable & Sized & Writable
+    Copyable & Sized & Writable
 ):
     """Unified, reference-counted storage for Host (CPU) or Device (GPU) data.
 
@@ -689,7 +690,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     @always_inline
     def __init__(
         out self,
-        ptr: UnsafePointer[Scalar[Self.dtype], MutAnyOrigin],
+        ptr: Pointer[Scalar[Self.dtype], MutAnyOrigin],
         size: Int,
         copy: Bool = False,
     ) raises:
@@ -756,17 +757,17 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         self.size = copy.size
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """Move constructor.
 
         Transfers all fields without touching reference counts.
 
         Args:
-            take: The source container (consumed).
+            move: The source container (consumed).
         """
-        self.host_storage = take.host_storage^
-        self.device_storage = take.device_storage^
-        self.size = take.size
+        self.host_storage = move.host_storage^
+        self.device_storage = move.device_storage^
+        self.size = move.size
 
     # ===----------------------------------------------------------------------===#
     # Data Access (CPU)
@@ -775,7 +776,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     @always_inline
     def offset(
         self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.dtype], MutUntrackedOrigin] where (
+    ) -> Pointer[Scalar[Self.dtype], MutUntrackedOrigin] where (
         Self.device.type == "cpu"
     ):
         """Return a pointer advanced by `offset` elements.
@@ -789,7 +790,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        return self.host_storage.unsafe_value().ptr + offset
+        return self.host_storage.unsafe_value().ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(
@@ -808,7 +809,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        return self.host_storage.unsafe_value().ptr[idx]
+        return self.host_storage.unsafe_value().ptr[unsafe_offset=idx]
 
     @always_inline
     def __setitem__(
@@ -825,7 +826,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        self.host_storage.unsafe_value().ptr[idx] = val
+        self.host_storage.unsafe_value().ptr[unsafe_offset=idx] = val
 
     @always_inline
     def load[
@@ -849,11 +850,13 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        return self.host_storage.unsafe_value().ptr.load[width=width](offset)
+        return self.host_storage.unsafe_value().ptr.unsafe_load[width=width](
+            offset
+        )
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]) where (
         Self.device.type == "cpu"
     ):
@@ -871,7 +874,9 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Constraints:
             CPU containers only.
         """
-        self.host_storage.unsafe_value().ptr.store[width=width](offset, value)
+        self.host_storage.unsafe_value().ptr.unsafe_store[width=width](
+            offset, value
+        )
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations
@@ -977,7 +982,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
 
     def host_ptr(
         self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
         Self.device == Device.CPU
     ):
         """Return the raw host pointer to the CPU allocation.
@@ -988,11 +993,13 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         Returns:
             An `UnsafePointer` to the first element on the host.
         """
-        return self.host_storage.unsafe_value().unsafe_ptr()
+        return (
+            self.host_storage.unsafe_value().unsafe_ptr().as_unsafe_any_origin()
+        )
 
     def device_ptr(
         self,
-    ) -> UnsafePointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
         Self.device == Device.CUDA
         or Self.device == Device.ROCM
         or Self.device == Device.MPS

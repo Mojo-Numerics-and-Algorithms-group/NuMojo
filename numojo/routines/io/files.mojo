@@ -11,8 +11,11 @@ This module provides functions for reading and writing arrays to and from files.
 """
 from std.collections.optional import Optional
 from std.python import Python, PythonObject
-from std.memory import UnsafePointer, Span
+from std.memory import UnsafePointer
+from std.collections.span import Span
 
+from numojo.core.dtype import f64
+from numojo.core.ndarray import NDArray
 from numojo.routines.creation import fromstring, array
 
 # We call into the numpy backend for now, this at least let's people go back and forth smoothly.

@@ -91,10 +91,10 @@ from .accelerator import Device, cpu, cuda, mps, rocm
 
 from .indexing import Item, IndexMethods, TraverseMethods, Validator
 
-import .dtype
-import .layout
-import .memory
-import .matrix
-import .complex
-import .traits
-import .accelerator
+from . import dtype
+from . import layout
+from . import memory
+from . import matrix
+from . import complex
+from . import traits
+from . import accelerator

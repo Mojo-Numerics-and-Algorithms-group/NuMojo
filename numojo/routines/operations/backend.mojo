@@ -10,7 +10,8 @@
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
 
-from std.algorithm.functional import parallelize, vectorize
+from std.algorithm.functional import vectorize
+from max.algorithm import parallelize
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
 from std.builtin.simd import FastMathFlag
@@ -52,17 +53,19 @@ def _apply_unary_chunk[
         type, simd_w
     ],
 ](
-    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        dst.store(i, kernel[dtype, width](src.load[width=width](i)))
+        dst.unsafe_store(
+            i, kernel[dtype, width](src.unsafe_load[width=width](i))
+        )
         i += width
     while i < end:
-        dst.store(i, kernel[dtype, 1](src.load[width=1](i)))
+        dst.unsafe_store(i, kernel[dtype, 1](src.unsafe_load[width=1](i)))
         i += 1
 
 
@@ -74,25 +77,28 @@ def _apply_binary_chunk[
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
 ](
-    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], MutAnyOrigin],
+    src2: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        dst.store(
+        dst.unsafe_store(
             i,
             kernel[dtype, width](
-                src1.load[width=width](i), src2.load[width=width](i)
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
             ),
         )
         i += width
     while i < end:
-        dst.store(
+        dst.unsafe_store(
             i,
-            kernel[dtype, 1](src1.load[width=1](i), src2.load[width=1](i)),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)
+            ),
         )
         i += 1
 
@@ -107,26 +113,26 @@ def _apply_binary_scalar_chunk[
     *,
     scalar_first: Bool,
 ](
-    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        var data = src.load[width=width](i)
+        var data = src.unsafe_load[width=width](i)
         comptime if scalar_first:
-            dst.store(i, kernel[dtype, width](scalar, data))
+            dst.unsafe_store(i, kernel[dtype, width](scalar, data))
         else:
-            dst.store(i, kernel[dtype, width](data, scalar))
+            dst.unsafe_store(i, kernel[dtype, width](data, scalar))
         i += width
     while i < end:
-        var data = src.load[width=1](i)
+        var data = src.unsafe_load[width=1](i)
         comptime if scalar_first:
-            dst.store(i, kernel[dtype, 1](scalar, data))
+            dst.unsafe_store(i, kernel[dtype, 1](scalar, data))
         else:
-            dst.store(i, kernel[dtype, 1](data, scalar))
+            dst.unsafe_store(i, kernel[dtype, 1](data, scalar))
         i += 1
 
 
@@ -138,18 +144,22 @@ def _apply_binary_int_chunk[
         SIMD[type, simd_w], Int
     ) capturing -> SIMD[type, simd_w],
 ](
-    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     intval: Int,
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        dst.store(i, kernel[dtype, width](src.load[width=width](i), intval))
+        dst.unsafe_store(
+            i, kernel[dtype, width](src.unsafe_load[width=width](i), intval)
+        )
         i += width
     while i < end:
-        dst.store(i, kernel[dtype, 1](src.load[width=1](i), intval))
+        dst.unsafe_store(
+            i, kernel[dtype, 1](src.unsafe_load[width=1](i), intval)
+        )
         i += 1
 
 
@@ -161,9 +171,9 @@ def _apply_binary_predicate_chunk[
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[DType.bool, simd_w],
 ](
-    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], MutAnyOrigin],
+    src2: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
     start: Int,
     end: Int,
 ):
@@ -173,7 +183,8 @@ def _apply_binary_predicate_chunk[
             dst,
             i,
             kernel[dtype, width](
-                src1.load[width=width](i), src2.load[width=width](i)
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
             ),
         )
         i += width
@@ -181,7 +192,9 @@ def _apply_binary_predicate_chunk[
         bool_simd_store[1](
             dst,
             i,
-            kernel[dtype, 1](src1.load[width=1](i), src2.load[width=1](i)),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)
+            ),
         )
         i += 1
 
@@ -194,8 +207,8 @@ def _apply_binary_predicate_scalar_chunk[
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[DType.bool, simd_w],
 ](
-    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
@@ -206,7 +219,7 @@ def _apply_binary_predicate_scalar_chunk[
             dst,
             i,
             kernel[dtype, width](
-                src.load[width=width](i), SIMD[dtype, width](scalar)
+                src.unsafe_load[width=width](i), SIMD[dtype, width](scalar)
             ),
         )
         i += width
@@ -214,7 +227,9 @@ def _apply_binary_predicate_scalar_chunk[
         bool_simd_store[1](
             dst,
             i,
-            kernel[dtype, 1](src.load[width=1](i), SIMD[dtype, 1](scalar)),
+            kernel[dtype, 1](
+                src.unsafe_load[width=1](i), SIMD[dtype, 1](scalar)
+            ),
         )
         i += 1
 
@@ -227,19 +242,21 @@ def _apply_unary_predicate_chunk[
         DType.bool, simd_w
     ],
 ](
-    src: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[DType.bool], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
         bool_simd_store[width](
-            dst, i, kernel[dtype, width](src.load[width=width](i))
+            dst, i, kernel[dtype, width](src.unsafe_load[width=width](i))
         )
         i += width
     while i < end:
-        bool_simd_store[1](dst, i, kernel[dtype, 1](src.load[width=1](i)))
+        bool_simd_store[1](
+            dst, i, kernel[dtype, 1](src.unsafe_load[width=1](i))
+        )
         i += 1
 
 
@@ -251,31 +268,31 @@ def _apply_ternary_chunk[
         SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
 ](
-    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    src3: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], MutAnyOrigin],
+    src2: Pointer[Scalar[dtype], MutAnyOrigin],
+    src3: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        dst.store(
+        dst.unsafe_store(
             i,
             kernel(
-                src1.load[width=width](i),
-                src2.load[width=width](i),
-                src3.load[width=width](i),
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
+                src3.unsafe_load[width=width](i),
             ),
         )
         i += width
     while i < end:
-        dst.store(
+        dst.unsafe_store(
             i,
-            kernel(
-                src1.load[width=1](i),
-                src2.load[width=1](i),
-                src3.load[width=1](i),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i),
+                src2.unsafe_load[width=1](i),
+                src3.unsafe_load[width=1](i),
             ),
         )
         i += 1
@@ -289,30 +306,30 @@ def _apply_ternary_scalar_chunk[
         SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
 ](
-    src1: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    src2: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    dst: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], MutAnyOrigin],
+    src2: Pointer[Scalar[dtype], MutAnyOrigin],
+    dst: Pointer[Scalar[dtype], MutAnyOrigin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
 ):
     var i = start
     while i + width <= end:
-        dst.store(
+        dst.unsafe_store(
             i,
             kernel(
-                src1.load[width=width](i),
-                src2.load[width=width](i),
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
                 SIMD[dtype, width](scalar),
             ),
         )
         i += width
     while i < end:
-        dst.store(
+        dst.unsafe_store(
             i,
-            kernel(
-                src1.load[width=1](i),
-                src2.load[width=1](i),
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i),
+                src2.unsafe_load[width=1](i),
                 SIMD[dtype, 1](scalar),
             ),
         )
@@ -465,7 +482,9 @@ struct HostExecutor:
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
             var result_array = _0darray(
-                val=kernel[dtype, 1]((array._buf.ptr + array.offset)[])
+                val=kernel[dtype, 1](
+                    (array._buf.ptr.unsafe_offset(array.offset))[]
+                )
             )
             return result_array^
 
@@ -1081,7 +1100,7 @@ def bool_simd_store[
     //,
     simd_width: Int,
 ](
-    ptr: UnsafePointer[Scalar[DType.bool], ptr_origin],
+    ptr: Pointer[Scalar[DType.bool], ptr_origin],
     start: Int,
     val: SIMD[DType.bool, simd_width],
 ):
@@ -1097,4 +1116,6 @@ def bool_simd_store[
         start: Start position in the pointer.
         val: SIMD boolean value to store.
     """
-    (ptr + start).strided_store[width=simd_width](val=val, stride=1)
+    (ptr.unsafe_offset(start)).unsafe_strided_store[width=simd_width](
+        val=val, stride=1
+    )

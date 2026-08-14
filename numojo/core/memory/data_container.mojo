@@ -11,7 +11,8 @@ A reference-counted container for contiguous data buffers, used for NDArray and 
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
 
-from std.memory import UnsafePointer, memcpy
+from std.memory import UnsafePointer, unsafe_memcpy
+from std.memory.alloc import unsafe_alloc
 from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 
@@ -75,7 +76,7 @@ struct Ownership(ImplicitlyCopyable):
         writer.write(self.__str__())
 
 
-struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
+struct DataContainer[dtype: DType](Copyable & Sized & Writable):
     """
     Reference-counted container for a contiguous buffer of elements.
 
@@ -95,10 +96,10 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     comptime origin = MutUntrackedOrigin
     """Memory origin for the allocation."""
 
-    var ptr: UnsafePointer[Scalar[Self.dtype], Self.origin]
+    var ptr: Pointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: UnsafePointer[Atomic[DType.uint64], Self.origin]
+    var _refcount: Pointer[Atomic[DType.uint64], Self.origin]
     """Pointer to the atomic reference count."""
 
     var ownership: Ownership
@@ -115,10 +116,8 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         Create an empty, managed DataContainer.
         """
-        self.ptr = UnsafePointer[
-            Scalar[Self.dtype], Self.origin
-        ].unsafe_dangling()
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
         self.size = 0
@@ -135,21 +134,21 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         self.ownership = Ownership.Managed
 
         if size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
 
     @always_inline
     def __init__(
         out self,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
         copy: Bool = False,
     ):
@@ -169,13 +168,13 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
         self.size = size
         if copy:
-            self._refcount = alloc[Atomic[DType.uint64]](1)
+            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
             self._refcount[] = Atomic[DType.uint64](1)
-            self.ptr = alloc[Scalar[Self.dtype]](size)
-            memcpy(dest=self.ptr, src=ptr, count=size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
+            unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
-            self._refcount = UnsafePointer[
+            self._refcount = Pointer[
                 Atomic[DType.uint64], Self.origin
             ].unsafe_dangling()
             self.ptr = ptr
@@ -185,9 +184,9 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     def __init__(
         out self,
         *,
-        ptr: UnsafePointer[Scalar[Self.dtype], Self.origin],
+        ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: UnsafePointer[Atomic[DType.uint64], Self.origin],
+        refcount: Pointer[Atomic[DType.uint64], Self.origin],
         ownership: Ownership,
     ):
         """Create a DataContainer that shares an existing buffer and refcount.
@@ -217,33 +216,33 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = alloc[Atomic[DType.uint64]](1)
+        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
         self._refcount[] = Atomic[DType.uint64](1)
         if copy.size == 0:
-            self.ptr = UnsafePointer[
+            self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
             ].unsafe_dangling()
         else:
-            self.ptr = alloc[Scalar[Self.dtype]](copy.size)
-            memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
+            self.ptr = unsafe_alloc[Scalar[Self.dtype]](copy.size)
+            unsafe_memcpy(dest=self.ptr, src=copy.ptr, count=copy.size)
 
     @always_inline
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """
         Move constructor.
 
         Transfers ownership without changing the reference count.
 
         Args:
-            take: DataContainer to move from.
+            move: DataContainer to move from.
         """
-        self.ptr = take.ptr
-        self._refcount = take._refcount
-        self.ownership = take.ownership
-        self.size = take.size
+        self.ptr = move.ptr
+        self._refcount = move._refcount
+        self.ownership = move.ownership
+        self.size = move.size
 
     @always_inline
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """
         Destructor.
 
@@ -260,8 +259,8 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
 
         fence[ordering=Ordering.ACQUIRE]()
         if self.size > 0:
-            self.ptr.free()
-        self._refcount.free()
+            self.ptr.unsafe_free()
+        self._refcount.unsafe_free()
 
     # ===----------------------------------------------------------------------===#
     # Data Access Methods
@@ -269,7 +268,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
     @always_inline
     def get_ptr(
         ref self,
-    ) -> ref[self.ptr] UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    ) -> ref[self.ptr] Pointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a reference to the data pointer.
 
@@ -279,9 +278,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         return self.ptr
 
     @always_inline
-    def offset(
-        self, offset: Int
-    ) -> UnsafePointer[Scalar[Self.dtype], Self.origin]:
+    def offset(self, offset: Int) -> Pointer[Scalar[Self.dtype], Self.origin]:
         """
         Return a pointer offset by the specified number of elements.
 
@@ -291,7 +288,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Returns:
             Pointer to the element at the given offset.
         """
-        return self.ptr + offset
+        return self.ptr.unsafe_offset(offset)
 
     @always_inline
     def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
@@ -307,7 +304,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure index is valid.
         """
-        return self.ptr[idx]
+        return self.ptr[unsafe_offset=idx]
 
     @always_inline
     def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
@@ -321,7 +318,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure index is valid.
         """
-        self.ptr[idx] = val
+        self.ptr[unsafe_offset=idx] = val
 
     @always_inline
     def load[width: Int](self, offset: Int) -> SIMD[Self.dtype, width]:
@@ -340,11 +337,11 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
-        return self.ptr.load[width=width](offset)
+        return self.ptr.unsafe_load[width=width](offset)
 
     @always_inline
     def store[
-        width: Int
+        width: Int = 1
     ](mut self, offset: Int, value: SIMD[Self.dtype, width]):
         """
         Store a SIMD vector of the specified width at the given offset.
@@ -359,7 +356,7 @@ struct DataContainer[dtype: DType](Copyable & Movable & Sized & Writable):
         Notes:
             No bounds checking is performed. Caller must ensure there are enough elements from `offset`.
         """
-        self.ptr.store[width=width](offset, value)
+        self.ptr.unsafe_store[width=width](offset, value)
 
     # ===----------------------------------------------------------------------===#
     # Trait Implementations

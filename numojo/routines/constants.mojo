@@ -36,7 +36,7 @@ struct Constants(AnyType, Copyable, Movable):
         """
         pass
 
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """
         Deletes the constants.
         """

@@ -314,6 +314,14 @@ struct Item(
         """
         self._buf.unsafe_store[width=width](idx, value)
 
+    @always_inline
+    def unsafe_get(self, idx: Int) -> Scalar[Self.element_type]:
+        return self.unsafe_load[width=1](idx)
+
+    @always_inline
+    def unsafe_set(mut self, idx: Int, value: Scalar[Self.element_type]):
+        self.unsafe_store[width=1](idx, value)
+
     # ===----------------------------------------------------------------------=== #
     # Transformation Methods
     # ===----------------------------------------------------------------------=== #

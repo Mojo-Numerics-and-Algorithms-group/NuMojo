@@ -614,9 +614,9 @@ def compress[
     var temp: Scalar[DType.int] = 1
     for i in range(result.ndim - 1, -1, -1):
         if i != normalized_axis:
-            (res_strides._buf.ptr.unsafe_offset(i)).unsafe_write(temp)
+            res_strides.unsafe_set(i, temp)
             temp *= Scalar[DType.int](result.shape[i])
-    (res_strides._buf.ptr.unsafe_offset(normalized_axis)).unsafe_write(temp)
+    res_strides.unsafe_set(normalized_axis, temp)
 
     var iterator = a.iter_over_dimension(normalized_axis)
 
@@ -631,16 +631,14 @@ def compress[
 
                 # First along the axis
                 var j = normalized_axis
-                (item._buf.ptr.unsafe_offset(j)).unsafe_write(
-                    remainder // res_strides.unsafe_load(j)
-                )
+                item.unsafe_set(j, remainder // res_strides.unsafe_load(j))
                 remainder %= res_strides.unsafe_load(j)
 
                 # Then along other axes
                 for j in range(result.ndim):
                     if j != normalized_axis:
-                        (item._buf.ptr.unsafe_offset(j)).unsafe_write(
-                            remainder // res_strides.unsafe_load(j)
+                        item.unsafe_set(
+                            j, remainder // res_strides.unsafe_load(j)
                         )
                         remainder %= res_strides.unsafe_load(j)
 

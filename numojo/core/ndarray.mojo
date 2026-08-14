@@ -545,7 +545,7 @@ struct NDArray[dtype: DType = DType.float64](
                     location="NDArray.__getitem__()",
                 )
             )
-        return (self._buf.ptr.unsafe_offset(self.offset))[]
+        return self.unsafe_get(0)
 
     def __getitem__(self, index: Item) raises -> SIMD[Self.dtype, 1]:
         """Gets the value at the index list.
@@ -689,10 +689,8 @@ struct NDArray[dtype: DType = DType.float64](
         if self.is_c_contiguous():
             var block = self.size // self.shape[0]
             unsafe_memcpy(
-                dest=result._buf.ptr,
-                src=(self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(
-                    norm * block
-                ),
+                dest=result.unsafe_ptr(),
+                src=self.unsafe_ptr().unsafe_offset(norm * block),
                 count=block,
             )
             return result^
@@ -1423,22 +1421,19 @@ struct NDArray[dtype: DType = DType.float64](
 
             if self.is_c_contiguous():
                 unsafe_memcpy(
-                    dest=result._buf.ptr.unsafe_offset(i * size_per_item),
-                    src=(
-                        self._buf.ptr.unsafe_offset(self.offset)
-                    ).unsafe_offset(normalized_idx * size_per_item),
+                    dest=result.unsafe_ptr().unsafe_offset(i * size_per_item),
+                    src=self.unsafe_ptr().unsafe_offset(
+                        normalized_idx * size_per_item
+                    ),
                     count=size_per_item,
                 )
             else:
                 var selected = self[normalized_idx].contiguous()
                 unsafe_memcpy(
-                    dest=result._buf.ptr.unsafe_offset(i * size_per_item),
-                    src=selected._buf.ptr.unsafe_offset(selected.offset),
+                    dest=result.unsafe_ptr().unsafe_offset(i * size_per_item),
+                    src=selected.unsafe_ptr(),
                     count=size_per_item,
                 )
-                # `DataContainer.origin` is untracked, so the raw pointer above does
-                # not keep `selected` alive; hold it until the copy has finished.
-                _ = selected^
 
         return result^
 
@@ -1490,9 +1485,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var indices_array = NDArray[DType.int](shape=Shape(len(indices)))
         for i in range(len(indices)):
-            (indices_array._buf.ptr.unsafe_offset(i)).unsafe_write(
-                Scalar[DType.int](indices[i])
-            )
+            indices_array.unsafe_set(i, Scalar[DType.int](indices[i]))
 
         return self[indices_array]
 
@@ -1592,9 +1585,7 @@ struct NDArray[dtype: DType = DType.float64](
             var offset = 0
             for i in range(mask.size):
                 if mask.item(i):
-                    (result._buf.ptr.unsafe_offset(offset)).unsafe_write(
-                        self_c._buf[i]
-                    )
+                    result.unsafe_set(offset, self_c.unsafe_get(i))
                     offset += 1
 
             return result^
@@ -1621,17 +1612,15 @@ struct NDArray[dtype: DType = DType.float64](
             for i in range(mask.size):
                 if mask.item(i):
                     unsafe_memcpy(
-                        dest=result._buf.ptr.unsafe_offset(
+                        dest=result.unsafe_ptr().unsafe_offset(
                             offset * size_per_item
                         ),
-                        src=self_c._buf.ptr.unsafe_offset(i * size_per_item),
+                        src=self_c.unsafe_ptr().unsafe_offset(
+                            i * size_per_item
+                        ),
                         count=size_per_item,
                     )
                     offset += 1
-
-            # `DataContainer.origin` is untracked, so the raw pointers above
-            # do not keep `self_c` alive; hold it until the loop is done.
-            _ = self_c^
 
             return result^
 
@@ -1763,7 +1752,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         var mask_array = NDArray[DType.bool](shape=Shape(len(mask)))
         for i in range(len(mask)):
-            (mask_array._buf.ptr.unsafe_offset(i)).unsafe_write(mask[i])
+            mask_array.unsafe_set(i, mask[i])
 
         return self[mask_array]
 
@@ -1841,9 +1830,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
 
         if self.is_c_contiguous() or self.ndim == 1:
-            return (
-                (self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(index)
-            )[]
+            return self.unsafe_get(index)
 
         var remainder = index
         var item = Item(ndim=self.ndim)
@@ -1910,7 +1897,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         # For 0-D array, return the scalar value.
         if self.ndim == 0:
-            return (self._buf.ptr.unsafe_offset(self.offset))[]
+            return self.unsafe_get(0)
 
         var list_index = List[Int]()
         for i in range(len(index)):
@@ -1932,11 +1919,7 @@ struct NDArray[dtype: DType = DType.float64](
                         location="NDArray.item(*index: Int)",
                     )
                 )
-        return (
-            (self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(
-                IndexMethods.get_1d_index(index, self.strides)
-            )
-        )[]
+        return self.unsafe_get(IndexMethods.get_1d_index(index, self.strides))
 
     @always_inline
     def unsafe_get(self, index: Int) -> Scalar[Self.dtype]:

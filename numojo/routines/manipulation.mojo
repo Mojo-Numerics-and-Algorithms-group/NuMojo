@@ -10,7 +10,7 @@
 This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
 """
 
-from std.memory import UnsafePointer, memcpy
+from std.memory import UnsafePointer, unsafe_memcpy
 from std.sys import simd_width_of
 from std.algorithm import vectorize
 
@@ -25,6 +25,8 @@ from numojo.core.indexing import TraverseMethods
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
 )
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.error import NumojoError
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -49,9 +51,9 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
         )
 
     if dst.is_c_contiguous() and src.is_c_contiguous():
-        memcpy(
-            dest=dst._buf.ptr + dst.offset,
-            src=src._buf.ptr + src.offset,
+        unsafe_memcpy(
+            dest=dst._buf.ptr.unsafe_offset(dst.offset),
+            src=src._buf.ptr.unsafe_offset(src.offset),
             count=src.size,
         )
     else:
@@ -64,7 +66,9 @@ def copy_to[dtype: DType](dst: NDArray[dtype], src: NDArray[dtype]) raises:
                 remainder = remainder // dst.shape[dim]
                 src_offset += coord * src.strides[dim]
                 dst_offset += coord * dst.strides[dim]
-            dst._buf.ptr[dst_offset] = src._buf.ptr[src_offset]
+            dst._buf.ptr[unsafe_offset=dst_offset] = src._buf.ptr[
+                unsafe_offset=src_offset
+            ]
 
 
 def ndim[dtype: DType](array: NDArray[dtype]) -> Int:
@@ -188,11 +192,14 @@ def reshape[
     if array_order != order:
         var temp: NDArray[dtype] = ravel(A, order=order)
         B = NDArray[dtype](shape=shape, order=order)
-        memcpy(dest=B._buf.ptr, src=temp._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=B._buf.ptr, src=temp._buf.ptr, count=A.size)
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `temp` alive; hold it until the copy has finished.
+        _ = temp^
     else:
         # Write in this order into the new array
         B = NDArray[dtype](shape=shape, order=order)
-        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
 
     return B^
 
@@ -231,11 +238,14 @@ def ravel[
 
     for i in range(length_of_iterator):
         var sub = iterator.ith(i)
-        memcpy(
-            dest=res._buf.ptr + i * length_of_elements,
-            src=sub._buf.ptr + sub.offset,
+        unsafe_memcpy(
+            dest=res._buf.ptr.unsafe_offset(i * length_of_elements),
+            src=sub._buf.ptr.unsafe_offset(sub.offset),
             count=length_of_elements,
         )
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `sub` alive; hold it until the copy has finished.
+        _ = sub^
 
     return res^
 
@@ -264,7 +274,7 @@ def _set_values_according_to_shape_and_strides(
             previous_sum + index_of_axis * new_strides[current_dim]
         )
         if current_dim >= new_shape.ndim - 1:
-            I._buf.ptr[index] = Scalar[DType.int](current_sum)
+            I._buf.ptr[unsafe_offset=index] = Scalar[DType.int](current_sum)
             index = index + 1
         else:
             _set_values_according_to_shape_and_strides(
@@ -338,7 +348,9 @@ def transpose[
 
     var B = NDArray[dtype](new_shape, order=array_order)
     for i in range(B.size):
-        B._buf.ptr[i] = (A._buf.ptr + A.offset)[Int(I._buf.ptr[i])]
+        B._buf.ptr[unsafe_offset=i] = (A._buf.ptr.unsafe_offset(A.offset))[
+            unsafe_offset=Int(I._buf.ptr[unsafe_offset=i])
+        ]
     return B^
 
 
@@ -358,14 +370,14 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         var array_order = "C" if A.is_c_contiguous() else "F"
         var B = NDArray[dtype](Shape(A.shape[1], A.shape[0]), order=array_order)
         if A.shape[0] == 1 or A.shape[1] == 1:
-            memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+            unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
         else:
             for i in range(B.shape[0]):
                 for j in range(B.shape[1]):
                     B._setitem(i, j, val=A._getitem(j, i))
         return B^
     else:
-        flipped_axes = List[Int]()
+        var flipped_axes = List[Int]()
         for i in range(A.ndim - 1, -1, -1):
             flipped_axes.append(i)
 
@@ -383,7 +395,7 @@ def transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
     var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
 
     if A.shape[0] == 1 or A.shape[1] == 1:
-        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     else:
         for i in range(B.shape[0]):
             for j in range(B.shape[1]):
@@ -540,12 +552,12 @@ def broadcast_to[
 
     var B: Matrix[dtype] = Matrix[dtype](shape, order=ord)
     if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
+        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
     elif (A.shape[0] == 1) and (A.shape[1] == 1):
         B = Matrix[dtype].full(shape, A[0, 0], order=ord)
     elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
         for i in range(shape[0]):
-            memcpy(
+            unsafe_memcpy(
                 dest=B._buf.offset(shape[1] * i),
                 src=A._buf.ptr,
                 count=shape[1],
@@ -553,7 +565,7 @@ def broadcast_to[
     elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
         for i in range(shape[0]):
             for j in range(shape[1]):
-                B._store(i, j, A._buf.ptr[i])
+                B._store(i, j, A._buf.ptr[unsafe_offset=i])
     else:
         var message = String(
             "Cannot broadcast shape {}x{} to shape {}x{}!"
@@ -628,9 +640,9 @@ def flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     var A = array.contiguous()  # Owned, C-contiguous copy
     for i in range(A.size // 2):
-        var temp = A._buf.ptr[i]
-        A._buf.ptr[i] = A._buf.ptr[A.size - 1 - i]
-        A._buf.ptr[A.size - 1 - i] = temp
+        var temp = A._buf.ptr[unsafe_offset=i]
+        A._buf.ptr[unsafe_offset=i] = A._buf.ptr[unsafe_offset=A.size - 1 - i]
+        A._buf.ptr[unsafe_offset=A.size - 1 - i] = temp
 
     return A^
 
@@ -668,11 +680,19 @@ def flip[
 
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
-            var temp = A._buf.ptr[I._buf.ptr[i + j]]
-            A._buf.ptr[I._buf.ptr[i + j]] = A._buf.ptr[
-                I._buf.ptr[i + A.shape[axis] - 1 - j]
+            var temp = A._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
+            A._buf.ptr[
+                unsafe_offset=I._buf.ptr[unsafe_offset=i + j]
+            ] = A._buf.ptr[
+                unsafe_offset=I._buf.ptr[
+                    unsafe_offset=i + A.shape[axis] - 1 - j
+                ]
             ]
-            A._buf.ptr[I._buf.ptr[i + A.shape[axis] - 1 - j]] = temp
+            A._buf.ptr[
+                unsafe_offset=I._buf.ptr[
+                    unsafe_offset=i + A.shape[axis] - 1 - j
+                ]
+            ] = temp
 
     return A^
 
@@ -792,7 +812,9 @@ def _concatenate_list[
         # Adjust the coordinate along the concat axis to be local.
         nd_index[ax] = coord_along_axis - boundaries[src_idx]
 
-        result._buf.ptr[flat_idx] = arrays[src_idx]._getitem(nd_index)
+        result._buf.ptr[unsafe_offset=flat_idx] = arrays[src_idx]._getitem(
+            nd_index
+        )
 
     return result^
 

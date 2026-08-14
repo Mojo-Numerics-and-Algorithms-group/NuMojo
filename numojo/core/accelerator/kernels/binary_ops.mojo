@@ -12,7 +12,7 @@ on contiguous `AcceleratorNDArray` buffers.
 """
 
 from std.gpu import thread_idx, block_idx, block_dim
-from std.gpu.host import DeviceContext
+from max.gpu.host import DeviceContext
 
 comptime ADD = 0
 comptime SUB = 1
@@ -37,15 +37,17 @@ def _binary_op[
 def binary_op_kernel[
     dtype: DType, op_code: Int
 ](
-    result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    b: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    result: Pointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
+    b: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
 ):
     """GPU kernel: `result[i] = op(a[i], b[i])` for contiguous buffers."""
     var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
     if i < size:
-        result[i] = _binary_op[dtype, op_code](a[i], b[i])
+        result[unsafe_offset=i] = _binary_op[dtype, op_code](
+            a[unsafe_offset=i], b[unsafe_offset=i]
+        )
 
 
 def launch_config(size: Int) -> Tuple[Int, Int]:
@@ -63,9 +65,9 @@ def launch_binary_op[
     dtype: DType, op_code: Int
 ](
     context: DeviceContext,
-    result: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    b: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    result: Pointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
+    b: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
     sync: Bool = True,
 ) raises:

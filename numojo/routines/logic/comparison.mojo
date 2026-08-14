@@ -584,8 +584,8 @@ def allclose[
         )
 
     for i in range(a.size):
-        val_a: Scalar[dtype] = a.load(i)
-        val_b: Scalar[dtype] = b.load(i)
+        var val_a: Scalar[dtype] = a.load(i)
+        var val_b: Scalar[dtype] = b.load(i)
         if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
             continue
         if abs(val_a - val_b) <= atol + rtol * abs(val_b):
@@ -653,8 +653,8 @@ def isclose[
 
     var res: NDArray[DType.bool] = NDArray[DType.bool](a.shape)
     for i in range(a.size):
-        val_a: Scalar[dtype] = a.load(i)
-        val_b: Scalar[dtype] = b.load(i)
+        var val_a: Scalar[dtype] = a.load(i)
+        var val_b: Scalar[dtype] = b.load(i)
         if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
             res.store(i, True)
             continue
@@ -723,8 +723,8 @@ def allclose[
         )
 
     for i in range(a.size):
-        val_a: Scalar[dtype] = a.load(i)
-        val_b: Scalar[dtype] = b.load(i)
+        var val_a: Scalar[dtype] = a.load(i)
+        var val_b: Scalar[dtype] = b.load(i)
         if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
             continue
         if abs(val_a - val_b) <= atol + rtol * abs(val_b):
@@ -792,8 +792,8 @@ def isclose[
 
     var res: Matrix[DType.bool] = Matrix[DType.bool](a.shape)
     for i in range(a.size):
-        val_a: Scalar[dtype] = a.load(i)
-        val_b: Scalar[dtype] = b.load(i)
+        var val_a: Scalar[dtype] = a.load(i)
+        var val_b: Scalar[dtype] = b.load(i)
         if equal_nan and (math.isnan(val_a) and math.isnan(val_b)):
             res._store_idx(i, val=True)
             continue

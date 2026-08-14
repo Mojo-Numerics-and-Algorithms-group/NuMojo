@@ -6,7 +6,7 @@ from numojo.prelude import *
 
 
 def test_searchsorted_scalar_left() raises:
-    """searchsorted with a scalar value, default side='left'."""
+    """Searchsorted with a scalar value, default side='left'."""
     var a = nm.array[nm.i32]("[1, 3, 5, 7]")
     assert_equal(a.searchsorted(Scalar[nm.i32](4)), 2)
     assert_equal(a.searchsorted(Scalar[nm.i32](1)), 0)
@@ -15,14 +15,14 @@ def test_searchsorted_scalar_left() raises:
 
 
 def test_searchsorted_scalar_right() raises:
-    """searchsorted with side='right' returns the rightmost insertion point."""
+    """Searchsorted with side='right' returns the rightmost insertion point."""
     var a = nm.array[nm.i32]("[1, 3, 5, 7]")
     assert_equal(a.searchsorted(Scalar[nm.i32](3), side="right"), 2)
     assert_equal(a.searchsorted(Scalar[nm.i32](3), side="left"), 1)
 
 
 def test_searchsorted_array_values() raises:
-    """searchsorted with an array of values returns one index per value."""
+    """Searchsorted with an array of values returns one index per value."""
     var a = nm.array[nm.i32]("[1, 3, 5, 7]")
     var result = a.searchsorted(nm.array[nm.i32]("[2, 6]"))
     assert_equal(result.size, 2)
@@ -31,14 +31,14 @@ def test_searchsorted_array_values() raises:
 
 
 def test_searchsorted_duplicates_left_right() raises:
-    """searchsorted handles duplicate values correctly for both sides."""
+    """Searchsorted handles duplicate values correctly for both sides."""
     var a = nm.array[nm.i32]("[1, 2, 2, 2, 5]")
     assert_equal(a.searchsorted(Scalar[nm.i32](2), side="left"), 1)
     assert_equal(a.searchsorted(Scalar[nm.i32](2), side="right"), 4)
 
 
 def test_searchsorted_non_1d_raises() raises:
-    """searchsorted raises when `self` is not 1-D."""
+    """Searchsorted raises when `self` is not 1-D."""
     var a = nm.arange[nm.i32](0, 6).reshape(Shape(2, 3))
     var raised = False
     try:
@@ -49,7 +49,7 @@ def test_searchsorted_non_1d_raises() raises:
 
 
 def test_searchsorted_invalid_side_raises() raises:
-    """searchsorted raises for an invalid `side` argument."""
+    """Searchsorted raises for an invalid `side` argument."""
     var a = nm.array[nm.i32]("[1, 3, 5, 7]")
     var raised = False
     try:

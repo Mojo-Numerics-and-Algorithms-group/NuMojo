@@ -19,8 +19,9 @@ Features:
 Use this module to create, manipulate, and analyze matrices with high performance and safety guarantees.
 """
 
-from std.algorithm import parallelize, vectorize
-from std.memory import UnsafePointer, memcpy, memset_zero
+from std.algorithm import vectorize
+from max.algorithm import parallelize
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 from std.random import random_float64
 from std.sys import simd_width_of
 from std.python import PythonObject, Python
@@ -31,7 +32,7 @@ from numojo.core.ndarray import NDArray
 from numojo.core.indexing import Validator, InternalSlice
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.traits.buffered import Buffered
-from numojo.routines.manipulation import broadcast_to, reorder_layout
+from numojo.routines.manipulation import broadcast_to, reorder_layout, transpose
 from numojo.routines.linalg.misc import issymmetric
 import numojo.routines.statistics as stat
 import numojo.routines.linalg as linalg
@@ -41,6 +42,9 @@ import numojo.routines.math.extrema as extrema
 import numojo.routines.math.rounding as rounding
 import numojo.routines.searching as searching
 import numojo.routines.sorting as sorting
+from numojo.core.indexing import IndexMethods
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.error import NumojoError
 
 
 # TODO: Currently the copyinit creates a ref counted view instead of a deep copy.
@@ -249,9 +253,9 @@ struct Matrix[
         """
         self = Self(data.shape, data.order())
         if data.is_c_contiguous() or data.is_f_contiguous():
-            memcpy(
+            unsafe_memcpy(
                 dest=self._buf.ptr,
-                src=data._buf.ptr + data.offset,
+                src=data._buf.ptr.unsafe_offset(data.offset),
                 count=data.size,
             )
         else:
@@ -312,7 +316,7 @@ struct Matrix[
         self.flags = Flags(
             self.shape, self.strides, owndata=True, writeable=True
         )
-        memcpy(
+        unsafe_memcpy(
             dest=self._buf.ptr,
             src=data._buf.ptr,
             count=self.size,
@@ -411,7 +415,7 @@ struct Matrix[
         )
 
     @always_inline("nodebug")
-    def __init__(out self, *, deinit take: Self):
+    def __init__(out self, *, deinit move: Self):
         """
         Transfer ownership of resources from `other` to `self`.
 
@@ -420,21 +424,21 @@ struct Matrix[
         is left in an invalid state and should not be used.
 
         Args:
-            take: The source matrix instance whose resources will be moved.
+            move: The source matrix instance whose resources will be moved.
 
         Notes:
             - This operation is efficient as it avoids copying data.
             - The `other` instance is deinitialized as part of this operation.
         """
-        self.shape = take.shape^
-        self.strides = take.strides^
-        self.size = take.size
-        self._buf = take._buf^
-        self.offset = take.offset
-        self.flags = take.flags^
+        self.shape = move.shape^
+        self.strides = move.strides^
+        self.size = move.size
+        self._buf = move._buf^
+        self.offset = move.offset
+        self.flags = move.flags^
 
     @always_inline("nodebug")
-    def __del__(deinit self):
+    def __deinit__(deinit self):
         """
         Destructor for the matrix instance.
 
@@ -611,7 +615,7 @@ struct Matrix[
         )
         if self.is_c_contiguous():
             var ptr = self._buf.offset(self.offset + x_norm * self.strides[0])
-            memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
+            unsafe_memcpy(dest=result._buf.ptr, src=ptr, count=self.shape[1])
         else:
             for j in range(self.shape[1]):
                 result[0, j] = self[x_norm, j]
@@ -641,8 +645,8 @@ struct Matrix[
             var slice_view = mat.get(Slice(1, 3), Slice(0, 2))  # Get a view of the submatrix
             ```
         """
-        start_x, end_x, step_x = x.indices(self.shape[0])
-        start_y, end_y, step_y = y.indices(self.shape[1])
+        var start_x, end_x, step_x = x.indices(self.shape[0])
+        var start_y, end_y, step_y = y.indices(self.shape[1])
 
         var offset = start_x * self.strides[0] + start_y * self.strides[1]
         return Matrix[Self.dtype](
@@ -996,14 +1000,14 @@ struct Matrix[
                 )
             )
         var idx_norm = Validator.normalize(idx, self.size)
-        return self._buf.ptr.load[width=width](self.offset + idx_norm)
+        return self._buf.ptr.unsafe_load[width=width](self.offset + idx_norm)
 
     def _load[width: Int = 1](self, x: Int, y: Int) -> SIMD[Self.dtype, width]:
         """
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.ptr.load[width=width](
+        return self._buf.ptr.unsafe_load[width=width](
             self.offset + x * self.strides[0] + y * self.strides[1]
         )
 
@@ -1012,7 +1016,7 @@ struct Matrix[
         `__getitem__` with width.
         Unsafe: No boundary check!
         """
-        return self._buf.ptr.load[width=width](self.offset + idx)
+        return self._buf.ptr.unsafe_load[width=width](self.offset + idx)
 
     def __setitem__(mut self, x: Int, y: Int, value: Scalar[Self.dtype]) raises:
         """
@@ -1137,9 +1141,9 @@ struct Matrix[
                 var dest_ptr = self._buf.offset(
                     self.offset + x * self.strides[0]
                 )
-                memcpy(
+                unsafe_memcpy(
                     dest=dest_ptr,
-                    src=value._buf.ptr + value.offset,
+                    src=value._buf.ptr.unsafe_offset(value.offset),
                     count=self.shape[1],
                 )
             else:
@@ -1152,8 +1156,10 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._buf.offset(
                         self.offset + x + j * self.strides[1]
-                    ).store(
-                        value._buf.ptr.load(value.offset + j * value.strides[1])
+                    ).unsafe_store(
+                        value._buf.ptr.unsafe_load(
+                            value.offset + j * value.strides[1]
+                        )
                     )
             else:
                 for j in range(self.shape[1]):
@@ -1231,9 +1237,9 @@ struct Matrix[
                 var dest_ptr = self._buf.offset(
                     self.offset + x * self.strides[0]
                 )
-                memcpy(
+                unsafe_memcpy(
                     dest=dest_ptr,
-                    src=value._buf.ptr + value.offset,
+                    src=value._buf.ptr.unsafe_offset(value.offset),
                     count=self.shape[1],
                 )
             else:
@@ -1246,8 +1252,10 @@ struct Matrix[
                 for j in range(self.shape[1]):
                     self._buf.offset(
                         self.offset + x + j * self.strides[1]
-                    ).store(
-                        value._buf.ptr.load(value.offset + j * value.strides[1])
+                    ).unsafe_store(
+                        value._buf.ptr.unsafe_load(
+                            value.offset + j * value.strides[1]
+                        )
                     )
             else:
                 for j in range(self.shape[1]):
@@ -1688,7 +1696,7 @@ struct Matrix[
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.ptr.store(
+        self._buf.ptr.unsafe_store(
             self.offset + x * self.strides[0] + y * self.strides[1], simd
         )
 
@@ -1699,7 +1707,7 @@ struct Matrix[
         `__setitem__` with width.
         Unsafe: No boundary check!
         """
-        self._buf.ptr.store(self.offset + idx, val)
+        self._buf.ptr.unsafe_store(self.offset + idx, val)
 
     def store[
         width: Int = 1
@@ -1739,7 +1747,7 @@ struct Matrix[
                 )
             )
         var idx_norm = Validator.normalize(idx, self.size)
-        self._buf.ptr.store[width=width](self.offset + idx_norm, val)
+        self._buf.ptr.unsafe_store[width=width](self.offset + idx_norm, val)
 
     # ===-------------------------------------------------------------------===#
     # Other dunders and auxiliary methods
@@ -1826,7 +1834,7 @@ struct Matrix[
         Returns:
             A string showing the matrix contents, shape, strides, order, and ownership.
         """
-        return String.write(self)
+        return String(self)
 
     def write_to[W: Writer](self, mut writer: W):
         """
@@ -2251,8 +2259,8 @@ struct Matrix[
         comptime width = simd_width_of[Self.dtype]()
 
         def vec_pow[w: Int](i: Int) {mut result, self, rhs}:
-            var vec = self._buf.ptr.load[width=w](i)
-            result._buf.ptr.store(i, vec.__pow__(rhs))
+            var vec = self._buf.ptr.unsafe_load[width=w](i)
+            result._buf.ptr.unsafe_store(i, vec.__pow__(rhs))
 
         vectorize[width](self.size, vec_pow)
         return result^
@@ -2297,9 +2305,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_add[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a + b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a + b)
 
             vectorize[width](self.size, vec_add)
         else:
@@ -2325,8 +2333,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_add_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a + other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a + other)
 
             vectorize[width](self.size, vec_add_scalar)
         else:
@@ -2374,9 +2382,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_sub[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a - b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a - b)
 
             vectorize[width](self.size, vec_sub)
         else:
@@ -2402,8 +2410,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_sub_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a - other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a - other)
 
             vectorize[width](self.size, vec_sub_scalar)
         else:
@@ -2451,9 +2459,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_mul[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a * b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a * b)
 
             vectorize[width](self.size, vec_mul)
         else:
@@ -2479,8 +2487,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_mul_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a * other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a * other)
 
             vectorize[width](self.size, vec_mul_scalar)
         else:
@@ -2528,9 +2536,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_div[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a / b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a / b)
 
             vectorize[width](self.size, vec_div)
         else:
@@ -2556,8 +2564,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_div_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a / other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a / other)
 
             vectorize[width](self.size, vec_div_scalar)
         else:
@@ -2676,9 +2684,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_floordiv[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a // b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a // b)
 
             vectorize[width](self.size, vec_floordiv)
         else:
@@ -2704,8 +2712,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_floordiv_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a // other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a // other)
 
             vectorize[width](self.size, vec_floordiv_scalar)
         else:
@@ -2819,9 +2827,9 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_mod[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                var b = other._buf.ptr.load[width=w](other.offset + i)
-                self._buf.ptr.store(self.offset + i, a % b)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                var b = other._buf.ptr.unsafe_load[width=w](other.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a % b)
 
             vectorize[width](self.size, vec_mod)
         else:
@@ -2847,8 +2855,8 @@ struct Matrix[
             comptime width = simd_width_of[Self.dtype]()
 
             def vec_mod_scalar[w: Int](i: Int) {mut self, other}:
-                var a = self._buf.ptr.load[width=w](self.offset + i)
-                self._buf.ptr.store(self.offset + i, a % other)
+                var a = self._buf.ptr.unsafe_load[width=w](self.offset + i)
+                self._buf.ptr.unsafe_store(self.offset + i, a % other)
 
             vectorize[width](self.size, vec_mod_scalar)
         else:
@@ -3480,7 +3488,9 @@ struct Matrix[
             shape=(src.shape[0], src.shape[1]), order=src.order()
         )
         for i in range(src.size):
-            casted_matrix._buf.ptr[i] = src._buf.ptr[i].cast[asdtype]()
+            casted_matrix._buf.ptr[unsafe_offset=i] = src._buf.ptr[
+                unsafe_offset=i
+            ].cast[asdtype]()
         return casted_matrix^
 
     def cumprod(self) raises -> Matrix[Self.dtype]:
@@ -3574,7 +3584,9 @@ struct Matrix[
         """
         if self.is_c_contiguous():
             for i in range(self.size):
-                (self._buf.ptr + self.offset + i).init_pointee_copy(fill_value)
+                (
+                    (self._buf.ptr.unsafe_offset(self.offset)).unsafe_offset(i)
+                ).unsafe_write(fill_value)
         else:
             for i in range(self.shape[0]):
                 for j in range(self.shape[1]):
@@ -3597,7 +3609,10 @@ struct Matrix[
         """
         var src = self.contiguous()
         var res = Matrix[Self.dtype](shape=(1, src.size), order=src.order())
-        memcpy(dest=res._buf.ptr, src=src._buf.ptr, count=res.size)
+        unsafe_memcpy(dest=res._buf.ptr, src=src._buf.ptr, count=res.size)
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `src` alive; hold it until the copy has finished.
+        _ = src^
         return res^
 
     def inv(self) raises -> Matrix[Self.dtype]:
@@ -3700,9 +3715,9 @@ struct Matrix[
         """
         var result = Self(shape=self.shape, order="C")
         if self.is_c_contiguous():
-            memcpy(
+            unsafe_memcpy(
                 dest=result._buf.ptr,
-                src=self._buf.ptr + self.offset,
+                src=self._buf.ptr.unsafe_offset(self.offset),
                 count=self.size,
             )
         else:
@@ -3918,20 +3933,21 @@ struct Matrix[
             for row in range(self.shape[0]):
                 for col in range(self.shape[1]):
                     var val = self._buf.ptr[
-                        self.offset
+                        unsafe_offset=self.offset
                         + row * self.strides[0]
                         + col * self.strides[1]
                     ]
                     var dest_row = Int(k // shape[1])
                     var dest_col = k % shape[1]
                     res._buf.ptr[
-                        dest_row * res.strides[0] + dest_col * res.strides[1]
+                        unsafe_offset=dest_row * res.strides[0]
+                        + dest_col * res.strides[1]
                     ] = val
                     k += 1
         else:
-            memcpy(
+            unsafe_memcpy(
                 dest=res._buf.ptr,
-                src=self._buf.ptr + self.offset,
+                src=self._buf.ptr.unsafe_offset(self.offset),
                 count=res.size,
             )
         return res^
@@ -3963,29 +3979,31 @@ struct Matrix[
         if shape[0] * shape[1] > self.size:
             var other = Matrix[Self.dtype](shape=shape, order=self.order())
             if self.is_c_contiguous():
-                memcpy(
+                unsafe_memcpy(
                     dest=other._buf.ptr,
-                    src=self._buf.ptr + self.offset,
+                    src=self._buf.ptr.unsafe_offset(self.offset),
                     count=self.size,
                 )
                 for i in range(self.size, other.size):
-                    other._buf.ptr[i] = 0
+                    other._buf.ptr[unsafe_offset=i] = 0
             else:
                 var min_rows = min(self.shape[0], shape[0])
                 var min_cols = min(self.shape[1], shape[1])
 
                 for j in range(min_cols):
                     for i in range(min_rows):
-                        other._buf.ptr[i + j * shape[0]] = self._buf.ptr[
-                            self.offset + i + j * self.shape[0]
+                        other._buf.ptr[
+                            unsafe_offset=i + j * shape[0]
+                        ] = self._buf.ptr[
+                            unsafe_offset=self.offset + i + j * self.shape[0]
                         ]
                     for i in range(min_rows, shape[0]):
-                        other._buf.ptr[i + j * shape[0]] = 0
+                        other._buf.ptr[unsafe_offset=i + j * shape[0]] = 0
 
                 # Zero the additional columns
                 for j in range(min_cols, shape[1]):
                     for i in range(shape[0]):
-                        other._buf.ptr[i + j * shape[0]] = 0
+                        other._buf.ptr[unsafe_offset=i + j * shape[0]] = 0
 
             self = other^
         else:
@@ -4257,7 +4275,12 @@ struct Matrix[
         var ndarray: NDArray[Self.dtype] = NDArray[Self.dtype](
             shape=NDArrayShape(src.shape[0], src.shape[1]), order=src.order()
         )
-        memcpy(dest=ndarray._buf.ptr, src=src._buf.ptr, count=ndarray.size)
+        unsafe_memcpy(
+            dest=ndarray._buf.ptr, src=src._buf.ptr, count=ndarray.size
+        )
+        # `DataContainer.origin` is untracked, so the raw pointer above does
+        # not keep `src` alive; hold it until the copy has finished.
+        _ = src^
 
         return ndarray^
 
@@ -4325,7 +4348,9 @@ struct Matrix[
             var pointer_d = numpyarray.__array_interface__[
                 PythonObject("data")
             ][0].unsafe_get_as_pointer[Self.dtype]()
-            memcpy(dest=pointer_d, src=src._buf.get_ptr(), count=src.size)
+            unsafe_memcpy(
+                dest=pointer_d, src=src._buf.get_ptr(), count=src.size
+            )
 
             return numpyarray^
 
@@ -4367,7 +4392,7 @@ struct Matrix[
         comptime width = simd_width_of[datatype]()
 
         def vec_fill[w: Int](i: Int) {mut matrix, fill_value}:
-            matrix._buf.ptr.store(i, SIMD[datatype, w](fill_value))
+            matrix._buf.ptr.unsafe_store(i, SIMD[datatype, w](fill_value))
 
         vectorize[width](matrix.size, vec_fill)
         return matrix^
@@ -4394,7 +4419,7 @@ struct Matrix[
         """
 
         var res = Matrix[datatype](shape, order)
-        memset_zero(res._buf.ptr, res.size)
+        unsafe_memset_zero(res._buf.ptr, res.size)
         return res^
 
     @staticmethod
@@ -4443,7 +4468,7 @@ struct Matrix[
         """
         var matrix = Matrix.zeros[datatype]((len, len), order)
         for i in range(len):
-            matrix._buf.ptr.store(
+            matrix._buf.ptr.unsafe_store(
                 i * matrix.strides[0] + i * matrix.strides[1], 1
             )
         return matrix^
@@ -4475,7 +4500,7 @@ struct Matrix[
             var rand_vec = SIMD[datatype, w]()
             for j in range(w):
                 rand_vec[j] = random_float64(0, 1).cast[datatype]()
-            result._buf.ptr.store(i, rand_vec)
+            result._buf.ptr.unsafe_store(i, rand_vec)
 
         vectorize[width](result.size, vec_rand)
         return result^
@@ -4578,7 +4603,9 @@ struct Matrix[
 
         var result = Matrix[datatype](shape=(1, num_elements), order=order)
         for i in range(num_elements):
-            result._buf.ptr[i] = start + Scalar[datatype](i) * step
+            result._buf.ptr[unsafe_offset=i] = (
+                start + Scalar[datatype](i) * step
+            )
 
         return result^
 
@@ -4628,7 +4655,9 @@ struct Matrix[
         var step = (stop - start) / Scalar[datatype](num - 1)
 
         for i in range(num):
-            result._buf.ptr[i] = start + Scalar[datatype](i) * step
+            result._buf.ptr[unsafe_offset=i] = (
+                start + Scalar[datatype](i) * step
+            )
 
         return result^
 
@@ -4665,8 +4694,8 @@ struct Matrix[
             var result = Matrix.zeros[datatype]((size, size), order)
             for i in range(size):
                 result._buf.ptr[
-                    i * result.strides[0] + i * result.strides[1]
-                ] = diagonal._buf.ptr[i]
+                    unsafe_offset=i * result.strides[0] + i * result.strides[1]
+                ] = diagonal._buf.ptr[unsafe_offset=i]
             return result^
         elif diagonal.shape[1] == 1:
             # Column vector: create diagonal matrix
@@ -4674,16 +4703,17 @@ struct Matrix[
             var result = Matrix.zeros[datatype]((size, size), order)
             for i in range(size):
                 result._buf.ptr[
-                    i * result.strides[0] + i * result.strides[1]
-                ] = diagonal._buf.ptr[i]
+                    unsafe_offset=i * result.strides[0] + i * result.strides[1]
+                ] = diagonal._buf.ptr[unsafe_offset=i]
             return result^
         else:
             # Matrix: extract diagonal
             var size = min(diagonal.shape[0], diagonal.shape[1])
             var result = Matrix[datatype](shape=(1, size), order=order)
             for i in range(size):
-                result._buf.ptr[i] = diagonal._buf.ptr[
-                    i * diagonal.strides[0] + i * diagonal.strides[1]
+                result._buf.ptr[unsafe_offset=i] = diagonal._buf.ptr[
+                    unsafe_offset=i * diagonal.strides[0]
+                    + i * diagonal.strides[1]
                 ]
             return result^
 
@@ -4785,7 +4815,9 @@ struct Matrix[
 
         if (shape[0] == 0) and (shape[1] == 0):
             var M = Matrix[datatype](shape=(1, len(object)))
-            memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
+            unsafe_memcpy(
+                dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size
+            )
             return M^
 
         if shape[0] * shape[1] != len(object):
@@ -4803,7 +4835,7 @@ struct Matrix[
                 )
             )
         var M = Matrix[datatype](shape=shape, order="C")
-        memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
+        unsafe_memcpy(dest=M._buf.ptr, src=object.unsafe_ptr(), count=M.size)
         if order == "F":
             M = M.reorder_layout()
         return M^
@@ -4892,7 +4924,7 @@ struct Matrix[
 
         var result = Matrix[datatype](shape=shape)
         for i in range(len(data)):
-            result._buf.ptr[i] = data[i]
+            result._buf.ptr[unsafe_offset=i] = data[i]
         return result^
 
 
@@ -5078,12 +5110,12 @@ def _arithmetic_func_matrix_matrix_to_matrix[
 
     var res = Matrix[dtype](shape=A.shape, order=A.order())
 
-    def vec_func[simd_width: Int](i: Int) {mut res, read A, read B}:
-        res._buf.ptr.store(
+    def vec_func[simd_width: Int](i: Int) {mut res, imm A, imm B}:
+        res._buf.ptr.unsafe_store(
             i,
             simd_func(
-                A._buf.ptr.load[width=simd_width](i),
-                B._buf.ptr.load[width=simd_width](i),
+                A._buf.ptr.unsafe_load[width=simd_width](i),
+                B._buf.ptr.unsafe_load[width=simd_width](i),
             ),
         )
 
@@ -5117,8 +5149,10 @@ def _arithmetic_func_matrix_to_matrix[
 
     var C: Matrix[dtype] = Matrix[dtype](shape=A.shape, order=A.order())
 
-    def vec_func[simd_width: Int](i: Int) {mut C, read A}:
-        C._buf.ptr.store(i, simd_func(A._buf.ptr.load[width=simd_width](i)))
+    def vec_func[simd_width: Int](i: Int) {mut C, imm A}:
+        C._buf.ptr.unsafe_store(
+            i, simd_func(A._buf.ptr.unsafe_load[width=simd_width](i))
+        )
 
     vectorize[simd_width](A.size, vec_func)
 
@@ -5184,15 +5218,15 @@ def _logic_func_matrix_matrix_to_matrix[
 
     # Use vectorized comparison for better performance
     # Process elements using input dtype width, then store results as bool
-    def vec_compare[w: Int](i: Int) {mut C, read A, read B}:
-        var a_vec = A._buf.ptr.load[width=w](i)
-        var b_vec = B._buf.ptr.load[width=w](i)
+    def vec_compare[w: Int](i: Int) {mut C, imm A, imm B}:
+        var a_vec = A._buf.ptr.unsafe_load[width=w](i)
+        var b_vec = B._buf.ptr.unsafe_load[width=w](i)
         var result = simd_func[dtype, w](a_vec, b_vec)
 
         # Store bool results element by element to avoid width mismatch
         for j in range(w):
             if i + j < A.size:
-                C._buf.ptr[i + j] = result[j]
+                C._buf.ptr[unsafe_offset=i + j] = result[j]
 
     vectorize[width](A.size, vec_compare)
     return C^

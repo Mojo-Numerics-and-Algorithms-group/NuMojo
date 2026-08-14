@@ -156,24 +156,24 @@ def test_diag() raises:
     x_nm.resize(Shape(3, 3))
     var x_np = np.arange(0, 9, step=1).reshape(3, 3)
 
-    x_nm_k0 = nm.diag[f32](x_nm, k=0)
-    x_np_k0 = np.diag(x_np, k=0)
+    var x_nm_k0 = nm.diag[f32](x_nm, k=0)
+    var x_np_k0 = np.diag(x_np, k=0)
     check(x_nm_k0, x_np_k0, "Diag is broken (k=0)")
 
-    x_nm_k1 = nm.diag[f32](x_nm, k=1)
-    x_np_k1 = np.diag(x_np, k=1)
+    var x_nm_k1 = nm.diag[f32](x_nm, k=1)
+    var x_np_k1 = np.diag(x_np, k=1)
     check(x_nm_k1, x_np_k1, "Diag is broken (k=1)")
 
-    x_nm_km1 = nm.diag[f32](x_nm, k=-1)
-    x_np_km1 = np.diag(x_np, k=-1)
+    var x_nm_km1 = nm.diag[f32](x_nm, k=-1)
+    var x_np_km1 = np.diag(x_np, k=-1)
     check(x_nm_km1, x_np_km1, "Diag is broken (k=-1)")
 
-    x_nm_rev_k1 = nm.diag[f32](x_nm_k0, k=0)
-    x_np_rev_k1 = np.diag(x_np_k0, k=0)
+    var x_nm_rev_k1 = nm.diag[f32](x_nm_k0, k=0)
+    var x_np_rev_k1 = np.diag(x_np_k0, k=0)
     check(x_nm_rev_k1, x_np_rev_k1, "Diag reverse is broken (k=0)")
 
-    x_nm_rev_km1 = nm.diag[f32](x_nm_km1, k=-1)
-    x_np_rev_km1 = np.diag(x_np_km1, k=-1)
+    var x_nm_rev_km1 = nm.diag[f32](x_nm_km1, k=-1)
+    var x_np_rev_km1 = np.diag(x_np_km1, k=-1)
     check(x_nm_rev_km1, x_np_rev_km1, "Diag reverse is broken (k=-1)")
 
 

@@ -10,9 +10,11 @@
 GPU kernel functions and launch helpers for full-array reduction ops.
 """
 
-from std.gpu import thread_idx, block_idx, block_dim, barrier
-from std.gpu.host import DeviceContext
-from std.memory import AddressSpace, stack_allocation, alloc
+from std.gpu import thread_idx, block_idx, block_dim
+from max.gpu.sync import barrier
+from max.gpu.host import DeviceContext
+from std.memory import AddressSpace, stack_allocation
+from std.memory.alloc import unsafe_alloc
 
 from .binary_ops import launch_config
 
@@ -20,8 +22,8 @@ from .binary_ops import launch_config
 def sum_reduce_kernel[
     dtype: DType, block_size: Int
 ](
-    partial_sums: UnsafePointer[Scalar[dtype], MutAnyOrigin],
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    partial_sums: Pointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
 ):
     """GPU kernel: each block reduces its chunk of `a` to one partial sum.
@@ -38,27 +40,27 @@ def sum_reduce_kernel[
     var idx = bid * block_size + tid
 
     if idx < size:
-        smem[tid] = a[idx]
+        smem[unsafe_offset=tid] = a[unsafe_offset=idx]
     else:
-        smem[tid] = Scalar[dtype](0)
+        smem[unsafe_offset=tid] = Scalar[dtype](0)
     barrier()
 
     var stride = block_size >> 1
     while stride > 0:
         if tid < stride:
-            smem[tid] += smem[tid + stride]
+            smem[unsafe_offset=tid] += smem[unsafe_offset=tid + stride]
         barrier()
         stride >>= 1
 
     if tid == 0:
-        partial_sums[bid] = smem[0]
+        partial_sums[unsafe_offset=bid] = smem[unsafe_offset=0]
 
 
 def launch_sum_reduce[
     dtype: DType
 ](
     context: DeviceContext,
-    a: UnsafePointer[Scalar[dtype], MutAnyOrigin],
+    a: Pointer[Scalar[dtype], MutAnyOrigin],
     size: Int,
 ) raises -> Scalar[dtype]:
     """Launch the GPU sum-reduction kernel and combine partial sums.
@@ -85,13 +87,13 @@ def launch_sum_reduce[
         block_dim=block_dim_size,
     )
 
-    var host_partial = alloc[Scalar[dtype]](num_blocks)
+    var host_partial = unsafe_alloc[Scalar[dtype]](num_blocks)
     partial_sums.enqueue_copy_to(host_partial)
     context.synchronize()
 
     var result = Scalar[dtype](0)
     for i in range(num_blocks):
-        result += host_partial[i]
+        result += host_partial[unsafe_offset=i]
 
-    host_partial.free()
+    host_partial.unsafe_free()
     return result

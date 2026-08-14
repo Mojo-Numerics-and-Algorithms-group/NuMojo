@@ -31,7 +31,7 @@ def test_fancy_index_2d_free_fn() raises:
 
 
 def test_fancy_index_getitem_list_syntax() raises:
-    """a[[rows, cols]] subscript syntax via List[NDArray[DType.int]]."""
+    """A[[rows, cols]] subscript syntax via List[NDArray[DType.int]]."""
     var a = nm.arange[nm.i32](0, 12).reshape(Shape(3, 4))
     var rows = nm.array[nm.int]("[0, 1, 2]")
     var cols = nm.array[nm.int]("[2, 3, 0]")

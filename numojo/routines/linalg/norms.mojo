@@ -16,6 +16,7 @@ from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
 )
+from numojo.core.type_aliases import Shape
 
 
 def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -67,8 +68,8 @@ def det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
     var U: Matrix[dtype]
     var L: Matrix[dtype]
     var A_pivoted_s = partial_pivoting(A.copy())
-    A_pivoted = A_pivoted_s[0].copy()
-    s = A_pivoted_s[2].copy()
+    var A_pivoted = A_pivoted_s[0].copy()
+    var s = A_pivoted_s[2].copy()
     var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
         A_pivoted
     )
@@ -123,8 +124,10 @@ def trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result._buf.ptr.store(
-            0, result._buf.ptr.load(0) + array._buf.ptr[row * cols + col]
+        result._buf.ptr.unsafe_store(
+            0,
+            result._buf.ptr.unsafe_load(0)
+            + array._buf.ptr[unsafe_offset=row * cols + col],
         )
 
     return result^

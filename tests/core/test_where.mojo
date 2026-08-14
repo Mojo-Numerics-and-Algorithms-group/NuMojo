@@ -6,7 +6,7 @@ from numojo.prelude import *
 
 
 def test_where_array_array() raises:
-    """where(cond, x, y) with two arrays picks x where True, y where False."""
+    """Where(cond, x, y) with two arrays picks x where True, y where False."""
     var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
     var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
     var mask = nm.array[boolean]("[1, 0, 1, 0]")
@@ -19,7 +19,7 @@ def test_where_array_array() raises:
 
 
 def test_where_array_scalar() raises:
-    """where(cond, x, scalar) fills scalar where False."""
+    """Where(cond, x, scalar) fills scalar where False."""
     var a = nm.array[nm.f32]("[1.0, 2.0, 3.0, 4.0]")
     var mask = nm.array[boolean]("[1, 0, 1, 0]")
     var result = nm.`where`(mask, a, Scalar[nm.f32](0.0))
@@ -30,7 +30,7 @@ def test_where_array_scalar() raises:
 
 
 def test_where_scalar_array() raises:
-    """where(cond, scalar, y) fills scalar where True."""
+    """Where(cond, scalar, y) fills scalar where True."""
     var b = nm.array[nm.f32]("[10.0, 20.0, 30.0, 40.0]")
     var mask = nm.array[boolean]("[1, 0, 1, 0]")
     var result = nm.`where`(mask, Scalar[nm.f32](-1.0), b)
@@ -63,7 +63,7 @@ def test_where_all_false() raises:
 
 
 def test_where_2d() raises:
-    """where works element-wise on 2-D arrays."""
+    """Where works element-wise on 2-D arrays."""
     var a = nm.arange[nm.i32](1, 5).reshape(Shape(2, 2))
     var b = nm.zeros[nm.i32](Shape(2, 2))
     # mask = [[True, False],[False, True]]

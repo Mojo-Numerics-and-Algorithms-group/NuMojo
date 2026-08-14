@@ -12,7 +12,6 @@ Implements Item type.
 `Item` is a series of `Int` on the heap used to index into N-dimensional arrays.
 It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to access `arr[1, 2, 3]`.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

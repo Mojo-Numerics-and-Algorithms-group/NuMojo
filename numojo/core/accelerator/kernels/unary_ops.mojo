@@ -10,7 +10,6 @@
 GPU kernel functions and launch helpers for elementwise unary operations
 on contiguous `AcceleratorNDArray` buffers.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

@@ -12,7 +12,6 @@ The shape is stored as a contiguous buffer of integers, with the number of dimen
 The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
 and properties like size and rank.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

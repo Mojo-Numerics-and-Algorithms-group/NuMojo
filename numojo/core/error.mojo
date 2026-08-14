@@ -23,7 +23,6 @@ Currently we have a few common error categories like
 
 We can expand this list in the future as needed.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

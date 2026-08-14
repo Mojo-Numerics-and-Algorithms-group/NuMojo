@@ -9,7 +9,6 @@
 ---------------------------------------------------------------
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

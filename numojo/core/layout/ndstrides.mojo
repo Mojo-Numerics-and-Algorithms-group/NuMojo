@@ -10,7 +10,6 @@
 Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
 which is used to calculate the memory offset for each dimension when indexing into the array.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

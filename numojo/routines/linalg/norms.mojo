@@ -9,7 +9,6 @@
 ------------------------------------------------------
 This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
 """
-
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#

@@ -9,7 +9,6 @@
 -------------------------------------------------------------------
 This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
 """
-
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#

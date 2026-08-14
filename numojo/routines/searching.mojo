@@ -9,7 +9,6 @@
 ----------------------------------------------
 This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """
-
 # ===----------------------------------------------------------------------===#
 # Stdlib
 # ===----------------------------------------------------------------------===#

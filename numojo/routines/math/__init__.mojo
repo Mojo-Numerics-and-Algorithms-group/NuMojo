@@ -9,7 +9,6 @@
 
 Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
 """
-
 # ===----------------------------------------------------------------------===#
 # Local
 # ===----------------------------------------------------------------------===#

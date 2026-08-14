@@ -11,7 +11,6 @@ Functions to traverse a multi-dimensional array.
 This module provides both recursive and iterative traversal methods,
 which can be used for various indexing and slicing operations in NuMojo.
 """
-
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#

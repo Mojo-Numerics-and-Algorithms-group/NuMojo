@@ -9,7 +9,6 @@
 --------------------------------------------
 Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
 """
-
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#

@@ -10,7 +10,6 @@ Type aliases for commonly used data types in NuMojo.
 This module provides convenient, user-friendly aliases for core types such as shapes,
 strides, and complex scalars, as well as a symbolic constant for the imaginary unit.
 """
-
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#

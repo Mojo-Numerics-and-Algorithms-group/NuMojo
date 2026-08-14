@@ -10,12 +10,21 @@
 A reference-counted container for contiguous data buffers, used for NDArray and Matrix.
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
-
-from std.memory import UnsafePointer, unsafe_memcpy
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.atomic import (
+    Atomic,
+    fence,
+    Ordering,
+)
+from std.memory import unsafe_memcpy
 from std.memory.alloc import unsafe_alloc
-from std.atomic import Atomic, Ordering, fence
 from std.os import abort
 
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
 
 
@@ -291,7 +300,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         return self.ptr.unsafe_offset(offset)
 
     @always_inline
-    def __getitem__(self, idx: Int) raises -> Scalar[Self.dtype]:
+    def __getitem__(self, idx: Int) -> Scalar[Self.dtype]:
         """
         Return the element at the specified index.
 
@@ -307,7 +316,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         return self.ptr[unsafe_offset=idx]
 
     @always_inline
-    def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]) raises:
+    def __setitem__(mut self, idx: Int, val: Scalar[Self.dtype]):
         """
         Set the element at the specified index to the given value.
 

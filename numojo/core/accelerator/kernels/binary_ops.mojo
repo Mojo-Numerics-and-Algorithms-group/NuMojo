@@ -10,9 +10,20 @@
 GPU kernel functions and launch helpers for elementwise binary operations
 on contiguous `AcceleratorNDArray` buffers.
 """
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.gpu import (
+    block_dim,
+    block_idx,
+    thread_idx,
+)
 
-from std.gpu import thread_idx, block_idx, block_dim
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
 from max.gpu.host import DeviceContext
+
 
 comptime ADD = 0
 comptime SUB = 1

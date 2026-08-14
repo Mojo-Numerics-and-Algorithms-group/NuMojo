@@ -52,7 +52,7 @@ def `where`[
     var mask_c = mask.contiguous()
 
     for i in range(x.size):
-        if mask_c._buf.ptr[unsafe_offset=i] == True:
+        if mask_c.unsafe_get(i) == True:
             x.itemset(i, scalar)
 
 
@@ -82,8 +82,8 @@ def `where`[
     var y_c = y.contiguous()
 
     for i in range(x.size):
-        if mask_c._buf.ptr[unsafe_offset=i] == True:
-            x.itemset(i, y_c._buf.ptr[unsafe_offset=i])
+        if mask_c.unsafe_get(i) == True:
+            x.itemset(i, y_c.unsafe_get(i))
 
 
 def `where`[
@@ -155,10 +155,10 @@ def `where`[
 
     var result = NDArray[dtype](cond_c.shape)
     for i in range(result.size):
-        if cond_c._buf.ptr[unsafe_offset=i]:
-            result._buf.ptr[unsafe_offset=i] = x_c._buf.ptr[unsafe_offset=i]
+        if cond_c.unsafe_get(i):
+            result.unsafe_set(i, x_c.unsafe_get(i))
         else:
-            result._buf.ptr[unsafe_offset=i] = y_c._buf.ptr[unsafe_offset=i]
+            result.unsafe_set(i, y_c.unsafe_get(i))
     return result^
 
 
@@ -204,9 +204,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf.ptr[unsafe_offset=i] = x_c._buf.ptr[
-            unsafe_offset=i
-        ] if cond_c._buf.ptr[unsafe_offset=i] else y
+        result.unsafe_set(i, x_c.unsafe_get(i) if cond_c.unsafe_get(i) else y)
     return result^
 
 
@@ -252,9 +250,7 @@ def `where`[
 
     var result = NDArray[dtype](bc_shape)
     for i in range(result.size):
-        result._buf.ptr[unsafe_offset=i] = x if cond_c._buf.ptr[
-            unsafe_offset=i
-        ] else y_c._buf.ptr[unsafe_offset=i]
+        result.unsafe_set(i, x if cond_c.unsafe_get(i) else y_c.unsafe_get(i))
     return result^
 
 
@@ -344,7 +340,7 @@ def fancy_index[
     for i in range(out_size):
         var coords = List[Int](capacity=n_idx)
         for k in range(n_idx):
-            var raw = Int(bc_indices[k]._buf.ptr[unsafe_offset=i])
+            var raw = Int(bc_indices[k].unsafe_get(i))
             var ax_size = a.shape[k]
             if raw < -ax_size or raw >= ax_size:
                 raise Error(
@@ -356,7 +352,7 @@ def fancy_index[
             if raw < 0:
                 raw += ax_size
             coords.append(raw)
-        result._buf.ptr[unsafe_offset=i] = a._getitem(coords)
+        result.unsafe_set(i, a._getitem(coords))
 
     return result^
 
@@ -464,7 +460,7 @@ def compress[
 
     var number_of_true: Int = 0
     for i in range(condition.size):
-        number_of_true += Int(condition._buf.ptr[unsafe_offset=i])
+        number_of_true += Int(condition.unsafe_get(i))
 
     var shape_of_res: NDArrayShape = a.shape
     shape_of_res[normalized_axis] = number_of_true
@@ -506,11 +502,10 @@ def compress[
                         )
                         remainder %= res_strides.unsafe_load(j)
 
-                (
-                    result._buf.ptr.unsafe_offset(
-                        IndexMethods.get_1d_index(item, result.strides)
-                    )
-                ).unsafe_write(current_slice._buf.ptr[unsafe_offset=offset])
+                result.unsafe_set(
+                    IndexMethods.get_1d_index(item, result.strides),
+                    current_slice.unsafe_get(offset),
+                )
 
                 count += 1
 
@@ -662,15 +657,12 @@ def take_along_axis[
                 indices_slice
             ]
             unsafe_memcpy(
-                dest=result._buf.ptr.unsafe_offset(
+                dest=result.unsafe_ptr().unsafe_offset(
                     i * result.shape[normalized_axis]
                 ),
-                src=arr_slice_after_applying_indices._buf.ptr,
+                src=arr_slice_after_applying_indices.unsafe_ptr(),
                 count=result.shape[normalized_axis],
             )
-            # `DataContainer.origin` is untracked, so the raw pointer above does
-            # not keep `arr_slice_after_applying_indices` alive; hold it until the copy has finished.
-            _ = arr_slice_after_applying_indices^
     else:
         # If axis is not the last axis, the data is not contiguous.
         for i in range(length_of_iterator):
@@ -684,10 +676,9 @@ def take_along_axis[
             var arr_slice = arr_iterator.ith(i)
             var arr_slice_after_applying_indices = arr_slice[indices_slice]
             for j in range(arr_slice_after_applying_indices.size):
-                (
-                    result._buf.ptr.unsafe_offset(Int(indices_slice_offsets[j]))
-                ).unsafe_write(
-                    arr_slice_after_applying_indices._buf.ptr[unsafe_offset=j]
+                result.unsafe_set(
+                    Int(indices_slice_offsets[j]),
+                    arr_slice_after_applying_indices.unsafe_get(j),
                 )
 
     return result^
@@ -780,7 +771,7 @@ def take[
 
     for outer in range(outer_size):
         for i in range(n_idx):
-            var raw = Int(indices_c._buf.ptr[unsafe_offset=i])
+            var raw = Int(indices_c.unsafe_get(i))
             if raw < -axis_size or raw >= axis_size:
                 raise Error(
                     String(
@@ -797,14 +788,10 @@ def take[
             )
             var dst_base = outer * n_idx * inner_size + i * inner_size
             unsafe_memcpy(
-                dest=result._buf.ptr.unsafe_offset(dst_base),
-                src=a_c._buf.ptr.unsafe_offset(src_base),
+                dest=result.unsafe_ptr().unsafe_offset(dst_base),
+                src=a_c.unsafe_ptr().unsafe_offset(src_base),
                 count=inner_size,
             )
-
-    # `DataContainer.origin` is untracked, so the raw pointers above do not
-    # keep `a_c` alive; hold it until the loops are done.
-    _ = a_c^
 
     return result^
 
@@ -943,7 +930,7 @@ def put[
     var values_c = values.contiguous()
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf.ptr[unsafe_offset=i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
                 String(
@@ -955,7 +942,7 @@ def put[
         if norm_idx < 0:
             norm_idx += a.size
 
-        a.itemset(norm_idx, values_c._buf.ptr[unsafe_offset=i % values_c.size])
+        a.itemset(norm_idx, values_c.unsafe_get(i % values_c.size))
 
 
 def put[
@@ -1000,7 +987,7 @@ def put[
     var indices_c = indices.contiguous()
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf.ptr[unsafe_offset=i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
                 String(
@@ -1107,7 +1094,7 @@ def unravel_index(
         result.append(NDArray[DType.int](indices.shape))
 
     for i in range(indices_c.size):
-        var raw = Int(indices_c._buf.ptr[unsafe_offset=i])
+        var raw = Int(indices_c.unsafe_get(i))
         if raw < 0 or raw >= size:
             raise Error(
                 String(
@@ -1120,16 +1107,12 @@ def unravel_index(
         if order == "C":
             for d in range(shape.ndim - 1, -1, -1):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
-                    rem % dim
-                )
+                result[d].unsafe_set(i, Scalar[DType.int](rem % dim))
                 rem //= dim
         elif order == "F":
             for d in range(shape.ndim):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
-                    rem % dim
-                )
+                result[d].unsafe_set(i, Scalar[DType.int](rem % dim))
                 rem //= dim
 
     return result^
@@ -1217,7 +1200,7 @@ def ravel_multi_index(
         var flat = 0
         if order == "C":
             for d in range(shape.ndim):
-                var coord = Int(bc_indices[d]._buf.ptr[unsafe_offset=i])
+                var coord = Int(bc_indices[d].unsafe_get(i))
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
@@ -1230,7 +1213,7 @@ def ravel_multi_index(
         elif order == "F":
             var stride = 1
             for d in range(shape.ndim):
-                var coord = Int(bc_indices[d]._buf.ptr[unsafe_offset=i])
+                var coord = Int(bc_indices[d].unsafe_get(i))
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
@@ -1242,7 +1225,7 @@ def ravel_multi_index(
                 flat += coord * stride
                 stride *= dim
 
-        result._buf.ptr[unsafe_offset=i] = Scalar[DType.int](flat)
+        result.unsafe_set(i, Scalar[DType.int](flat))
 
     return result^
 
@@ -1275,14 +1258,14 @@ def flatnonzero[
 
     var count: Int = 0
     for i in range(a_c.size):
-        if a_c._buf.ptr[unsafe_offset=i] != 0:
+        if a_c.unsafe_get(i) != 0:
             count += 1
 
     var result = NDArray[DType.int](NDArrayShape(count))
     var out_idx = 0
     for i in range(a_c.size):
-        if a_c._buf.ptr[unsafe_offset=i] != 0:
-            result._buf.ptr[unsafe_offset=out_idx] = Scalar[DType.int](i)
+        if a_c.unsafe_get(i) != 0:
+            result.unsafe_set(out_idx, Scalar[DType.int](i))
             out_idx += 1
 
     return result^
@@ -1326,7 +1309,7 @@ def nonzero[
 
     var count: Int = 0
     for i in range(a_c.size):
-        if a_c._buf.ptr[unsafe_offset=i] != 0:
+        if a_c.unsafe_get(i) != 0:
             count += 1
 
     var result = List[NDArray[DType.int]]()
@@ -1335,14 +1318,12 @@ def nonzero[
 
     var out_idx = 0
     for flat in range(a_c.size):
-        if a_c._buf.ptr[unsafe_offset=flat] != 0:
+        if a_c.unsafe_get(flat) != 0:
             var rem = flat
             for d in range(a.ndim - 1, -1, -1):
                 var coord = rem % a.shape[d]
                 rem //= a.shape[d]
-                result[d]._buf.ptr[unsafe_offset=out_idx] = Scalar[DType.int](
-                    coord
-                )
+                result[d].unsafe_set(out_idx, Scalar[DType.int](coord))
             out_idx += 1
 
     return result^
@@ -1413,24 +1394,24 @@ def searchsorted[
     var result = NDArray[DType.int](Shape(v_c.shape))
 
     for i in range(v_c.size):
-        var target = v_c._buf.ptr[unsafe_offset=i]
+        var target = v_c.unsafe_get(i)
         var lo = 0
         var hi = n
         if side == "left":
             while lo < hi:
                 var mid = (lo + hi) // 2
-                if a_c._buf.ptr[unsafe_offset=mid] < target:
+                if a_c.unsafe_get(mid) < target:
                     lo = mid + 1
                 else:
                     hi = mid
         else:
             while lo < hi:
                 var mid = (lo + hi) // 2
-                if a_c._buf.ptr[unsafe_offset=mid] <= target:
+                if a_c.unsafe_get(mid) <= target:
                     lo = mid + 1
                 else:
                     hi = mid
-        result._buf.ptr[unsafe_offset=i] = Scalar[DType.int](lo)
+        result.unsafe_set(i, Scalar[DType.int](lo))
 
     return result^
 
@@ -1492,14 +1473,14 @@ def searchsorted[
     if side == "left":
         while lo < hi:
             var mid = (lo + hi) // 2
-            if a_c._buf.ptr[unsafe_offset=mid] < v:
+            if a_c.unsafe_get(mid) < v:
                 lo = mid + 1
             else:
                 hi = mid
     else:
         while lo < hi:
             var mid = (lo + hi) // 2
-            if a_c._buf.ptr[unsafe_offset=mid] <= v:
+            if a_c.unsafe_get(mid) <= v:
                 lo = mid + 1
             else:
                 hi = mid

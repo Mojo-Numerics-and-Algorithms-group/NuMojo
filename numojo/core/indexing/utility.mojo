@@ -14,18 +14,19 @@ SECTIONS OF THE FILE:
 2. Numojo.NDArray to other collections.
 3. Miscellaneous utility functions.
 """
-from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
-from std.collections import Dict
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.memory import unsafe_memcpy
-from std.memory import UnsafePointer
-from std.python import Python, PythonObject
-from std.sys import simd_width_of
+from std.python import (
+    Python,
+    PythonObject,
+)
 
-
-from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
-from numojo.core.error import NumojoError
 
 
 comptime newaxis: NewAxis = NewAxis()
@@ -95,9 +96,9 @@ def bool_to_numeric[
     for i in range(array.size):
         var t: Bool = array.item(i)
         if t:
-            result._buf.ptr[unsafe_offset=i] = 1
+            result.unsafe_set(i, 1)
         else:
-            result._buf.ptr[unsafe_offset=i] = 0
+            result.unsafe_set(i, 0)
     return result^
 
 
@@ -175,7 +176,6 @@ def to_numpy[dtype: DType](array: NDArray[dtype]) raises -> PythonObject:
             0
         ].unsafe_get_as_pointer[dtype]()
         unsafe_memcpy(dest=pointer_d, src=array.unsafe_ptr(), count=array.size)
-        _ = array
 
         return numpyarray^
 

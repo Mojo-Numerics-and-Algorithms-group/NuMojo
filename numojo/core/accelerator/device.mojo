@@ -10,14 +10,25 @@
 This module defines the `Device` struct, which represents an execution device for array and matrix operations.
 It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.
 """
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.sys.info import (
-    has_nvidia_gpu_accelerator,
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
+    has_nvidia_gpu_accelerator,
 )
+
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
 from max.gpu.host import DeviceContext
 
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
+
 
 comptime cpu = Device.CPU
 comptime cuda = Device.CUDA

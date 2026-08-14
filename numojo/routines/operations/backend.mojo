@@ -9,16 +9,24 @@
 ----------------------------------------------------------------
 Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
-
-from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
-from std.builtin.simd import FastMathFlag
 
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
+
 
 comptime MIN_SIMD_WIDTHS_PER_TASK = 8
 """Minimum number of SIMD-widths of work each parallel task should get before
@@ -52,9 +60,11 @@ def _apply_unary_chunk[
     kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
         type, simd_w
     ],
+    src_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     start: Int,
     end: Int,
 ):
@@ -76,10 +86,13 @@ def _apply_binary_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
+    src1_origin: Origin,
+    src2_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src1: Pointer[Scalar[dtype], MutAnyOrigin],
-    src2: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], src1_origin],
+    src2: Pointer[Scalar[dtype], src2_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     start: Int,
     end: Int,
 ):
@@ -112,9 +125,11 @@ def _apply_binary_scalar_chunk[
     ) capturing -> SIMD[type, simd_w],
     *,
     scalar_first: Bool,
+    src_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
@@ -143,9 +158,11 @@ def _apply_binary_int_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], Int
     ) capturing -> SIMD[type, simd_w],
+    src_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     intval: Int,
     start: Int,
     end: Int,
@@ -170,10 +187,13 @@ def _apply_binary_predicate_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[DType.bool, simd_w],
+    src1_origin: Origin,
+    src2_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src1: Pointer[Scalar[dtype], MutAnyOrigin],
-    src2: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], src1_origin],
+    src2: Pointer[Scalar[dtype], src2_origin],
+    dst: Pointer[Scalar[DType.bool], dst_origin],
     start: Int,
     end: Int,
 ):
@@ -206,9 +226,11 @@ def _apply_binary_predicate_scalar_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[DType.bool, simd_w],
+    src_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[DType.bool], dst_origin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
@@ -241,9 +263,11 @@ def _apply_unary_predicate_chunk[
     kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) capturing -> SIMD[
         DType.bool, simd_w
     ],
+    src_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[DType.bool], MutAnyOrigin],
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[DType.bool], dst_origin],
     start: Int,
     end: Int,
 ):
@@ -267,11 +291,15 @@ def _apply_ternary_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
+    src1_origin: Origin,
+    src2_origin: Origin,
+    src3_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src1: Pointer[Scalar[dtype], MutAnyOrigin],
-    src2: Pointer[Scalar[dtype], MutAnyOrigin],
-    src3: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], src1_origin],
+    src2: Pointer[Scalar[dtype], src2_origin],
+    src3: Pointer[Scalar[dtype], src3_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     start: Int,
     end: Int,
 ):
@@ -305,10 +333,13 @@ def _apply_ternary_scalar_chunk[
     kernel: def[type: DType, simd_w: Int](
         SIMD[type, simd_w], SIMD[type, simd_w], SIMD[type, simd_w]
     ) capturing -> SIMD[type, simd_w],
+    src1_origin: Origin,
+    src2_origin: Origin,
+    dst_origin: MutOrigin,
 ](
-    src1: Pointer[Scalar[dtype], MutAnyOrigin],
-    src2: Pointer[Scalar[dtype], MutAnyOrigin],
-    dst: Pointer[Scalar[dtype], MutAnyOrigin],
+    src1: Pointer[Scalar[dtype], src1_origin],
+    src2: Pointer[Scalar[dtype], src2_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
     scalar: Scalar[dtype],
     start: Int,
     end: Int,
@@ -482,9 +513,7 @@ struct HostExecutor:
         # Treat it as a scalar and apply the function
         if array.ndim == 0:
             var result_array = _0darray(
-                val=kernel[dtype, 1](
-                    (array._buf.ptr.unsafe_offset(array.offset))[]
-                )
+                val=kernel[dtype, 1](array.unsafe_get(0))
             )
             return result_array^
 

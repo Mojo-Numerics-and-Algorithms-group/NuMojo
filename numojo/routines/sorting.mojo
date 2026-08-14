@@ -287,7 +287,7 @@ def argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
     """
     var I = Matrix[DType.int](shape=(1, A.size), order=A.order())
     for i in range(I.size):
-        I._buf.ptr[unsafe_offset=i] = Scalar[DType.int](i)
+        I._store_idx(i, Scalar[DType.int](i))
     var B: Matrix[dtype]
     if A.order() == "C":
         B = A.flatten()
@@ -359,15 +359,10 @@ def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
         for i in range(1, end):
-            if (
-                result._buf.ptr[unsafe_offset=i - 1]
-                > result._buf.ptr[unsafe_offset=i]
-            ):
-                var temp = result._buf.ptr[unsafe_offset=i - 1]
-                result._buf.ptr[unsafe_offset=i - 1] = result._buf.ptr[
-                    unsafe_offset=i
-                ]
-                result._buf.ptr[unsafe_offset=i] = temp
+            if result.unsafe_get(i - 1) > result.unsafe_get(i):
+                var temp = result.unsafe_get(i - 1)
+                result.unsafe_set(i - 1, result.unsafe_get(i))
+                result.unsafe_set(i, temp)
     return result^
 
 
@@ -445,14 +440,14 @@ def bubble_sort[dtype: DType](ndarray: NDArray[dtype]) raises -> NDArray[dtype]:
 
     for i in range(length):
         for j in range(length - i - 1):
-            if result._buf.ptr.unsafe_load[width=1](
-                j
-            ) > result._buf.ptr.unsafe_load[width=1](j + 1):
-                var temp = result._buf.ptr.unsafe_load[width=1](j)
-                result._buf.ptr.unsafe_store(
-                    j, result._buf.ptr.unsafe_load[width=1](j + 1)
+            if result.unsafe_load[width=1](j) > result.unsafe_load[width=1](
+                j + 1
+            ):
+                var temp = result.unsafe_load[width=1](j)
+                result.unsafe_store[width=1](
+                    j, result.unsafe_load[width=1](j + 1)
                 )
-                result._buf.ptr.unsafe_store(j + 1, temp)
+                result.unsafe_store[width=1](j + 1, temp)
 
     return result^
 
@@ -583,6 +578,15 @@ def argsort_quick_sort_1d[
     return indices^
 
 
+def _unsafe_swap[
+    dtype: DType
+](mut array: NDArray[dtype], left: Int, right: Int):
+    """Swap two logical flat elements without bounds checks."""
+    var value = array.unsafe_get(left)
+    array.unsafe_set(left, array.unsafe_get(right))
+    array.unsafe_set(right, value)
+
+
 def _partition_in_range(
     mut A: NDArray,
     left: Int,
@@ -603,29 +607,18 @@ def _partition_in_range(
         New pivot index.
     """
 
-    var pivot_value = A._buf.ptr[unsafe_offset=pivot_index]
+    var pivot_value = A.unsafe_get(pivot_index)
 
-    A._buf.ptr[unsafe_offset=pivot_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=pivot_index],
-    )
+    _unsafe_swap(A, pivot_index, right)
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
-                unsafe_offset=i
-            ] = (
-                A._buf.ptr[unsafe_offset=i],
-                A._buf.ptr[unsafe_offset=store_index],
-            )
+        if A.unsafe_get(i) < pivot_value:
+            _unsafe_swap(A, store_index, i)
             store_index = store_index + 1
 
-    A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=store_index],
-    )
+    _unsafe_swap(A, store_index, right)
 
     return store_index
 
@@ -653,43 +646,21 @@ def _partition_in_range(
         New pivot index.
     """
 
-    var pivot_value = A._buf.ptr[unsafe_offset=pivot_index]
+    var pivot_value = A.unsafe_get(pivot_index)
 
-    A._buf.ptr[unsafe_offset=pivot_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=pivot_index],
-    )
-    I._buf.ptr[unsafe_offset=pivot_index], I._buf.ptr[unsafe_offset=right] = (
-        I._buf.ptr[unsafe_offset=right],
-        I._buf.ptr[unsafe_offset=pivot_index],
-    )
+    _unsafe_swap(A, pivot_index, right)
+    _unsafe_swap(I, pivot_index, right)
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
-                unsafe_offset=i
-            ] = (
-                A._buf.ptr[unsafe_offset=i],
-                A._buf.ptr[unsafe_offset=store_index],
-            )
-            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[
-                unsafe_offset=i
-            ] = (
-                I._buf.ptr[unsafe_offset=i],
-                I._buf.ptr[unsafe_offset=store_index],
-            )
+        if A.unsafe_get(i) < pivot_value:
+            _unsafe_swap(A, store_index, i)
+            _unsafe_swap(I, store_index, i)
             store_index = store_index + 1
 
-    A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=store_index],
-    )
-    I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[unsafe_offset=right] = (
-        I._buf.ptr[unsafe_offset=right],
-        I._buf.ptr[unsafe_offset=store_index],
-    )
+    _unsafe_swap(A, store_index, right)
+    _unsafe_swap(I, store_index, right)
 
     return store_index
 
@@ -720,43 +691,33 @@ def _quick_sort_partition(
             ).format(left, right, pivot_index, A.size)
         )
 
-    var pivot_value = A._buf.ptr[unsafe_offset=pivot_index]
+    var pivot_value = A._load(pivot_index)
 
-    A._buf.ptr[unsafe_offset=pivot_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=pivot_index],
-    )
-    I._buf.ptr[unsafe_offset=pivot_index], I._buf.ptr[unsafe_offset=right] = (
-        I._buf.ptr[unsafe_offset=right],
-        I._buf.ptr[unsafe_offset=pivot_index],
-    )
+    var pivot = A._load(pivot_index)
+    A._store_idx(pivot_index, A._load(right))
+    A._store_idx(right, pivot)
+    var pivot_i = I._load(pivot_index)
+    I._store_idx(pivot_index, I._load(right))
+    I._store_idx(right, pivot_i)
 
     var store_index = left
 
     for i in range(left, right):
-        if A._buf.ptr[unsafe_offset=i] < pivot_value:
-            A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[
-                unsafe_offset=i
-            ] = (
-                A._buf.ptr[unsafe_offset=i],
-                A._buf.ptr[unsafe_offset=store_index],
-            )
-            I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[
-                unsafe_offset=i
-            ] = (
-                I._buf.ptr[unsafe_offset=i],
-                I._buf.ptr[unsafe_offset=store_index],
-            )
+        if A._load(i) < pivot_value:
+            var value = A._load(store_index)
+            A._store_idx(store_index, A._load(i))
+            A._store_idx(i, value)
+            var index = I._load(store_index)
+            I._store_idx(store_index, I._load(i))
+            I._store_idx(i, index)
             store_index = store_index + 1
 
-    A._buf.ptr[unsafe_offset=store_index], A._buf.ptr[unsafe_offset=right] = (
-        A._buf.ptr[unsafe_offset=right],
-        A._buf.ptr[unsafe_offset=store_index],
-    )
-    I._buf.ptr[unsafe_offset=store_index], I._buf.ptr[unsafe_offset=right] = (
-        I._buf.ptr[unsafe_offset=right],
-        I._buf.ptr[unsafe_offset=store_index],
-    )
+    var value = A._load(store_index)
+    A._store_idx(store_index, A._load(right))
+    A._store_idx(right, value)
+    var index = I._load(store_index)
+    I._store_idx(store_index, I._load(right))
+    I._store_idx(right, index)
 
     return store_index
 
@@ -925,7 +886,7 @@ def _quick_sort_stable_inplace[
         )
 
     var pivot_index = size // 2
-    var pivot_value = a._buf.ptr[unsafe_offset=pivot_index]
+    var pivot_value = a.unsafe_get(pivot_index)
 
     var left = NDArray[dtype](shape=NDArrayShape(size), order="C")
     var right = NDArray[dtype](shape=NDArrayShape(size), order="C")
@@ -935,19 +896,19 @@ def _quick_sort_stable_inplace[
     # Put items to either left or right arrays
     for i in range(size):
         if i != pivot_index:
-            var value = a._buf.ptr[unsafe_offset=i]
+            var value = a.unsafe_get(i)
             if value < pivot_value:
-                left._buf.ptr[unsafe_offset=left_index] = value
+                left.unsafe_set(left_index, value)
                 left_index += 1
             elif value > pivot_value:
-                right._buf.ptr[unsafe_offset=right_index] = value
+                right.unsafe_set(right_index, value)
                 right_index += 1
             else:  # value == pivot_value
                 if i < pivot_index:
-                    left._buf.ptr[unsafe_offset=left_index] = value
+                    left.unsafe_set(left_index, value)
                     left_index += 1
                 else:
-                    right._buf.ptr[unsafe_offset=right_index] = value
+                    right.unsafe_set(right_index, value)
                     right_index += 1
 
     # Sort left and right arrays
@@ -956,9 +917,7 @@ def _quick_sort_stable_inplace[
 
     # Combine the sorted arrays
     for i in range(left_index):
-        a._buf.ptr[unsafe_offset=i] = left._buf.ptr[unsafe_offset=i]
-    a._buf.ptr[unsafe_offset=left_index] = pivot_value
+        a.unsafe_set(i, left.unsafe_get(i))
+    a.unsafe_set(left_index, pivot_value)
     for i in range(right_index):
-        a._buf.ptr[unsafe_offset=left_index + 1 + i] = right._buf.ptr[
-            unsafe_offset=i
-        ]
+        a.unsafe_set(left_index + 1 + i, right.unsafe_get(i))

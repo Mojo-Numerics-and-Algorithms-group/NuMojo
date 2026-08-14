@@ -9,6 +9,8 @@
 -----------------------------
 Complex number support (SIMD complex types and complex NDArray).
 """
-
-from .complex_simd import ComplexSIMD
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .complex_ndarray import ComplexNDArray
+from .complex_simd import ComplexSIMD

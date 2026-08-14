@@ -126,9 +126,9 @@ def diagonal[
     if a.ndim == 2 and norm_axis1 == 0 and norm_axis2 == 1:
         var result2d = NDArray[dtype](Shape(diag_len))
         for i in range(diag_len):
-            result2d._buf[i] = a._buf[
-                (i + start_row) * n + (i + start_col)
-            ]
+            result2d.unsafe_set(
+                i, a.unsafe_get((i + start_row) * n + (i + start_col))
+            )
         return result2d^
 
     # General N-D case: surviving axes (in original order) come first,
@@ -175,9 +175,7 @@ def diagonal[
                 + (i + start_row) * a_strides[norm_axis1]
                 + (i + start_col) * a_strides[norm_axis2]
             )
-            result._buf[outer * diag_len + i] = a._buf[
-                src_offset
-            ]
+            result.unsafe_set(outer * diag_len + i, a.unsafe_get(src_offset))
 
     return result^
 

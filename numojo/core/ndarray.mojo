@@ -385,6 +385,25 @@ struct NDArray[dtype: DType = DType.float64](
             offset=self.offset,
         )
 
+    def view_with_layout(
+        self,
+        shape: NDArrayShape,
+        strides: NDArrayStrides,
+        offset: Int,
+    ) raises -> Self:
+        """Create a non-owning view with explicit logical layout metadata."""
+        return NDArray[Self.dtype](
+            data=self._buf.share(),
+            is_view=True,
+            shape=shape,
+            strides=strides,
+            offset=offset,
+        )
+
+    def _dlpack_buffer_copy(self) -> DataContainer[Self.dtype]:
+        """Return a refcounted data copy retained by a DLPack export."""
+        return self._buf.copy()
+
     @always_inline("nodebug")
     def __init__(out self, *, deinit move: Self):
         """Moves `move` into `self`.

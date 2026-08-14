@@ -468,7 +468,7 @@ def to_dlpack[
         - Do not modify the original array while the DLPack tensor is in use.
         - The returned tensor shares memory with the original array.
     """
-    var buf = arr._buf.copy()
+    var buf = arr._dlpack_buffer_copy()
 
     var shape_ptr = unsafe_alloc[Int64](arr.ndim)
     for i in range(arr.ndim):

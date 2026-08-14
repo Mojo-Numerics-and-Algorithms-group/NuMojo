@@ -490,13 +490,7 @@ def broadcast_to[
         b_strides[i] = 0
 
     # view.
-    return NDArray[dtype](
-        data=a._buf.share(),
-        is_view=True,
-        shape=shape,
-        strides=b_strides,
-        offset=a.offset,
-    )
+    return a.view_with_layout(shape, b_strides, a.offset)
 
 
 def broadcast_to[
@@ -603,13 +597,7 @@ def _broadcast_back_to[
     )  # Strides of the broadcast view, referring to data of `a`.
     b_strides[axis] = 0
 
-    return NDArray[dtype](
-        data=a._buf.share(),
-        is_view=True,
-        shape=shape,
-        strides=b_strides,
-        offset=a.offset,
-    )
+    return a.view_with_layout(shape, b_strides, a.offset)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -632,9 +620,9 @@ def flip[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     var A = array.contiguous()  # Owned, C-contiguous copy
     for i in range(A.size // 2):
-        var temp = A._buf[i]
-        A._buf[i] = A._buf[A.size - 1 - i]
-        A._buf[A.size - 1 - i] = temp
+        var temp = A.unsafe_get(i)
+        A.unsafe_set(i, A.unsafe_get(A.size - 1 - i))
+        A.unsafe_set(A.size - 1 - i, temp)
 
     return A^
 
@@ -672,9 +660,11 @@ def flip[
 
     for i in range(0, A.size, A.shape[axis]):
         for j in range(A.shape[axis] // 2):
-            var temp = A._buf[I._buf[i + j]]
-            A._buf[I._buf[i + j]] = A._buf[I._buf[i + A.shape[axis] - 1 - j]]
-            A._buf[I._buf[i + A.shape[axis] - 1 - j]] = temp
+            var left = Int(I.unsafe_get(i + j))
+            var right = Int(I.unsafe_get(i + A.shape[axis] - 1 - j))
+            var temp = A.unsafe_get(left)
+            A.unsafe_set(left, A.unsafe_get(right))
+            A.unsafe_set(right, temp)
 
     return A^
 
@@ -794,7 +784,7 @@ def _concatenate_list[
         # Adjust the coordinate along the concat axis to be local.
         nd_index[ax] = coord_along_axis - boundaries[src_idx]
 
-        result._buf[flat_idx] = arrays[src_idx]._getitem(nd_index)
+        result.unsafe_set(flat_idx, arrays[src_idx]._getitem(nd_index))
 
     return result^
 

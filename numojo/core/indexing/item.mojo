@@ -13,22 +13,21 @@ Implements Item type.
 It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to access `arr[1, 2, 3]`.
 """
 
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.builtin.int import index as convert_to_int
 from std.memory import (
     unsafe_memcpy,
     unsafe_memset_zero,
-    UnsafePointer,
-    unsafe_memcmp,
 )
-from std.os import abort
-from std.sys import simd_width_of
-from std.utils import Variant
 
-from numojo.core.indexing.index_buffer import IndexBuffer
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
-from numojo.core.traits.indexer_collection_element import (
-    IndexerCollectionElement,
-)
+from numojo.core.indexing.index_buffer import IndexBuffer
+from numojo.core.traits.indexer_collection_element import IndexerCollectionElement
 
 
 struct Item(

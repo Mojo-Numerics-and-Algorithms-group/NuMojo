@@ -13,11 +13,17 @@ The NDArrayShape provides methods for element access, shape transformations (e.g
 and properties like size and rank.
 """
 
-from std.memory import unsafe_memcpy, unsafe_memcmp, UnsafePointer
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.memory import unsafe_memcpy
 
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
+from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.error import NumojoError
 
 
 struct NDArrayShape(

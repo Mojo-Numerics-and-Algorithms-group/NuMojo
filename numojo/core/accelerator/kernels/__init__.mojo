@@ -10,13 +10,24 @@
 GPU kernel functions for `AcceleratorNDArray` operation dispatch.
 """
 
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .binary_ops import (
     ADD,
-    SUB,
-    MUL,
-    DIV,
     binary_op_kernel,
+    DIV,
     launch_binary_op,
+    MUL,
+    SUB,
 )
-from .unary_ops import neg_kernel, launch_neg
-from .reduction_ops import sum_reduce_kernel, launch_sum_reduce
+from .reduction_ops import (
+    launch_sum_reduce,
+    sum_reduce_kernel,
+)
+from .unary_ops import (
+    launch_neg,
+    neg_kernel,
+)
+
+

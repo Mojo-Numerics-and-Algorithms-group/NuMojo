@@ -13,88 +13,102 @@ It serves as the foundational layer upon which higher-level routines and algorit
 Fundamental types and utilities for NuMojo: arrays, matrices, memory layouts, data types, and error handling.
 """
 
-from .ndarray import NDArray
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
+from . import (
+    accelerator,
+    complex,
+    dtype,
+    layout,
+    matrix,
+    memory,
+    traits,
+)
+from .accelerator import (
+    cpu,
+    cuda,
+    Device,
+    mps,
+    rocm,
+)
 from .accelerator_ndarray import AcceleratorNDArray
-
-from .type_aliases import (
-    Shape,
-    Strides,
-    ComplexScalar,
-    CScalar,
-    `1j`,
+from .complex import (
+    ComplexNDArray,
+    ComplexSIMD,
 )
-
-from .error import (
-    terminate,
-    NumojoError,
-)
-
-from .matrix import Matrix
-
-from .layout import NDArrayShape, NDArrayStrides, Flags, newaxis
-
 from .dtype import (
-    i8,
-    i16,
-    i32,
-    i64,
-    i128,
-    i256,
-    int,
-    u8,
-    u16,
-    u32,
-    u64,
-    u128,
-    u256,
-    uint,
     bf16,
-    f16,
-    f32,
-    f64,
     boolean,
-    ComplexDType,
-    ci8,
-    ci16,
-    ci32,
-    ci64,
-    ci128,
-    ci256,
-    cint,
-    cu8,
-    cu16,
-    cu32,
-    cu64,
-    cu128,
-    cu256,
-    cuint,
     cbf16,
+    cboolean,
     cf16,
     cf32,
     cf64,
-    cboolean,
+    ci128,
+    ci16,
+    ci256,
+    ci32,
+    ci64,
+    ci8,
+    cint,
     cinvalid,
+    ComplexDType,
+    cu128,
+    cu16,
+    cu256,
+    cu32,
+    cu64,
+    cu8,
+    cuint,
+    f16,
+    f32,
+    f64,
+    i128,
+    i16,
+    i256,
+    i32,
+    i64,
+    i8,
+    int,
+    u128,
+    u16,
+    u256,
+    u32,
+    u64,
+    u8,
+    uint,
 )
-
-from .complex import (
-    ComplexSIMD,
-    ComplexNDArray,
+from .error import (
+    NumojoError,
+    terminate,
 )
-
+from .indexing import (
+    IndexMethods,
+    Item,
+    TraverseMethods,
+    Validator,
+)
+from .layout import (
+    Flags,
+    NDArrayShape,
+    NDArrayStrides,
+    newaxis,
+)
+from .matrix import Matrix
 from .memory import (
-    DataContainer,
-    HostStorage,
-    DeviceStorage,
     AcceleratorDataContainer,
+    DataContainer,
+    DeviceStorage,
+    HostStorage,
 )
-from .accelerator import Device, cpu, cuda, mps, rocm
+from .ndarray import NDArray
+from .type_aliases import (
+    `1j`,
+    ComplexScalar,
+    CScalar,
+    Shape,
+    Strides,
+)
 
-from .indexing import Item, IndexMethods, TraverseMethods, Validator
 
-from . import dtype
-from . import layout
-from . import memory
-from . import matrix
-from . import complex
-from . import traits
-from . import accelerator

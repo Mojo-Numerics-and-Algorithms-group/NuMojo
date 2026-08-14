@@ -1801,13 +1801,14 @@ def diag[
         )
         if k >= 0:
             for i in range(n):
-                result._buf[i * (n + abs(k) + 1) + k] = v_c._buf[i]
+                result.unsafe_set(i * (n + abs(k) + 1) + k, v_c.unsafe_get(i))
             return result^
         else:
             for i in range(n):
-                result._buf[
-                    result.size - 1 - i * (result.shape[1] + 1) + k
-                ] = v_c._buf[n - 1 - i]
+                result.unsafe_set(
+                    result.size - 1 - i * (result.shape[1] + 1) + k,
+                    v_c.unsafe_get(n - 1 - i),
+                )
         return result^
     elif v.ndim == 2:
         var v_c = v.contiguous()
@@ -1816,12 +1817,15 @@ def diag[
         var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(n - abs(k)))
         if k >= 0:
             for i in range(n - abs(k)):
-                result._buf[i] = v_c._buf[i * (n + 1) + k]
+                result.unsafe_set(i, v_c.unsafe_get(i * (n + 1) + k))
         else:
             for i in range(n - abs(k)):
-                result._buf[m - abs(k) - 1 - i] = v_c._buf[
-                    v_c.size - 1 - i * (v_c.shape[1] + 1) + k
-                ]
+                result.unsafe_set(
+                    m - abs(k) - 1 - i,
+                    v_c.unsafe_get(
+                        v_c.size - 1 - i * (v_c.shape[1] + 1) + k
+                    ),
+                )
         return result^
     else:
         raise Error("Arrays bigger than 2D are not supported")
@@ -2009,7 +2013,7 @@ def tril[
     if m.ndim == 2:
         for i in range(m.shape[0]):
             for j in range(i + 1 + k, m.shape[1]):
-                result._buf[i * m.shape[1] + j] = Scalar[dtype](0)
+                result.unsafe_set(i * m.shape[1] + j, Scalar[dtype](0))
     elif m.ndim >= 2:
         for i in range(m.ndim - 2):
             initial_offset *= m.shape[i]
@@ -2018,9 +2022,10 @@ def tril[
         for offset in range(initial_offset):
             for i in range(m.shape[-2]):
                 for j in range(i + 1 + k, m.shape[-1]):
-                    result._buf[
-                        offset * final_offset + j + i * m.shape[-1]
-                    ] = Scalar[dtype](0)
+                    result.unsafe_set(
+                        offset * final_offset + j + i * m.shape[-1],
+                        Scalar[dtype](0),
+                    )
     else:
         raise Error(
             "Arrays smaller than 2D are not supported for this operation."
@@ -2209,7 +2214,7 @@ def astype[
         ](idx: Int) {mut result, imm a} -> None:
             (result.unsafe_ptr().unsafe_offset(idx)).unsafe_strided_store[
                 width=simd_width
-            ](a._buf.load[width=simd_width](idx).cast[target](), 1)
+            ](a.unsafe_load[width=simd_width](idx).cast[target](), 1)
 
         vectorize[a.width](a.size, vectorized_astype)
 
@@ -2219,7 +2224,7 @@ def astype[
             def vectorized_astypenb_from_b[
                 simd_width: Int
             ](idx: Int) {mut result, imm a} -> None:
-                result._buf.store[width=simd_width](
+                result.unsafe_store[width=simd_width](
                     idx,
                     a.unsafe_load[width=simd_width](idx).cast[target](),
                 )
@@ -2231,9 +2236,9 @@ def astype[
             def vectorized_astypenb[
                 simd_width: Int
             ](idx: Int) {mut result, imm a} -> None:
-                result._buf.store[width=simd_width](
+                result.unsafe_store[width=simd_width](
                     idx,
-                    a._buf.load[width=simd_width](idx).cast[target](),
+                    a.unsafe_load[width=simd_width](idx).cast[target](),
                 )
 
             vectorize[a.width](a.size, vectorized_astypenb)

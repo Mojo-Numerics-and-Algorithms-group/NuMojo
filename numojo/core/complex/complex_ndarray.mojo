@@ -1846,8 +1846,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return
 
         # F order
-        self._re._write_first_axis_slice(self._re, norm, val._re)
-        self._im._write_first_axis_slice(self._im, norm, val._im)
+        NDArray[Self.dtype]._write_first_axis_slice(self._re, norm, val._re)
+        NDArray[Self.dtype]._write_first_axis_slice(self._im, norm, val._im)
 
     def __setitem__(
         mut self, var index: Item, val: ComplexSIMD[Self.cdtype]

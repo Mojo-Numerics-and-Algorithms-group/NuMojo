@@ -57,7 +57,6 @@ from numojo.core.type_aliases import Shape
 # ===------------------------------------------------------------------------===#
 # Numerical ranges
 # ===------------------------------------------------------------------------===#
-# FIXME: a lot of the creation routines uses ._buf.ptr directly. This should be changed to ._buf[idx] once we use the new DataContainer with correct origins.
 def arange[
     dtype: DType = DType.float64
 ](
@@ -129,7 +128,7 @@ def arange[
     var size: Int = Int(stop)  # TODO: handle negative values.
     var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(size))
     for i in range(size):
-        (result._buf.ptr.unsafe_offset(i)).unsafe_write(Scalar[dtype](i))
+        result.unsafe_set(i, Scalar[dtype](i))
 
     return result^
 
@@ -2251,9 +2250,7 @@ def astype[
             ](idx: Int) {mut result, imm a} -> None:
                 result._buf.store[width=simd_width](
                     idx,
-                    (a._buf.ptr.unsafe_offset(idx))
-                    .unsafe_strided_load[width=simd_width](1)
-                    .cast[target](),
+                    a.unsafe_load[width=simd_width](idx).cast[target](),
                 )
 
             vectorize[a.width](a.size, vectorized_astypenb_from_b)
@@ -2423,7 +2420,6 @@ def fromstring[
 
 #     var a = NDArray[dtype](shape=shape)
 
-#     memcpy(a._buf.ptr, data._ptr, a.size)
 
 #     return a
 
@@ -2454,8 +2450,6 @@ def fromstring[
 
 #     var a = ComplexNDArray[cdtype](shape=shape)
 
-#     memcpy(a._re._buf.ptr, real._ptr, a._re.size)
-#     memcpy(a._im._buf.ptr, imag._ptr, a._im.size)
 
 #     return a
 
@@ -2628,7 +2622,7 @@ def array[
         0
     ].unsafe_get_as_pointer[dtype]()
     var A: NDArray[dtype] = NDArray[dtype](array_shape, order)
-    unsafe_memcpy[Scalar[dtype]](dest=A._buf.ptr, src=pointer, count=A.size)
+    unsafe_memcpy[Scalar[dtype]](dest=A.unsafe_ptr(), src=pointer, count=A.size)
     return A^
 
 
@@ -2716,10 +2710,10 @@ def array[
     ].unsafe_get_as_pointer[dtype]()
     var A: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](array_shape, order)
     unsafe_memcpy[Scalar[dtype]](
-        dest=A._re._buf.ptr, src=pointer, count=A._re.size
+        dest=A._re.unsafe_ptr(), src=pointer, count=A._re.size
     )
     unsafe_memcpy[Scalar[dtype]](
-        dest=A._im._buf.ptr, src=pointer_imag, count=A._im.size
+        dest=A._im.unsafe_ptr(), src=pointer_imag, count=A._im.size
     )
     return A^
 
@@ -2836,7 +2830,7 @@ def _0darray[
         ),
     )
     b._buf = DataContainer[dtype](1)
-    b._buf.ptr.unsafe_write(val)
+    b.unsafe_set(0, val)
     b.flags.OWNDATA = True
     return b^
 
@@ -2864,7 +2858,7 @@ def _0darray[
     # TODO: initialize the values of buffers directly without going through copy, this also removes the need for MutExternalOrigin.
     b._re._buf = DataContainer[cdtype.dtype](1)
     b._im._buf = DataContainer[cdtype.dtype](1)
-    b._re._buf.ptr.unsafe_write(val.re)
-    b._im._buf.ptr.unsafe_write(val.im)
+    b._re.unsafe_set(0, val.re)
+    b._im.unsafe_set(0, val.im)
     b.flags.OWNDATA = True
     return b^

@@ -22,7 +22,12 @@ What it exports:
 
 Usage:
 ```mojo
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.prelude import *
+
+
 ```
 
 For more functions (math, linalg, statistics, etc.), import them from

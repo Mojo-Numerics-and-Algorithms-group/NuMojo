@@ -9,20 +9,25 @@
 --------------------------------------------------------
 Device-aware NDArray that stores data in `AcceleratorDataContainer`.
 """
-
-from std.memory import UnsafePointer
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
 from max.gpu.host import DeviceContext
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
+from numojo.core.accelerator.device import Device
+import numojo.core.accelerator.kernels as kernels
+from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.error import NumojoError
+from numojo.core.indexing.item import Item
+from numojo.core.indexing.offset import IndexMethods
 from numojo.core.layout.flags import Flags
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.indexing.item import Item
-from numojo.core.indexing.offset import IndexMethods
 from numojo.core.memory.storage import AcceleratorDataContainer
-from numojo.core.accelerator.device import Device
-import numojo.core.accelerator.kernels as kernels
 from numojo.core.ndarray import NDArray
-from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.type_aliases import Shape
 
 

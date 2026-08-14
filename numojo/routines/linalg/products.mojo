@@ -9,18 +9,28 @@
 ---------------------------------------------------------------
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
-
-import std.math
-from std.algorithm import vectorize
-from max.algorithm import parallelize
-from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
-from std.sys import simd_width_of
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.algorithm import (
+    Static2DTileUnitFunc as Tile2DFunc,
+    vectorize,
+)
 from std.memory import unsafe_memcpy
+from std.sys import simd_width_of
 
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.layout import NDArrayShape
-from numojo.core.type_aliases import Shape
 from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
 from numojo.routines.creation import zeros
 from numojo.routines.math.sums import sum
 
@@ -102,10 +112,10 @@ def dot[
         def vectorized_dot[
             simd_width: Int
         ](idx: Int) {mut result, imm array1, imm array2} -> None:
-            result._buf.ptr.unsafe_store(
+            result.unsafe_store[width=simd_width](
                 idx,
-                array1._buf.ptr.unsafe_load[width=simd_width](idx)
-                * array2._buf.ptr.unsafe_load[width=simd_width](idx),
+                array1.unsafe_load[width=simd_width](idx)
+                * array2.unsafe_load[width=simd_width](idx),
             )
 
         vectorize[width](array1.size, vectorized_dot)
@@ -165,15 +175,13 @@ def matmul_tiled_unrolled_parallelized[
                     imm m,
                     imm k,
                 } -> None:
-                    result._buf.ptr.unsafe_store(
+                    result.unsafe_store[width=simd_width](
                         m * t2 + (n + x),
-                        val=result._buf.ptr.unsafe_load[width=simd_width](
+                        val=result.unsafe_load[width=simd_width](
                             m * t2 + (n + x)
                         )
-                        + A._buf.ptr.unsafe_load(m * t1 + k)
-                        * B._buf.ptr.unsafe_load[width=simd_width](
-                            k * t2 + (n + x)
-                        ),
+                        + A.unsafe_load[width=1](m * t1 + k)
+                        * B.unsafe_load[width=simd_width](k * t2 + (n + x)),
                     )
 
                 comptime unroll_factor = tile_x // width
@@ -205,7 +213,7 @@ def matmul_1darray[
             ).format(A.size, B.size)
         )
     else:
-        result._buf.ptr.unsafe_write(sum(A * B))
+        result.unsafe_set(0, sum(A * B))
 
     return result^
 
@@ -290,13 +298,11 @@ def matmul_2darray[
             ](n: Int) {
                 mut result, imm A, imm B, imm t2, imm t1, imm k, imm m
             } -> None:
-                result._buf.ptr.unsafe_store(
+                result.unsafe_store[width=simd_width](
                     m * t2 + n,
-                    val=result._buf.ptr.unsafe_load[width=simd_width](
-                        m * t2 + n
-                    )
-                    + A._buf.ptr.unsafe_load[width=simd_width](m * t1 + k)
-                    * B._buf.ptr.unsafe_load[width=simd_width](k * t2 + n),
+                    val=result.unsafe_load[width=simd_width](m * t2 + n)
+                    + A.unsafe_load[width=simd_width](m * t1 + k)
+                    * B.unsafe_load[width=simd_width](k * t2 + n),
                 )
 
             vectorize[width](t2, dot)
@@ -382,27 +388,21 @@ def matmul[
 
     for i in range(result.size // result_sub_matrix.size):
         unsafe_memcpy(
-            dest=A_sub_matrix._buf.ptr,
-            src=A._buf.ptr.unsafe_offset((i * A_sub_matrix.size)),
+            dest=A_sub_matrix.unsafe_ptr(),
+            src=A.unsafe_ptr().unsafe_offset(i * A_sub_matrix.size),
             count=A_sub_matrix.size,
         )
         unsafe_memcpy(
-            dest=B_sub_matrix._buf.ptr,
-            src=B._buf.ptr.unsafe_offset((i * B_sub_matrix.size)),
+            dest=B_sub_matrix.unsafe_ptr(),
+            src=B.unsafe_ptr().unsafe_offset(i * B_sub_matrix.size),
             count=B_sub_matrix.size,
         )
         result_sub_matrix = matmul_2darray(A_sub_matrix, B_sub_matrix)
         unsafe_memcpy(
-            dest=result._buf.ptr.unsafe_offset((i * result_sub_matrix.size)),
-            src=result_sub_matrix._buf.ptr,
+            dest=result.unsafe_ptr().unsafe_offset(i * result_sub_matrix.size),
+            src=result_sub_matrix.unsafe_ptr(),
             count=result_sub_matrix.size,
         )
-
-    # `DataContainer.origin` is untracked, so the raw pointers above do not
-    # keep the sub-matrices alive; hold them until the loop is done.
-    _ = result_sub_matrix^
-    _ = A_sub_matrix^
-    _ = B_sub_matrix^
 
     return result^
 

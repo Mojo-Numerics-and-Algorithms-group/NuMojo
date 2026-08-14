@@ -15,6 +15,7 @@ from numojo.routines.math.extrema import minimum
 from std.python import Python, PythonObject
 from std.testing.testing import assert_true, assert_equal
 from std.testing import TestSuite
+from numojo.routines.indexing import `where`
 
 
 # ===-----------------------------------------------------------------------===#
@@ -1577,7 +1578,7 @@ def test_where_on_offset_view() raises:
     mask.itemset(1, Scalar[DType.bool](False))
     mask.itemset(2, Scalar[DType.bool](True))
     mask.itemset(3, Scalar[DType.bool](False))
-    nm.routines.indexing.`where`(view, Scalar[nm.f64](99.0), mask)
+    `where`(view, Scalar[nm.f64](99.0), mask)
 
     # Parent positions 3 and 5 should be 99, others 0
     assert_true(parent.load(2) == 0.0, "where parent[2] unchanged")

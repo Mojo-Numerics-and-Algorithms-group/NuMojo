@@ -9,19 +9,28 @@
 
 Provides sum reductions along axes for NDArrays and Matrices, covering both flattened and axis-aware workflows.
 """
-
-from std.sys import simd_width_of
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.algorithm import vectorize
-from max.algorithm import parallelize
-from std.memory import UnsafePointer, unsafe_memset_zero, unsafe_memcpy
+from std.memory import unsafe_memcpy
+from std.sys import simd_width_of
 
-from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
-from numojo.core.indexing import TraverseMethods
-from numojo.routines.creation import zeros
-from numojo.core.layout.ndshape import NDArrayShape
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
+from numojo.core.indexing import TraverseMethods
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import zeros
 
 
 def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -52,7 +61,7 @@ def sum[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var result: Scalar[dtype] = Scalar[dtype](0)
 
     def cal_vec[width: Int](i: Int) {mut result, A}:
-        result += A._buf.ptr.unsafe_load[width=width](i).reduce_add()
+        result += A.unsafe_load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return result
@@ -148,7 +157,7 @@ def sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res + A._buf.ptr.unsafe_load[width=width](i).reduce_add()
+        res = res + A._buf.load[width=width](i).reduce_add()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -250,7 +259,7 @@ def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf.ptr[unsafe_offset=i + 1] += B._buf.ptr[unsafe_offset=i]
+            B.unsafe_set(i + 1, B.unsafe_get(i + 1) + B.unsafe_get(i))
         return B^
 
     else:
@@ -284,7 +293,7 @@ def cumsum[
         )
 
     var I = NDArray[DType.int](Shape(A.size))
-    var ptr = I._buf.ptr
+    var ptr = I.unsafe_ptr()
 
     var _shape = B.shape.move_axis_to_end(axis)
     var _strides = B.strides.move_axis_to_end(axis)
@@ -295,9 +304,9 @@ def cumsum[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[
-                unsafe_offset=Int(I._buf.ptr[unsafe_offset=i + j + 1])
-            ] += B._buf.ptr[unsafe_offset=Int(I._buf.ptr[unsafe_offset=i + j])]
+            var next = Int(I.unsafe_get(i + j + 1))
+            var current = Int(I.unsafe_get(i + j))
+            B.unsafe_set(next, B.unsafe_get(next) + B.unsafe_get(current))
 
     return B^
 
@@ -332,7 +341,7 @@ def cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
     result.resize(shape=(1, A.size))
 
     for i in range(1, A.size):
-        result._buf.ptr[unsafe_offset=i] += result._buf.ptr[unsafe_offset=i - 1]
+        result._buf[i] += result._buf[i - 1]
 
     if reorder:
         result = result.reorder_layout()

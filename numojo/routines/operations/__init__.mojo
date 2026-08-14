@@ -9,4 +9,7 @@
 
 This module contains all the vectorized unary, binary, unary_predicate, binary_predicate operations.
 """
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
 from .backend import HostExecutor

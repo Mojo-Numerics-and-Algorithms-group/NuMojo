@@ -9,9 +9,11 @@
 --------------------------------------------
 Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
 """
-
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.error import NumojoError
-from numojo.core.layout import NDArrayShape, NDArrayStrides
+from numojo.core.layout import NDArrayShape
 
 
 struct Validator:

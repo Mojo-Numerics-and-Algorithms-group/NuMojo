@@ -12,12 +12,17 @@ The shape is stored as a contiguous buffer of integers, with the number of dimen
 The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
 and properties like size and rank.
 """
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
+from std.memory import unsafe_memcpy
 
-from std.memory import unsafe_memcpy, unsafe_memcmp, UnsafePointer
-
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
+from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.error import NumojoError
 
 
 struct NDArrayShape(

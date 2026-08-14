@@ -9,8 +9,15 @@
 ---------------------------------
 This module provides functions for reading and writing arrays to and from files, as well as formatting options for printing arrays.
 """
-from .files import loadtxt, savetxt, load, save
-
+# ===----------------------------------------------------------------------===#
+# Local
+# ===----------------------------------------------------------------------===#
+from .files import (
+    load,
+    loadtxt,
+    save,
+    savetxt,
+)
 from .formatting import (
     format_floating_scientific,
     PrintOptions,

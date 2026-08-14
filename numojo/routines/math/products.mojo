@@ -9,19 +9,27 @@
 
 Implements product and cumulative product reductions for NDArrays and Matrices.
 """
-
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
+from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 
-from numojo.core.ndarray import NDArray
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
+# ===----------------------------------------------------------------------===#
+# External
+# ===----------------------------------------------------------------------===#
+from max.algorithm import parallelize
+
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.indexing import TraverseMethods
-from numojo.routines.creation import ones
 from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.matrix import Matrix
+from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import ones
 
 
 def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
@@ -53,7 +61,7 @@ def prod[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     var res = Scalar[dtype](1)
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res *= A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
+        res *= A.unsafe_load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -112,7 +120,7 @@ def prod[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
     comptime width: Int = simd_width_of[dtype]()
 
     def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res * A._buf.ptr.unsafe_load[width=width](i).reduce_mul()
+        res = res * A._buf.load[width=width](i).reduce_mul()
 
     vectorize[width](A.size, cal_vec)
     return res
@@ -192,7 +200,7 @@ def cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     if A.ndim == 1:
         var B = A.contiguous()
         for i in range(A.size - 1):
-            B._buf.ptr[unsafe_offset=i + 1] *= B._buf.ptr[unsafe_offset=i]
+            B.unsafe_set(i + 1, B.unsafe_get(i + 1) * B.unsafe_get(i))
         return B^
 
     else:
@@ -225,7 +233,7 @@ def cumprod[
         )
 
     var I = NDArray[DType.int](Shape(A.size))
-    var ptr = I._buf.ptr
+    var ptr = I.unsafe_ptr()
 
     var _shape = B.shape.move_axis_to_end(axis)
     var _strides = B.strides.move_axis_to_end(axis)
@@ -236,9 +244,9 @@ def cumprod[
 
     for i in range(0, B.size, B.shape[axis]):
         for j in range(B.shape[axis] - 1):
-            B._buf.ptr[
-                unsafe_offset=I._buf.ptr[unsafe_offset=i + j + 1]
-            ] *= B._buf.ptr[unsafe_offset=I._buf.ptr[unsafe_offset=i + j]]
+            var next = Int(I.unsafe_get(i + j + 1))
+            var current = Int(I.unsafe_get(i + j))
+            B.unsafe_set(next, B.unsafe_get(next) * B.unsafe_get(current))
 
     return B^
 
@@ -270,7 +278,7 @@ def cumprod[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
                 result[i, j] = A[i, j]
 
     for i in range(1, A.size):
-        result._buf.ptr[unsafe_offset=i] *= result._buf.ptr[unsafe_offset=i - 1]
+        result._buf[i] *= result._buf[i - 1]
 
     result.resize(shape=(1, result.size))
     return result^

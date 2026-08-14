@@ -1107,16 +1107,12 @@ def unravel_index(
         if order == "C":
             for d in range(shape.ndim - 1, -1, -1):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
-                    rem % dim
-                )
+                result[d].unsafe_set(i, Scalar[DType.int](rem % dim))
                 rem //= dim
         elif order == "F":
             for d in range(shape.ndim):
                 var dim = shape[d]
-                result[d]._buf.ptr[unsafe_offset=i] = Scalar[DType.int](
-                    rem % dim
-                )
+                result[d].unsafe_set(i, Scalar[DType.int](rem % dim))
                 rem //= dim
 
     return result^
@@ -1327,9 +1323,7 @@ def nonzero[
             for d in range(a.ndim - 1, -1, -1):
                 var coord = rem % a.shape[d]
                 rem //= a.shape[d]
-                result[d]._buf.ptr[unsafe_offset=out_idx] = Scalar[DType.int](
-                    coord
-                )
+                result[d].unsafe_set(out_idx, Scalar[DType.int](coord))
             out_idx += 1
 
     return result^

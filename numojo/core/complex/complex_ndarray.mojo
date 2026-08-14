@@ -1728,7 +1728,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
         return slices^
 
-    def _setitem(self, *indices: Int, val: ComplexSIMD[Self.cdtype]):
+    def _setitem(mut self, *indices: Int, val: ComplexSIMD[Self.cdtype]):
         """
         (UNSAFE! for internal use only.)
         Set item at indices and bypass all boundary checks.
@@ -1752,8 +1752,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var index_of_buffer: Int = 0
         for i in range(self.ndim):
             index_of_buffer += indices[i] * Int(self.strides.unsafe_load(i))
-        self._re._buf.ptr[unsafe_offset=index_of_buffer] = val.re
-        self._im._buf.ptr[unsafe_offset=index_of_buffer] = val.im
+        self._re.unsafe_set(index_of_buffer, val.re)
+        self._im.unsafe_set(index_of_buffer, val.im)
 
     def __setitem__(mut self, idx: Int, val: Self) raises:
         """Assign a single first-axis slice.
@@ -1814,12 +1814,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         ),
                     )
                 )
-            self._re._buf.store[width=1](
-                norm, val._re._buf.load[width=1](0)
-            )
-            self._im._buf.store[width=1](
-                norm, val._im._buf.load[width=1](0)
-            )
+            self._re.unsafe_set(norm, val._re.unsafe_get(0))
+            self._im.unsafe_set(norm, val._im.unsafe_get(0))
             return
 
         if val.shape != self.shape[1:]:
@@ -1838,13 +1834,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if self.flags.C_CONTIGUOUS & val.flags.C_CONTIGUOUS:
             var block = self.size // self.shape[0]
             unsafe_memcpy(
-                dest=self._re._buf.ptr.unsafe_offset(norm * block),
-                src=val._re._buf.ptr,
+                dest=self._re.unsafe_ptr().unsafe_offset(norm * block),
+                src=val._re.unsafe_ptr(),
                 count=block,
             )
             unsafe_memcpy(
-                dest=self._im._buf.ptr.unsafe_offset(norm * block),
-                src=val._im._buf.ptr,
+                dest=self._im.unsafe_ptr().unsafe_offset(norm * block),
+                src=val._im.unsafe_ptr(),
                 count=block,
             )
             return
@@ -2185,8 +2181,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         if (self.size == 1) or (self.ndim == 0):
-            var re_val = self._re._buf.ptr[]
-            var im_val = self._im._buf.ptr[]
+            var re_val = self._re.unsafe_get(0)
+            var im_val = self._im.unsafe_get(0)
             return Bool((re_val != 0.0) or (im_val != 0.0))
         else:
             raise Error(
@@ -2220,7 +2216,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         if (self.size == 1) or (self.ndim == 0):
-            return Int(self._re._buf.ptr[])
+            return Int(self._re.unsafe_get(0))
         else:
             raise Error(
                 "\nError in `ComplexNDArray.__int__(self)`: "
@@ -2251,8 +2247,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         ```
         """
         if (self.size == 1) or (self.ndim == 0):
-            var re_val = self._re._buf.ptr[]
-            var im_val = self._im._buf.ptr[]
+            var re_val = self._re.unsafe_get(0)
+            var im_val = self._im.unsafe_get(0)
             var magnitude_sq = Float64(re_val * re_val + im_val * im_val)
             return sqrt(magnitude_sq)
         else:
@@ -3022,7 +3018,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             writer.write(
                 String(
                     ComplexScalar[Self.cdtype](
-                        self._re._buf.ptr[], self._im._buf.ptr[]
+                        self._re.unsafe_get(0), self._im.unsafe_get(0)
                     )
                 )
                 + String(
@@ -3507,7 +3503,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 self.shape
             )
             unsafe_memcpy(
-                dest=result._buf.ptr, src=self._re._buf.ptr, count=self.size
+                dest=result.unsafe_ptr(), src=self._re.unsafe_ptr(), count=self.size
             )
             return result^
         elif type == "im":
@@ -3515,7 +3511,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 self.shape
             )
             unsafe_memcpy(
-                dest=result._buf.ptr, src=self._im._buf.ptr, count=self.size
+                dest=result.unsafe_ptr(), src=self._im.unsafe_ptr(), count=self.size
             )
             return result^
         else:
@@ -4385,7 +4381,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     def argsort(self, axis: Int) raises -> NDArray[DType.int]:
         if self.ndim == 0:
             var out = NDArray[DType.int](Shape())
-            out._buf.ptr[] = 0
+            out.unsafe_set(0, 0)
             return out^
         var normalized_axis = self._normalize_axis(axis)
         var axes = self._permute_axis_to_last(normalized_axis)

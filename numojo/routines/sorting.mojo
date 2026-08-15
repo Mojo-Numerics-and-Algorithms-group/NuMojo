@@ -27,8 +27,6 @@ from std.algorithm import vectorize
 from numojo.core.ndarray import NDArray
 from numojo.core.layout import NDArrayShape
 from numojo.core.layout import NDArrayShape
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
 from numojo.routines.manipulation import ravel, transpose
 from numojo.routines.functional import (
     apply_along_axis_preserve,
@@ -151,66 +149,6 @@ def sort_inplace[
 
 
 # Below are overrides for Matrix type
-
-
-def sort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Sort the Matrix. It is first flattened before sorting.
-    """
-    var I = Matrix[DType.int].zeros(shape=A.shape)
-    var B = A.flatten()
-    _quick_sort_inplace(B, I, 0, A.size - 1)
-
-    return B^
-
-
-def sort[dtype: DType](var A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
-    """
-    Sort the Matrix along the given axis.
-    """
-    var order = A.order()
-
-    if axis == 1:
-        var result = Matrix[dtype](shape=A.shape, order=order)
-
-        for i in range(A.shape[0]):
-            var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
-            var indices = Matrix[DType.int].zeros(
-                shape=(1, A.shape[1]), order="C"
-            )
-
-            for j in range(A.shape[1]):
-                row._store(0, j, A._load(i, j))
-
-            _quick_sort_inplace(row, indices, 0, row.size - 1)
-
-            for j in range(A.shape[1]):
-                result._store(i, j, row._load(0, j))
-
-        return result^
-
-    elif axis == 0:
-        var result = Matrix[dtype](shape=A.shape, order=order)
-
-        for j in range(A.shape[1]):
-            var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
-            var indices = Matrix[DType.int].zeros(
-                shape=(A.shape[0], 1), order="C"
-            )
-
-            for i in range(A.shape[0]):
-                col._store(i, 0, A._load(i, j))
-
-            _quick_sort_inplace(col, indices, 0, col.size - 1)
-
-            for i in range(A.shape[0]):
-                result._store(i, j, col._load(i, 0))
-
-        return result^
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
-
-
 def argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort an array.
@@ -279,82 +217,6 @@ def argsort[
     return apply_along_axis_indices[dtype, func1d=argsort_quick_sort_1d](
         a, axis=normalized_axis
     )
-
-
-def argsort[dtype: DType](A: Matrix[dtype]) raises -> Matrix[DType.int]:
-    """
-    Argsort the Matrix. It is first flattened before sorting.
-    """
-    var I = Matrix[DType.int](shape=(1, A.size), order=A.order())
-    for i in range(I.size):
-        I._store_idx(i, Scalar[DType.int](i))
-    var B: Matrix[dtype]
-    if A.order() == "C":
-        B = A.flatten()
-    else:
-        B = A.reorder_layout().flatten().reorder_layout()
-    _quick_sort_inplace(B, I, 0, A.size - 1)
-
-    return I^
-
-
-def argsort[
-    dtype: DType
-](A: Matrix[dtype], axis: Int) raises -> Matrix[DType.int]:
-    """
-    Argsort the Matrix along the given axis.
-    """
-    var order = A.order()
-
-    if axis == 1:
-        var result = Matrix[DType.int](shape=A.shape, order=order)
-
-        for i in range(A.shape[0]):
-            var row = Matrix[dtype](shape=(1, A.shape[1]), order="C")
-            var idx = Matrix[DType.int](shape=(1, A.shape[1]), order="C")
-
-            for j in range(A.shape[1]):
-                row._store(0, j, A._load(i, j))
-                idx._store(0, j, Scalar[DType.int](j))
-
-            _quick_sort_inplace(row, idx, 0, row.size - 1)
-
-            for j in range(A.shape[1]):
-                result._store(i, j, idx._load(0, j))
-
-        return result^
-
-    elif axis == 0:
-        var result = Matrix[DType.int](shape=A.shape, order=order)
-
-        for j in range(A.shape[1]):
-            var col = Matrix[dtype](shape=(A.shape[0], 1), order="C")
-            var idx = Matrix[DType.int](shape=(A.shape[0], 1), order="C")
-
-            for i in range(A.shape[0]):
-                col._store(i, 0, A._load(i, j))
-                idx._store(i, 0, Scalar[DType.int](i))
-
-            _quick_sort_inplace(col, idx, 0, col.size - 1)
-
-            for i in range(A.shape[0]):
-                result._store(i, j, idx._load(i, 0))
-
-        return result^
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
-
-
-# ===----------------------------------------------------------------------=== #
-# Multiple sorting algorithms in the backend.
-# ===----------------------------------------------------------------------=== #
-
-
-###############
-# Binary sort #
-###############
-
-
 def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
@@ -663,65 +525,6 @@ def _partition_in_range(
     _unsafe_swap(I, store_index, right)
 
     return store_index
-
-
-def _quick_sort_partition(
-    mut A: Matrix, mut I: Matrix, left: Int, right: Int, pivot_index: Int
-) raises -> Int:
-    """
-    Do partition for the data buffer of Matrix.
-
-    Args:
-        A: A Matrix.
-        I: A Matrix used to store indices.
-        left: Left index of the partition.
-        right: Right index of the partition.
-        pivot_index: Input pivot index
-
-    Returns:
-        New pivot index.
-    """
-
-    # Boundary check due to use of unsafe way.
-    if (left >= A.size) or (right >= A.size) or (pivot_index >= A.size):
-        raise Error(
-            String(
-                "Index out of boundary! "
-                "left={}, right={}, pivot_index={}, matrix.size={}"
-            ).format(left, right, pivot_index, A.size)
-        )
-
-    var pivot_value = A._load(pivot_index)
-
-    var pivot = A._load(pivot_index)
-    A._store_idx(pivot_index, A._load(right))
-    A._store_idx(right, pivot)
-    var pivot_i = I._load(pivot_index)
-    I._store_idx(pivot_index, I._load(right))
-    I._store_idx(right, pivot_i)
-
-    var store_index = left
-
-    for i in range(left, right):
-        if A._load(i) < pivot_value:
-            var value = A._load(store_index)
-            A._store_idx(store_index, A._load(i))
-            A._store_idx(i, value)
-            var index = I._load(store_index)
-            I._store_idx(store_index, I._load(i))
-            I._store_idx(i, index)
-            store_index = store_index + 1
-
-    var value = A._load(store_index)
-    A._store_idx(store_index, A._load(right))
-    A._store_idx(right, value)
-    var index = I._load(store_index)
-    I._store_idx(store_index, I._load(right))
-    I._store_idx(right, index)
-
-    return store_index
-
-
 def _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
     """
     Sort in-place of the data buffer (quick-sort) within give range.
@@ -762,32 +565,6 @@ def _quick_sort_in_range(
         )
         _quick_sort_in_range(A, I, left, pivot_new_index - 1)
         _quick_sort_in_range(A, I, pivot_new_index + 1, right)
-
-
-def _quick_sort_inplace(
-    mut A: Matrix, mut I: Matrix, left: Int, right: Int
-) raises:
-    """
-    Sort in-place of the data buffer (quick-sort).
-    It is not guaranteed to be stable.
-    The data buffer must be contiguous.
-
-    Args:
-        A: A Matrix.
-        I: A Matrix used to store indices.
-        left: Left index of the partition.
-        right: Right index of the partition.
-    """
-
-    if right > left:
-        var pivot_index = left + (right - left) // 2
-        var pivot_new_index = _quick_sort_partition(
-            A, I, left, right, pivot_index
-        )
-        _quick_sort_inplace(A, I, left, pivot_new_index - 1)
-        _quick_sort_inplace(A, I, pivot_new_index + 1, right)
-
-
 def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     """
     Sort in-place array's buffer using quick sort method.

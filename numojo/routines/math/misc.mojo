@@ -19,7 +19,6 @@ from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 
 
-# TODO: Implement same routines for Matrix.
 def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Element-wise cube root of a NDArray.

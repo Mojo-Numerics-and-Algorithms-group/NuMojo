@@ -14,31 +14,7 @@ import std.math as builtin_math
 from std.utils.numerics import nextafter as builtin_nextafter
 
 from numojo.core.ndarray import NDArray
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
 from numojo.routines import HostExecutor
-
-# ===------------------------------------------------------------------------===#
-# Matrix Rounding
-# ===------------------------------------------------------------------------===#
-
-
-def round[dtype: DType](A: Matrix[dtype], decimals: Int = 0) -> Matrix[dtype]:
-    # FIXME
-    # The built-in `round` function is not working now.
-    # It will be fixed in future.
-    if not A.is_c_contiguous():
-        return round(A.contiguous(), decimals)
-    var res = Matrix.zeros[dtype](A.shape)
-    for i in range(A.size):
-        res._buf[i] = builtin_math.round(A._buf[i], ndigits=decimals)
-    return res^
-
-
-# ===------------------------------------------------------------------------===#
-# Absolute Value
-# ===------------------------------------------------------------------------===#
-
 
 def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """

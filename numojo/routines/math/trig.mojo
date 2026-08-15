@@ -7,14 +7,12 @@
 #  ===----------------------------------------------------------------------=== #
 """Trigonometric routines for NuMojo (numojo.routines.math.trig).
 
-Implements trigonometric and inverse trigonometric functions for NDArrays and Matrices.
+Implements trigonometric and inverse trigonometric functions for NDArrays.
 """
 
 import std.math as math
 
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
-from numojo.core.matrix.base import _arithmetic_func_matrix_to_matrix
 from numojo.routines import HostExecutor
 from numojo.routines.math.misc import sqrt
 from numojo.routines.math.arithmetic import fma
@@ -49,6 +47,11 @@ def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
+def arccos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Apply inverse cosine element-wise."""
+    return acos(array)
+
+
 def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse sine.
@@ -74,6 +77,11 @@ def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
+def arcsin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Apply inverse sine element-wise."""
+    return asin(array)
+
+
 def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply inverse tangent.
@@ -97,6 +105,11 @@ def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         return math.atan(simd)
 
     return HostExecutor.apply_unary[dtype, _kernel](array)
+
+
+def arctan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Apply inverse tangent element-wise."""
+    return atan(array)
 
 
 def atan2[
@@ -131,166 +144,6 @@ def atan2[
         return math.atan2(simd1, simd2)
 
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
-
-
-# ===------------------------------------------------------------------------===#
-# Inverse Trig (Matrix)
-# ===------------------------------------------------------------------------===#
-
-
-def arccos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse cosine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise acos of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.acos(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def acos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse cosine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise acos of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.acos(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def arcsin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse sine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise asin of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.asin(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def asin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse sine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise asin of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.asin(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def arctan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse tangent.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise atan of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.atan(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def atan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply inverse tangent.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise atan of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.atan(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-# ===------------------------------------------------------------------------===#
-# Trig (NDArray)
-# ===------------------------------------------------------------------------===#
 
 
 def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -371,88 +224,6 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 # Trig (Matrix)
 # ===------------------------------------------------------------------------===#
-
-
-def cos[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply cosine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise cos of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.cos(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def sin[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply sine.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise sin of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.sin(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-def tan[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Apply tangent.
-
-    Parameters:
-        dtype: The element type.
-
-    Args:
-        A: A Matrix.
-
-    Returns:
-        The element-wise tan of `A`.
-    """
-
-    @parameter
-    def _kernel[
-        dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ] where dtype.is_floating_point():
-        return math.tan(simd)
-
-    return _arithmetic_func_matrix_to_matrix[dtype, _kernel](A)
-
-
-# ===------------------------------------------------------------------------===#
-# Hypotenuse
-# ===------------------------------------------------------------------------===#
-
-
 def hypot[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:

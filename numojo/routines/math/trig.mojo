@@ -222,7 +222,7 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
 
 # ===------------------------------------------------------------------------===#
-# Trig (Matrix)
+# Trig (NDArray)
 # ===------------------------------------------------------------------------===#
 def hypot[
     dtype: DType

@@ -188,5 +188,5 @@ def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
 
 # ===------------------------------------------------------------------------===#
-# Hyperbolic Trig (Matrix)
+# Hyperbolic Trig (NDArray)
 # ===------------------------------------------------------------------------===#

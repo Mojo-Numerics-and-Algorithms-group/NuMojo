@@ -218,10 +218,10 @@ def solve[
 
     Args:
         A: Non-singular, square, and row-major matrix. The size is m x m.
-        Y: Matrix of size m x n.
+        Y: Array of size m x n.
 
     Returns:
-        Matrix of size m x n.
+        Array of size m x n.
 
     An example goes as follows.
 

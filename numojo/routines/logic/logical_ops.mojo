@@ -7,7 +7,7 @@
 #  ===----------------------------------------------------------------------=== #
 """Logical Operations Module (numojo.routines.logic.logical_ops)
 ----------------------------------------------------------------
-This module implements element-wise logical operations for NDArray, ComplexNDArray, and Matrix types in the NuMojo library.
+This module implements element-wise logical operations for NDArray and ComplexNDArray types in the NuMojo library.
 """
 
 from numojo.routines import HostExecutor
@@ -410,5 +410,5 @@ def logical_xor[
 
 
 # ===----------------------------------------------------------------------=== #
-# Logical operations for Matrix
+# Logical operations for NDArray
 # ===----------------------------------------------------------------------=== #

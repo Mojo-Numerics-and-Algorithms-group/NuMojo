@@ -147,7 +147,7 @@ def partial_pivoting[
     if A.ndim != 2:
         raise Error(String("Array must be 2d."))
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Matrix is not square."))
+        raise Error(String("Array is not square."))
 
     var n = A.shape[0]
     var P = identity[dtype](n)

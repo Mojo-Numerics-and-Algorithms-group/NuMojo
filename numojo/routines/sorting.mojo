@@ -148,7 +148,7 @@ def sort_inplace[
         )
 
 
-# Below are overrides for Matrix type
+# Array sorting overloads
 def argsort[dtype: DType](a: NDArray[dtype]) raises -> NDArray[DType.int]:
     """
     Returns the indices that would sort an array.

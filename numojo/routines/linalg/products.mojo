@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Matrix and vector products (numojo.routines.linalg.products)
+"""Array and vector products (numojo.routines.linalg.products)
 ---------------------------------------------------------------
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
@@ -143,7 +143,7 @@ def matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Matrix multiplication vectorized, tiled, unrolled, and parallelized.
+    Array multiplication vectorized, tiled, unrolled, and parallelized.
     """
     if not A.is_c_contiguous():
         return matmul_tiled_unrolled_parallelized(A.contiguous(), B)
@@ -410,7 +410,7 @@ def matmul_naive[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Matrix multiplication with three nested loops.
+    Array multiplication with three nested loops.
     """
     var result: NDArray[dtype]
     if B.ndim == 1:

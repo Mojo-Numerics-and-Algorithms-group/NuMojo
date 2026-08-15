@@ -7,7 +7,7 @@
 #  ===----------------------------------------------------------------------=== #
 """Truth value testing (numojo.routines.logic.truth)
 ----------------------------------------------------
-This module implements the truth value testing functions, such as `all` and `any`, for both `NDArray` and `Matrix`.
+This module implements the truth value testing functions, such as `all` and `any`, for `NDArray`.
 """
 
 from std.algorithm import vectorize
@@ -84,5 +84,5 @@ def any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
 
 
 # ===----------------------------------------------------------------------=== #
-# Truth operations for Matrix
+# Truth operations for NDArray
 # ===----------------------------------------------------------------------=== #

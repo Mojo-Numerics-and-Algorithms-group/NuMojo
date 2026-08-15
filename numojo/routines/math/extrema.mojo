@@ -227,7 +227,7 @@ def min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
 
 
 # ===-----------------------------------------------------------------------===#
-# Matrix reductions (min/max over axes)
+# Array reductions (min/max over axes)
 # ===-----------------------------------------------------------------------===#
 def minimum[
     dtype: DType = DType.float64

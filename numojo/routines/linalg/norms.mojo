@@ -28,7 +28,7 @@ def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     if A.ndim != 2:
         raise Error(String("Array must be 2d."))
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Matrix is not square."))
+        raise Error(String("Array is not square."))
 
     var det_L: Scalar[dtype] = 1
     var det_U: Scalar[dtype] = 1

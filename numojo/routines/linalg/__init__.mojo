@@ -13,6 +13,7 @@ This module provides functions for linear algebra operations, including matrix d
 # Local
 # ===----------------------------------------------------------------------===#
 from .misc import diagonal
+from .decompositions import lu_decomposition
 from .norms import (
     det,
     trace,
@@ -22,4 +23,7 @@ from .products import (
     dot,
     matmul,
 )
-from .solving import inv
+from .solving import (
+    inv,
+    solve,
+)

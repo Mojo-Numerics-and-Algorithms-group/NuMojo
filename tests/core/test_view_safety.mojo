@@ -362,7 +362,7 @@ def test_ndarray_pow_view() raises:
 
 
 # ===-----------------------------------------------------------------------===#
-# Matrix: sum, prod, cumsum on F-order matrices
+# Sorting a non-contiguous view
 # ===-----------------------------------------------------------------------===#
 def test_sort_does_not_mutate_original() raises:
     """Test that sorting a view does not mutate the original array."""
@@ -1129,7 +1129,7 @@ def test_offset_view_slice_setitem() raises:
 
 
 # ===-----------------------------------------------------------------------===#
-# Phase 4+ tests: In-place operators, Matrix view safety, where, ravel
+# Phase 4+ tests: in-place operators, where, ravel
 # ===-----------------------------------------------------------------------===#
 
 

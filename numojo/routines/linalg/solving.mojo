@@ -30,10 +30,7 @@ from numojo.routines.creation import (
     full,
     zeros,
 )
-from numojo.routines.linalg.decompositions import (
-    lu_decomposition,
-    partial_pivoting,
-)
+from numojo.routines.linalg.decompositions import lu_decomposition
 
 
 def forward_substitution[
@@ -127,6 +124,8 @@ def inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     var I = eye[dtype](m, m)
 
     return solve(A, I)
+
+
 def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, row-major matrix.
 
@@ -194,6 +193,8 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     # var _U = U^
 
     return X^
+
+
 def solve[
     dtype: DType
 ](A: NDArray[dtype], Y: NDArray[dtype]) raises -> NDArray[dtype]:

@@ -10,11 +10,6 @@
 This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """
 # ===----------------------------------------------------------------------===#
-# Stdlib
-# ===----------------------------------------------------------------------===#
-from std.collections.optional import Optional
-
-# ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
@@ -173,6 +168,8 @@ def argmax[
     return apply_along_axis_reduce_to_int[dtype, func1d=argmax_1d](
         a=a, axis=normalized_axis
     )
+
+
 def argmin[dtype: DType, //](a: NDArray[dtype]) raises -> Scalar[DType.int]:
     """Returns the indices of the minimum values of the array along an axis.
     When no axis is specified, the array is flattened.

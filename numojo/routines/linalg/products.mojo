@@ -404,6 +404,8 @@ def matmul[
         )
 
     return result^
+
+
 def matmul_naive[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:

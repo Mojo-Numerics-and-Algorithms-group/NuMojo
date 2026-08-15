@@ -44,6 +44,8 @@ def check_scalar_close[
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.isclose(value, np_sol, atol=PythonObject(0.001)), st)
+
+
 def check_value_close[
     dtype: DType
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
@@ -1239,6 +1241,8 @@ def test_inplace_imod_scalar_view() raises:
     assert_true(parent.load(4) == 1.0, "imod parent[4]")
     assert_true(parent.load(5) == 2.0, "imod parent[5]")
     assert_true(parent.load(6) == 6.0, "imod parent[6] unchanged")
+
+
 def test_ndarray_ravel_offset_view() raises:
     """Test ravel on a C-contiguous view with offset."""
     var parent = nm.arange[nm.f64](0, 24)

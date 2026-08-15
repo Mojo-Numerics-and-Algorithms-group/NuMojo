@@ -13,13 +13,7 @@ Implements product and cumulative product reductions for NDArrays and Matrices.
 # Stdlib
 # ===----------------------------------------------------------------------===#
 from std.algorithm.functional import vectorize
-from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-
-# ===----------------------------------------------------------------------===#
-# External
-# ===----------------------------------------------------------------------===#
-from max.algorithm import parallelize
 
 # ===----------------------------------------------------------------------===#
 # numojo
@@ -104,6 +98,8 @@ def prod[
         result *= arr_slice
 
     return result^
+
+
 def cumprod[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns cumprod of all items of an array.

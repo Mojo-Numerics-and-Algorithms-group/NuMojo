@@ -664,6 +664,8 @@ def isclose[
             res.store(i, False)
 
     return res^
+
+
 def array_equal[
     dtype: DType
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> Bool:

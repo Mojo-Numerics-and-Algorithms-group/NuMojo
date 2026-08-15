@@ -372,6 +372,8 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
             flipped_axes.append(i)
 
         return transpose(A, axes=flipped_axes)
+
+
 def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -425,6 +427,8 @@ def broadcast_to[
 
     # view.
     return a.view_with_layout(shape, b_strides, a.offset)
+
+
 def _broadcast_back_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape, axis: Int) raises -> NDArray[dtype]:

@@ -10,11 +10,17 @@
 Implements rounding, truncation, absolute value, and next-after helpers for NDArrays.
 """
 
-import std.math as builtin_math
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 from std.utils.numerics import nextafter as builtin_nextafter
 
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
+
 
 def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """

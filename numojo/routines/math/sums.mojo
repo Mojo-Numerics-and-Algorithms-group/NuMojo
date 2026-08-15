@@ -13,13 +13,7 @@ Provides sum reductions along axes for NDArrays and Matrices, covering both flat
 # Stdlib
 # ===----------------------------------------------------------------------===#
 from std.algorithm import vectorize
-from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-
-# ===----------------------------------------------------------------------===#
-# External
-# ===----------------------------------------------------------------------===#
-from max.algorithm import parallelize
 
 # ===----------------------------------------------------------------------===#
 # numojo
@@ -132,6 +126,8 @@ def sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         result += arr_slice
 
     return result^
+
+
 def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns cumsum of all items of an array.

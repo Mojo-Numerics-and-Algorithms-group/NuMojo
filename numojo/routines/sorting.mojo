@@ -217,6 +217,8 @@ def argsort[
     return apply_along_axis_indices[dtype, func1d=argsort_quick_sort_1d](
         a, axis=normalized_axis
     )
+
+
 def binary_sort_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
     var result: NDArray[dtype] = a.contiguous()
     for end in range(result.size, 1, -1):
@@ -525,6 +527,8 @@ def _partition_in_range(
     _unsafe_swap(I, store_index, right)
 
     return store_index
+
+
 def _quick_sort_in_range(mut A: NDArray, left: Int, right: Int) raises:
     """
     Sort in-place of the data buffer (quick-sort) within give range.
@@ -565,6 +569,8 @@ def _quick_sort_in_range(
         )
         _quick_sort_in_range(A, I, left, pivot_new_index - 1)
         _quick_sort_in_range(A, I, pivot_new_index + 1, right)
+
+
 def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     """
     Sort in-place array's buffer using quick sort method.

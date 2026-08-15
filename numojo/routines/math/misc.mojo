@@ -10,11 +10,14 @@
 Implements miscellaneous math helpers on NDArrays, including cube root, clipping, reciprocal square root, square root, and scalb.
 """
 
-from std.algorithm import vectorize
-import std.math as builtin_math
+# ===----------------------------------------------------------------------===#
+# Stdlib
+# ===----------------------------------------------------------------------===#
 import std.math.math as stdlib_math
-from std.sys import simd_width_of
 
+# ===----------------------------------------------------------------------===#
+# numojo
+# ===----------------------------------------------------------------------===#
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 

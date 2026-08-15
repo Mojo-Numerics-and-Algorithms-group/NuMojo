@@ -10,13 +10,6 @@
 This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
 """
 # ===----------------------------------------------------------------------===#
-# Stdlib
-# ===----------------------------------------------------------------------===#
-from std.algorithm import vectorize
-import std.math as builtin_math
-from std.sys import simd_width_of
-
-# ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
 from numojo.core.indexing.item import Item
@@ -25,8 +18,9 @@ from numojo.core.ndarray import NDArray
 from numojo.routines.creation import (
     full,
     identity,
-    zeros,
 )
+
+
 def lu_decomposition[
     dtype: DType
 ](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]]:
@@ -133,6 +127,8 @@ def lu_decomposition[
     # parallelize[calculate](n, n)
 
     return L^, U^
+
+
 def partial_pivoting[
     dtype: DType
 ](var A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype], Int]:

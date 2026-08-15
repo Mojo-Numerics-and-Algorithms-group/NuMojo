@@ -100,6 +100,8 @@ def mean[
     return apply_along_axis_reduce_with_dtype[
         dtype, returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
+
+
 def median_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:
@@ -327,6 +329,8 @@ def stddev[
     return variance[returned_dtype](
         A, axis=normalized_axis, ddof=ddof
     ) ** Scalar[returned_dtype](0.5)
+
+
 def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:

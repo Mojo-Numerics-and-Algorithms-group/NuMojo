@@ -56,6 +56,8 @@ def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         return det_L * det_U
     else:
         return -det_L * det_U
+
+
 def trace[
     dtype: DType
 ](

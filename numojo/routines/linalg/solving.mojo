@@ -23,7 +23,6 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (
@@ -128,28 +127,6 @@ def inv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     var I = eye[dtype](m, m)
 
     return solve(A, I)
-
-
-def inv[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Inverse of matrix.
-    """
-
-    # Check whether the matrix is square
-    if A.shape[0] != A.shape[1]:
-        raise Error(
-            String("{}x{} matrix is not square.").format(A.shape[0], A.shape[1])
-        )
-    var order: String = "F"
-    if A.is_c_contiguous():
-        order = "C"
-
-    var I = Matrix.identity[dtype](A.shape[0], order=order)
-    var B = solve(A, I)
-
-    return B^
-
-
 def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """Find the inverse of a non-singular, row-major matrix.
 
@@ -217,43 +194,6 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     # var _U = U^
 
     return X^
-
-
-def lstsq[
-    dtype: DType
-](X: Matrix[dtype], y: Matrix[dtype]) raises -> Matrix[dtype]:
-    """Caclulate the OLS estimates.
-
-    Example:
-    ```text
-    from numojo import Matrix
-    X = Matrix.rand((1000000, 5))
-    y = Matrix.rand((1000000, 1))
-    print(lstsq(X, y))
-    ```
-    ```text
-    [[0.18731374756029967]
-     [0.18821352688798607]
-     [0.18717162200411439]
-     [0.1867570378683612]
-     [0.18828715376701158]]
-    Size: 5x1  DType: float64
-    ```
-    """
-
-    if X.shape[0] != y.shape[0]:
-        raise Error(
-            String(
-                "Row number of `X` {X.shape[0]} should equal that of `y`"
-                " {y.shape[0]}"
-            )
-        )
-
-    var X_prime = X.T()
-    var b = (X_prime @ X).inv() @ X_prime @ y
-    return b^
-
-
 def solve[
     dtype: DType
 ](A: NDArray[dtype], Y: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -390,112 +330,3 @@ def solve[
 
 
 # TODO: remove unnecessary copies going on here later.
-def solve[
-    dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Solve `AX = Y` using LUP decomposition.
-    """
-    if A.is_c_contiguous() != Y.is_c_contiguous():
-        raise Error("Input matrices A and Y must have the same memory layout")
-
-    var U: Matrix[dtype]
-    var L: Matrix[dtype]
-
-    var A_pivoted_Pair: Tuple[
-        Matrix[dtype], Matrix[dtype], Int
-    ] = partial_pivoting(A.copy())
-
-    var pivoted_A = A_pivoted_Pair[0].copy()
-    var P = A_pivoted_Pair[1].copy()
-
-    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
-        pivoted_A
-    )
-    L = L_U[0].copy()
-    U = L_U[1].copy()
-
-    var m: Int = A.shape[0]
-    var n: Int = Y.shape[1]
-
-    var Z: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
-    var X: Matrix[dtype] = Matrix.zeros[dtype]((m, n), order=A.order())
-    var PY = P @ Y
-
-    @parameter
-    def calculate_X(col: Int) -> None:
-        # Solve `LZ = PY` for `Z` for each col
-        for i in range(m):  # row of L
-            var _temp = PY._load(i, col)
-            for j in range(i):  # col of L
-                _temp = _temp - L._load(i, j) * Z._load(j, col)
-            _temp = _temp / L._load(i, i)
-            Z._store(i, col, _temp)
-
-        # Solve `UZ = Z` for `X` for each col
-        for i in range(m - 1, -1, -1):
-            var _temp2 = Z._load(i, col)
-            for j in range(i + 1, m):
-                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
-            _temp2 = _temp2 / U._load(i, i)
-            X._store(i, col, _temp2)
-
-    parallelize[calculate_X](n, n)
-
-    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
-    # This is disadvantage of Mojo's ASAP policy
-    var _L = L^
-    var _U = U^
-    var _Z = Z^
-    var _PY = PY^
-    var _m = m
-    var _n = n
-
-    return X^
-
-
-def solve_lu[
-    dtype: DType
-](A: Matrix[dtype], Y: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Solve `AX = Y` using LU decomposition.
-    """
-    var U: Matrix[dtype]
-    var L: Matrix[dtype]
-    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](A)
-    L = L_U[0].copy()
-    U = L_U[1].copy()
-
-    var m = A.shape[0]
-    var n = Y.shape[1]
-
-    var Z = Matrix.full[dtype]((m, n))
-    var X = Matrix.full[dtype]((m, n))
-
-    @parameter
-    def calculate_X(col: Int) -> None:
-        # Solve `LZ = Y` for `Z` for each col
-        for i in range(m):  # row of L
-            var _temp = Y._load(i, col)
-            for j in range(i):  # col of L
-                _temp = _temp - L._load(i, j) * Z._load(j, col)
-            _temp = _temp / L._load(i, i)
-            Z._store(i, col, _temp)
-        for i in range(m - 1, -1, -1):
-            var _temp2 = Z._load(i, col)
-            for j in range(i + 1, m):
-                _temp2 = _temp2 - U._load(i, j) * X._load(j, col)
-            _temp2 = _temp2 / U._load(i, i)
-            X._store(i, col, _temp2)
-
-    parallelize[calculate_X](n, n)
-
-    # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
-    # This is disadvantage of Mojo's ASAP policy
-    var _L = L^
-    var _U = U^
-    var _Z = Z^
-    var _m = m
-    var _n = n
-
-    return X^

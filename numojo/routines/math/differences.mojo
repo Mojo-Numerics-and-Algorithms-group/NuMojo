@@ -19,11 +19,10 @@ Exports
 -------
 - `gradient`: Compute gradients using the trapezoidal rule.
 - `diff`: Compute n-th order finite differences.
-
-Notes:
-    - TODO: Add Variant[NDArray, Scalar, ...] to include all possibilities
-    - TODO: Add edge_order parameter support
 """
+
+# TODO: Add Variant[NDArray, Scalar, ...] to include all possibilities
+# TODO: Add edge_order parameter support
 
 # ===----------------------------------------------------------------------=== #
 # Stdlib

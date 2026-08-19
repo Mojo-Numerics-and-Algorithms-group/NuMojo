@@ -17,11 +17,9 @@ Exports
 -------
 - `sinh`, `cosh`, `tanh`: Hyperbolic functions.
 - `asinh`, `acosh`, `atanh`: Inverse hyperbolic functions.
-
-Notes
------
-- TODO: Add dtype support in backends for better type handling.
 """
+
+# TODO: Add dtype support in backends for better type handling.
 
 # ===----------------------------------------------------------------------=== #
 # Stdlib

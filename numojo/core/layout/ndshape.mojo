@@ -5,21 +5,30 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayShape (numojo.core.layout.ndshape)
---------------------------------------------
-Implements NDArrayShape type representing the shape of an NDArray.
-The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim) tracked separately.
-The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
-and properties like size and rank.
 """
-# ===----------------------------------------------------------------------===#
+NDArrayShape (numojo.core.layout.ndshape)
+==========================================
+
+Represents the shape (dimensions) of an NDArray.
+
+The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim)
+tracked separately. The NDArrayShape provides methods for element access, shape transformations
+(e.g., permute, reverse), and properties like size and rank.
+
+Notes:
+    - The number of elements in the shape must be positive.
+    - All elements of the shape must be non-negative.
+    - Dimension values are validated upon creation.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.memory import unsafe_memcpy
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
@@ -34,22 +43,23 @@ struct NDArrayShape(
     Writable,
 ):
     """
-    Presents the shape of `NDArray` type.
+    Represents the shape (dimensions) of an NDArray.
 
-    The data buffer of the NDArrayShape is a series of `Int` on memory.
-    The number of elements in the shape must be positive.
-    The elements of the shape must be non-negative.
-    The number of dimension and values of elements are checked upon
-    creation of the shape.
+    The data buffer is a series of `Int` values in memory. Dimensions and values are validated
+    upon creation to ensure they are non-negative.
 
-    Example:
-    ```mojo
-    import numojo as nm
-    var shape1 = nm.Shape(2, 3, 4)
-    print(shape1)  # Shape: (2, 3, 4)
-    var shape2 = nm.Shape([5, 6, 7])
-    print(shape2)  # Shape: (5, 6, 7)
-    ```
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Create shape with variadic arguments
+        var shape1 = nm.Shape(2, 3, 4)
+        print(shape1)  # Shape: (2, 3, 4)
+
+        # Create shape from list
+        var shape2 = nm.Shape([5, 6, 7])
+        print(shape2)  # Shape: (5, 6, 7)
+        ```
     """
 
     # ===----------------------------------------------------------------------=== #

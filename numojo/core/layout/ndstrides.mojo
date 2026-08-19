@@ -5,19 +5,29 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayStrides (numojo.core.layout.ndstrides)
-------------------------------------------------
-Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
-which is used to calculate the memory offset for each dimension when indexing into the array.
 """
-# ===----------------------------------------------------------------------===#
+NDArrayStrides (numojo.core.layout.ndstrides)
+===============================================
+
+Represents the strides (memory layout) of an NDArray.
+
+Strides are used to calculate the memory offset for each dimension when indexing into an array.
+For example, strides [12, 4] mean each element in dimension 1 is 12 bytes apart, and each
+element in dimension 2 is 4 bytes apart.
+
+Notes:
+    - The number of elements in the strides must match the number of dimensions.
+    - Strides are validated upon creation to ensure correctness.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.memory import unsafe_memcpy
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndshape import NDArrayShape
@@ -32,11 +42,10 @@ struct NDArrayStrides(
     Writable,
 ):
     """
-    Presents the strides of `NDArray` type.
+    Represents the strides (memory layout) of an NDArray.
 
-    The data buffer of the NDArrayStrides is a series of `Int` on memory.
-    The number of elements in the strides must be positive.
-    The number of dimension is checked upon creation of the strides.
+    Strides are stored as a series of `Int` values in memory and define how to traverse
+    array elements in memory for efficient indexing and iteration.
     """
 
     # ===----------------------------------------------------------------------=== #

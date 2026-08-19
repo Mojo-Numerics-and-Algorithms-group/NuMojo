@@ -5,16 +5,20 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Storage (numojo.core.memory.storage)
----------------------------------------
+"""
+Storage (numojo.core.memory.storage)
+=====================================
+
 Backend storage containers for accelerator-aware data management.
 
-This module provides three storage structs:
+Provides reference-counted and device-aware memory storage with unified
+container selection based on device type at compile time.
 
+Exports
+-------
 - `HostStorage`: Reference-counted host (CPU) memory container.
-- `DeviceStorage`: Device (GPU) memory container wrapping a `DeviceBuffer`.
-- `AcceleratorDataContainer`: Unified container that selects between
-  `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
+- `DeviceStorage`: Device (GPU) memory container.
+- `AcceleratorDataContainer`: Unified container selecting storage by device.
 """
 from std.memory import UnsafePointer
 from std.atomic import Atomic, Ordering, fence

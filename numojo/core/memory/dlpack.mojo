@@ -5,13 +5,19 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""DLPack (numojo.core.memory.dlpack)
-----------------------------------
-This module implements the DLPack protocol for zero-copy tensor exchange
-between NuMojo and other array libraries (NumPy, PyTorch, JAX, etc.).
+"""
+DLPack Interoperability (numojo.core.memory.dlpack)
+====================================================
 
-DLPack is an open standard for in-memory tensor structures that enables
-zero-copy data sharing between different frameworks.
+Zero-copy tensor exchange via DLPack protocol.
+
+Implements the DLPack protocol for zero-copy data exchange between NuMojo
+and other array libraries (NumPy, PyTorch, JAX, etc.).
+
+Exports
+-------
+- `from_dlpack`: Create NDArray from DLPack tensor.
+- `to_dlpack`: Export NDArray as DLPack tensor.
 
 References:
     - DLPack Specification: https://dmlc.github.io/dlpack/latest/

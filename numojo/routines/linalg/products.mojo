@@ -301,7 +301,7 @@ def matmul_2darray[
                 result.unsafe_store[width=simd_width](
                     m * t2 + n,
                     val=result.unsafe_load[width=simd_width](m * t2 + n)
-                    + A.unsafe_load[width=simd_width](m * t1 + k)
+                    + A.unsafe_load[width=1](m * t1 + k)
                     * B.unsafe_load[width=simd_width](k * t2 + n),
                 )
 

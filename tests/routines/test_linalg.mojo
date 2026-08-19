@@ -1,6 +1,7 @@
 from std.python import Python, PythonObject
 from utils_for_test import check, check_is_close, check_values_close
 from std.testing import TestSuite
+from std.testing.testing import assert_true
 
 import numojo as nm
 from numojo.prelude import *
@@ -62,6 +63,61 @@ def test_matmul_1dx2d() raises:
     var nparr2 = arr2.to_numpy()
     check_is_close(
         arr1 @ arr2, np.matmul(nparr1, nparr2), "Dunder matmul is broken"
+    )
+
+
+def test_matmul_2dx2d_wide() raises:
+    """Test 2D matmul on rows wider than the kernel's vectorization width.
+
+    The kernel broadcasts a single element of `A` against a vector of `B`, so
+    it only exercises its full-width path once the last dimension reaches
+    `max(simd_width_of[dtype](), 16)`. Uniform values hide a broadcast that is
+    wrongly widened into a vector load, so these arrays are random.
+    """
+
+    def check_shape(m: Int, k: Int, n: Int) raises:
+        var np = Python.import_module("numpy")
+        var A = nm.random.randn(m, k)
+        var B = nm.random.randn(k, n)
+        check_is_close(
+            A @ B,
+            np.matmul(A.to_numpy(), B.to_numpy()),
+            String("`matmul` on a {}x{} @ {}x{} is broken").format(m, k, k, n),
+        )
+
+    # Widths on either side of the vectorization boundary: an exact multiple,
+    # a width that leaves a scalar remainder, and a non-square shape.
+    check_shape(32, 32, 32)
+    check_shape(20, 20, 20)
+    check_shape(17, 33, 20)
+    check_shape(5, 5, 64)
+
+
+def test_matmul_2dx2d_wide_f_order() raises:
+    """Test 2D matmul on wide rows when an operand is not C-contiguous."""
+    var np = Python.import_module("numpy")
+
+    var A = nm.random.randn(24, 20)
+    var B = nm.random.randn(20, 24)
+    var A_f = nm.random.randn(24, 20).reshape(Shape(24, 20), order="F")
+    var B_f = nm.random.randn(20, 24).reshape(Shape(20, 24), order="F")
+    assert_true(not A_f.is_c_contiguous(), "`A_f` should be F-order")
+    assert_true(not B_f.is_c_contiguous(), "`B_f` should be F-order")
+
+    check_is_close(
+        A_f @ B,
+        np.matmul(A_f.to_numpy(), B.to_numpy()),
+        "`matmul` with an F-order A is broken",
+    )
+    check_is_close(
+        A @ B_f,
+        np.matmul(A.to_numpy(), B_f.to_numpy()),
+        "`matmul` with an F-order B is broken",
+    )
+    check_is_close(
+        A_f @ B_f,
+        np.matmul(A_f.to_numpy(), B_f.to_numpy()),
+        "`matmul` with two F-order operands is broken",
     )
 
 

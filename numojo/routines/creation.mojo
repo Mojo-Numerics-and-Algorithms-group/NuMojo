@@ -1,29 +1,33 @@
 # ===----------------------------------------------------------------------=== #
-# NuMojo: Creation routines
+# NuMojo: Array creation routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Creation routines (numojo.routines.creation)
------------------------------------------------
-# TODO (In order of priority)
-1) Implement axis argument for the NDArray creation functions
-2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and reduce the number of function reloads.
-4) Simplify complex overloads into sum of real methods.
+# ===----------------------------------------------------------------------=== #
+"""
+Creation routines (numojo.routines.creation)
+==============================================
 
----
+Functions for creating and initializing NDArray and ComplexNDArray objects.
 
-Use more uniformed way of calling functions, i.e., using one specific
-overload for each function. This makes maintenance easier. Example:
+This module provides convenient factory functions for creating arrays with various
+initialization strategies (zeros, ones, empty, full, linspace, etc.) and helper
+functions for array generation from Python objects and mathematical sequences.
 
-- `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
-- `full` calls `NDArray.__init__`.
-- `zeros`, `ones` calls `full`.
-- Other functions calls `zeros`, `ones`, `full`.
+Notes:
+    Design principles follow the pattern:
+    - `NDArray.__init__` takes ShapeLike and initializes container.
+    - `full` is the primary creation function.
+    - `zeros`, `ones` call `full`.
+    - Other functions call `zeros`, `ones`, or `full`.
+    - When overloads are needed, they call the default signature.
 
-If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
+Planned improvements:
+    - Implement axis argument for creation functions.
+    - Separate `array(object)` and `NDArray.__init__(shape)`.
+    - Use `ShapeLike` trait to reduce function overloads.
+    - Simplify complex number overloads into real method composition.
 """
 
 from std.algorithm import vectorize
@@ -40,18 +44,17 @@ from std.memory import (
 from std.python import PythonObject, Python
 from std.sys import simd_width_of
 
-
-from numojo.core.layout import Flags
-from numojo.core.layout import Flags
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex.complex_ndarray import ComplexNDArray
-from numojo.core.dtype.complex_dtype import ComplexDType
-from numojo.core.type_aliases import ComplexScalar
-from numojo.core.layout import NDArrayShape
-from numojo.core.memory import DataContainer
 from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.layout import Flags, NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.type_aliases import Shape
+from numojo.core.memory import DataContainer
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import ComplexScalar, Shape
 
 
 # ===------------------------------------------------------------------------===#

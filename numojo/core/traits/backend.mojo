@@ -1,9 +1,28 @@
 # ===----------------------------------------------------------------------=== #
-# Defines computational backend traits
+# NuMojo: Computational backend
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+
+"""
+Backend Traits (numojo.core.traits.backend)
+============================================
+
+Computational backend trait definitions.
+
+Defines traits for different computation backends to standardize how
+array operations are implemented.
+
+Exports
+-------
+- `Backend`: Base trait for computational backends.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 
 

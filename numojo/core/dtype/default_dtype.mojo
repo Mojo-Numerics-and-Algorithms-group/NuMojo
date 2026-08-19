@@ -5,9 +5,21 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Default datatype (numojo.core.dtype.default_dtype).
+"""
+Default Datatypes (numojo.core.dtype.default_dtype)
+====================================================
 
-Datatypes Module - Implements rust like aliases for datatypes
+Type aliases for common Mojo data types.
+
+Rust-like and NumPy-like aliases for built-in Mojo data types with runtime
+and compile-time variants.
+
+Exports
+-------
+- Integer types: `i8`, `i16`, `i32`, `i64`, `i128`, `i256`, `int`, `uint`
+- Unsigned types: `u8`, `u16`, `u32`, `u64`, `u128`, `u256`
+- Float types: `f16`, `bf16`, `f32`, `f64`
+- Boolean type: `boolean`
 """
 
 # Rust-like or numpy-like data type comptime

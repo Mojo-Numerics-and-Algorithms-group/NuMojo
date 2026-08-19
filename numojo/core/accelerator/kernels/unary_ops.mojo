@@ -5,14 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Unary op GPU kernels (numojo.core.accelerator.kernels.unary_ops)
------------------------------------------------------------------
-GPU kernel functions and launch helpers for elementwise unary operations
-on contiguous `AcceleratorNDArray` buffers.
 """
-# ===----------------------------------------------------------------------===#
+Unary Ops Kernels (numojo.core.accelerator.kernels.unary_ops)
+==============================================================
+
+GPU kernels for unary operations.
+
+GPU kernel functions and launch helpers for element-wise unary operations
+on contiguous AcceleratorNDArray buffers.
+
+Exports
+-------
+- Unary operation kernel functions for GPU acceleration.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.gpu import (
     block_dim,
     block_idx,

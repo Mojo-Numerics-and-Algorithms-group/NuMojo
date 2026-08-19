@@ -1,6 +1,24 @@
 # ===----------------------------------------------------------------------=== #
-# Define `Buffered` traits
+# NuMojo: Buffered trait
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
+
+"""
+Buffered Trait (numojo.core.traits.buffered)
+==============================================
+
+Trait for buffer ownership semantics.
+
+Trait to denote whether a data buffer is owned or referenced. Implementations
+distinguish between owned data (OwnData) and referenced data (RefData).
+
+Exports
+-------
+- `Buffered`: Trait for buffer ownership.
+"""
 
 
 trait Buffered(ImplicitlyCopyable, Movable):

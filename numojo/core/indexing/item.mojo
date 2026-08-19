@@ -19,6 +19,10 @@ Notes:
     - Each Item instance is backed by a heap-allocated IndexBuffer.
     - Indices are stored as a series of Int values.
     - Item can be used for arbitrary-dimensional array indexing.
+
+Exports
+-------
+- `Item`: Array item indexing.
 """
 
 # ===----------------------------------------------------------------------=== #

@@ -11,6 +11,10 @@ Indexing offset calculation functions. These functions compute the flat index (o
 in memory for a given set of multi-dimensional indices and strides.
 They are used to translate multi-dimensional indexing into flat memory access,
 which is essential for efficient array operations in NuMojo.
+
+Exports
+-------
+- `calculate_offset`: Offset calculation.
 """
 
 from numojo.core.layout import NDArrayStrides

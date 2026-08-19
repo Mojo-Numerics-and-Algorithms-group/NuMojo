@@ -17,6 +17,10 @@ Example usage:
 
 Attributes:
     num (Int): The number of new axes to add. Defaults to 0 (single new axis).
+
+Exports
+-------
+- `NewAxis`: Add singleton dimension.
 """
 
 comptime newaxis = NewAxis()

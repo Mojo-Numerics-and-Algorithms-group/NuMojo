@@ -13,6 +13,10 @@ SECTIONS OF THE FILE:
 1. NDArray dtype conversions.
 2. Numojo.NDArray to other collections.
 3. Miscellaneous utility functions.
+
+Exports
+-------
+- `parse_index`: Parse index.
 """
 # ===----------------------------------------------------------------------===#
 # Stdlib

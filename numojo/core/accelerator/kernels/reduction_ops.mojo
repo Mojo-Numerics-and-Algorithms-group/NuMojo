@@ -5,13 +5,22 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Reduction GPU kernels (numojo.core.accelerator.kernels.reduction_ops)
------------------------------------------------------------------
-GPU kernel functions and launch helpers for full-array reduction ops.
 """
-# ===----------------------------------------------------------------------===#
+Reduction Ops Kernels (numojo.core.accelerator.kernels.reduction_ops)
+======================================================================
+
+GPU kernels for reduction operations.
+
+GPU kernel functions and launch helpers for full-array reduction operations.
+
+Exports
+-------
+- Reduction operation kernel functions for GPU acceleration.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.gpu import (
     block_dim,
     block_idx,

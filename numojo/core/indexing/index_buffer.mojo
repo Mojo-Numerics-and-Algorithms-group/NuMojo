@@ -11,6 +11,10 @@ Shared integer buffer backend for shape/strides/item.
 
 This type owns a contiguous heap buffer of Ints and provides
 small helpers for pointer access and SIMD load/store.
+
+Exports
+-------
+- `IndexBuffer`: Index storage.
 """
 
 from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero

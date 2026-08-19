@@ -8,6 +8,10 @@
 """Flags (numojo.core.layout.flags)
 -----------------------------------
 Implements Flags type to represent the memory layout information of NuMojo arrays.
+
+Exports
+-------
+- `Flags`: Layout flags.
 """
 # ===----------------------------------------------------------------------===#
 # numojo

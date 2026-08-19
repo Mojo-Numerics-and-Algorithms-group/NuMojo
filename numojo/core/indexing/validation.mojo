@@ -8,6 +8,10 @@
 """Validation (numojo.core.indexing.validation)
 --------------------------------------------
 Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
+
+Exports
+-------
+- `validate_index`: Index validation.
 """
 # ===----------------------------------------------------------------------===#
 # numojo

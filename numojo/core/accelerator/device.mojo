@@ -9,6 +9,10 @@
 ---------------------------------------
 This module defines the `Device` struct, which represents an execution device for array and matrix operations.
 It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.
+
+Exports
+-------
+- `Device`: Execution device.
 """
 # ===----------------------------------------------------------------------===#
 # Stdlib

@@ -17,6 +17,10 @@ type information tracking for different index types (integer, slice, ellipsis, n
 Notes:
     - This module is internal to NuMojo and not part of the public API.
     - Used internally for slice parsing and validation.
+
+Exports
+-------
+- `Slice`: Slice representation.
 """
 
 # ===----------------------------------------------------------------------=== #

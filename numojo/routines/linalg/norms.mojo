@@ -4,14 +4,21 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Norms and other numbers (numojo.routines.linalg.norms)
-------------------------------------------------------
-This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Norms (numojo.routines.linalg.norms).
+=====================================
+Determinant and trace computation for 2-D arrays.
+
+Exports
+-------
+- `det`: Determinant via LUP decomposition.
+- `trace`: Sum of the diagonal elements.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.linalg.decompositions import (

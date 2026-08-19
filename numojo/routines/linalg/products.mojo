@@ -4,14 +4,25 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Array and vector products (numojo.routines.linalg.products)
----------------------------------------------------------------
-This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
+Products (numojo.routines.linalg.products).
+===========================================
+Array and vector product operations.
+
+Functions for computing products of vectors and arrays (dot product, matrix
+multiplication, cross product).
+
+Exports
+-------
+- `dot`: Dot product of vectors.
+- `matmul`: Matrix multiplication.
+- `cross`: Cross product.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import (
     Static2DTileUnitFunc as Tile2DFunc,
     vectorize,

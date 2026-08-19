@@ -4,14 +4,29 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Decompositions (numojo.routines.linalg.decompositions)
----------------------------------------------------------
-This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Decompositions (numojo.routines.linalg.decompositions).
+=======================================================
+Matrix decomposition operations.
+
+Functions for decomposing NDArrays representing 2-D matrices (LU
+decomposition with partial pivoting).
+
+Exports
+-------
+- `lu_decomposition`: LU factorization.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.algorithm import vectorize
+from std.sys import simd_width_of
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray

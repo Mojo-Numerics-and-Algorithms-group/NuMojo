@@ -5,13 +5,24 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Miscellaneous Linear Algebra Routines (numojo.routines.linalg.misc)
--------------------------------------------------------------------
-This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Miscellaneous (numojo.routines.linalg.misc)
+============================================
+
+Miscellaneous linear algebra operations.
+
+Additional linear algebra utilities (diagonals, symmetry checks).
+
+Exports
+-------
+- `det`: Determinant.
+- `inv`: Matrix inverse.
+- `trace`: Matrix trace.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape

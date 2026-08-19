@@ -6,15 +6,22 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 
-"""Random (numojo.routines.random)
--------------------------------
-Creates array of the given shape and populate it with random samples from
-a certain distribution.
+"""
+Random (numojo.routines.random)
+================================
 
-This module is similar to `numpy.random`. However, in this module, the shape is
-always appearing as the first argument.
+Random number generation and sampling.
+
+Functions for creating arrays populated with random samples from various
+distributions.
+
+Notes:
+    Similar to numpy.random but shape is always the first argument.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as mt
 from std.random import random as builtin_random
 

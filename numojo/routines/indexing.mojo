@@ -5,23 +5,40 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Indexing routines (numojo.routines.indexing)
------------------------------------------------
-- Generating index arrays
-- Indexing-like operations
-- Inserting data into arrays
-- Iterating over arrays.
+"""
+Indexing routines (numojo.routines.indexing)
+==============================================
+
+Advanced indexing operations for arrays.
+
+Functions for generating index arrays, fancy indexing, selecting elements,
+and inserting data into arrays.
+
+Exports
+-------
+- `where`: Conditional element selection.
+- `compress`: Extract elements based on condition.
+- `take`, `take_along_axis`: Advanced indexing.
+- `nonzero`, `flatnonzero`: Find non-zero elements.
+- `fancy_index`: Apply fancy indexing.
+- `unravel_index`, `ravel_multi_index`: Index conversion.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.algorithm import vectorize
 from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-from std.algorithm import vectorize
 
-from numojo import broadcast_to
-from numojo.core.ndarray import NDArray
-from numojo.core.layout import NDArrayShape, NDArrayStrides
-from numojo.core.indexing import IndexMethods
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 import numojo.routines.manipulation as manipulation
+from numojo import broadcast_to
+from numojo.core.indexing import IndexMethods
+from numojo.core.layout import NDArrayShape, NDArrayStrides
+from numojo.core.ndarray import NDArray
 from numojo.routines.creation import array as _array_creation_from_list
 from numojo.core.type_aliases import Shape
 from numojo.core.indexing.item import Item

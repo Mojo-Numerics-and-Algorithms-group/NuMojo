@@ -5,13 +5,24 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Bit-wise operations module (`numojo.routines.bitwise`)
----------------------------------------------------------
-This module implements bit-wise operations on NDArrays, such as bitwise AND, OR, XOR, and NOT (invert).
+"""
+Bitwise operations (numojo.routines.bitwise)
+==============================================
+
+Bitwise operations for integer arrays.
+
+Element-wise bitwise operations (AND, OR, XOR, NOT/invert) for integer NDArrays.
+
+Exports
+-------
+- `invert`: Bitwise NOT operation.
 """
 
-from numojo.routines import HostExecutor
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
 # ===------------------------------------------------------------------------===#
 # Bitwise operations

@@ -6,32 +6,23 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-NuMojo Prelude (`numojo.prelude`)
-=================================
-The prelude is the recommended “batteries-included” import for day-to-day use.
+Prelude (numojo.prelude).
+=========================
+Core types and common utilities for day-to-day NuMojo usage.
 
-Why it exists:
-- Importing everything from `numojo` is convenient but pollutes your namespace.
-- Importing every symbol manually makes headers long and repetitive.
-
-What it exports:
-- Core container types like `NDArray`
-- Shape/index helpers like `Shape`, `NDArrayShape`, and `Item`
-- Common dtype aliases (e.g. `f32`, `f64`, `i32`, `boolean`)
-- Complex number helpers (`ComplexSIMD`, `ComplexScalar`, `CScalar`, `1j`)
+Exports
+-------
+- Container types: `NDArray`.
+- Shape/index helpers: `Shape`, `NDArrayShape`, `Item`.
+- Dtype aliases: `f32`, `f64`, `i32`, `boolean`.
+- Complex helpers: `ComplexSIMD`, `ComplexScalar`, `CScalar`, `1j`.
 
 Usage:
 ```mojo
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
 from numojo.prelude import *
-
-
 ```
 
-For more functions (math, linalg, statistics, etc.), import them from
-`numojo.routines.*` (or directly from `numojo`) as needed.
+For more functions (math, linalg, statistics), import from `numojo.routines.*`.
 """
 
 import numojo as nm

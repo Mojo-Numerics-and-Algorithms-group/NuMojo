@@ -5,13 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""AcceleratorNDArray (numojo.core.accelerator_ndarray)
---------------------------------------------------------
-Device-aware NDArray that stores data in `AcceleratorDataContainer`.
 """
-# ===----------------------------------------------------------------------===#
+AcceleratorNDArray (numojo.core.accelerator_ndarray)
+=====================================================
+
+Device-aware NDArray with accelerator support.
+
+Device-aware NDArray that stores data in AcceleratorDataContainer with
+GPU acceleration support.
+
+Exports
+-------
+- `AcceleratorNDArray`: Device-aware N-dimensional array type.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # External
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
 # ===----------------------------------------------------------------------===#

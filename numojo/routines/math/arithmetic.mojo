@@ -1,20 +1,42 @@
 # ===----------------------------------------------------------------------=== #
-# NuMojo: Arithmetic routines
+# NuMojo: Arithmetic operations
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Arithmetic routines for NuMojo (numojo.routines.math.arithmetic)
--------------------------------------------------------------------
-Implements addition, subtraction, multiplication, division, floor division, fused multiply-add, and remainder helpers for NDArrays.
+# ===----------------------------------------------------------------------=== #
+"""
+Arithmetic routines (numojo.routines.math.arithmetic)
+======================================================
+
+Basic arithmetic operations: addition, subtraction, multiplication, division, and related functions.
+
+This module provides element-wise arithmetic operations for NDArrays supporting both
+array-array and array-scalar operations.
+
+Exports
+-------
+- `add`: Element-wise addition.
+- `sub`: Element-wise subtraction.
+- `mul`: Element-wise multiplication.
+- `div`: Element-wise division.
+- `floor_div`: Element-wise floor division.
+- `mod`: Element-wise modulo.
+- `remainder`: Element-wise remainder.
+- `fma`: Fused multiply-add.
 """
 
-from std.utils import Variant
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.builtin.simd import FastMathFlag
+from std.utils import Variant
 
-from numojo.routines import HostExecutor
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
 # ===------------------------------------------------------------------------===#
 # Addition

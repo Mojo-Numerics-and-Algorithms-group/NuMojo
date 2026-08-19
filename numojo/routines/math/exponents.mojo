@@ -5,16 +5,32 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Exponential routines for NuMojo (numojo.routines.math.exponents).
+"""
+Exponential routines (numojo.routines.math.exponents)
+======================================================
 
-Implements element-wise exponential and logarithmic transformations for NDArrays.
+Exponential and logarithmic functions for arrays.
+
+Element-wise exponential functions (exp, exp2, expm1) and logarithmic functions
+(log, log2, log10, log1p) for NDArrays.
+
+Exports
+-------
+- `exp`, `exp2`, `expm1`: Exponential functions.
+- `log`, `log2`, `log10`, `log1p`: Logarithmic functions.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as math
 from max.algorithm import parallelize
 from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.utils import Variant
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 

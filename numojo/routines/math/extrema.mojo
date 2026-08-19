@@ -5,18 +5,30 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Extrema routines for NuMojo (numojo.routines.math.extrema).
+"""
+Extrema routines (numojo.routines.math.extrema)
+================================================
 
-Contains min/max helpers for NDArrays and Matrices, including axis-aware reductions
-and element-wise comparisons.
+Minimum and maximum operations for arrays.
+
+Element-wise min/max comparisons and axis-aware reduction operations
+for NDArrays and Matrices.
+
+Exports
+-------
+- `min`, `max`: Element-wise minimum and maximum.
+- `minimum`, `maximum`: Element-wise operations (aliases).
 """
 
-from std.algorithm import vectorize
-from max.algorithm import parallelize
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math.math as stdlib_math
+from max.algorithm import parallelize
+from std.algorithm import vectorize
+from std.collections.optional import Optional
 from std.math import max as builtin_max
 from std.math import min as builtin_min
-from std.collections.optional import Optional
 from std.sys import simd_width_of
 
 from numojo.core.ndarray import NDArray

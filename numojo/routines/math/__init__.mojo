@@ -1,17 +1,40 @@
 # ===----------------------------------------------------------------------=== #
-# NuMojo: Math routines submodule
+# NuMojo: Math routines and operations
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Math routines for NuMojo (numojo.routines.math).
-
-Aggregates arithmetic, trigonometric, hyperbolic, and utility routines for NDArrays and Matrices.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# Local
-# ===----------------------------------------------------------------------===#
+Math routines (numojo.routines.math)
+=====================================
+
+Arithmetic, trigonometric, hyperbolic, exponential, and utility mathematical operations for arrays.
+
+Exports
+-------
+Arithmetic: `add`, `sub`, `mul`, `div`, `floor_div`, `mod`, `remainder`, `fma`.
+
+Trigonometric: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`, `hypot`, `hypot_fma`.
+
+Hyperbolic: `sinh`, `cosh`, `tanh`, `arcsinh`, `arccosh`, `arctanh`.
+
+Exponential: `exp`, `exp2`, `expm1`, `log`, `log2`, `log10`, `log1p`.
+
+Extrema: `max`, `min`, `maximum`, `minimum`.
+
+Floating point: `copysign`, `nextafter`, `scalb`, `cbrt`, `sqrt`, `rsqrt`, `clip`.
+
+Rounding: `round`, `roundeven`, `trunc`, `ceil`, `floor`.
+
+Absolute value: `abs`.
+
+Differences and aggregation: `diff`, `gradient`, `sum`, `cumsum`, `prod`, `cumprod`.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from .arithmetic import (
     add,
     div,

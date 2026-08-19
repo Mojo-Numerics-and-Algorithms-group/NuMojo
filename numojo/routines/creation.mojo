@@ -15,21 +15,26 @@ This module provides convenient factory functions for creating arrays with vario
 initialization strategies (zeros, ones, empty, full, linspace, etc.) and helper
 functions for array generation from Python objects and mathematical sequences.
 
-Notes:
-    Design principles follow the pattern:
-    - `NDArray.__init__` takes ShapeLike and initializes container.
-    - `full` is the primary creation function.
-    - `zeros`, `ones` call `full`.
-    - Other functions call `zeros`, `ones`, or `full`.
-    - When overloads are needed, they call the default signature.
-
-Planned improvements:
-    - Implement axis argument for creation functions.
-    - Separate `array(object)` and `NDArray.__init__(shape)`.
-    - Use `ShapeLike` trait to reduce function overloads.
-    - Simplify complex number overloads into real method composition.
+Exports
+-------
+- `arange`: Evenly spaced values in interval.
+- `linspace`: Values spaced linearly in interval.
+- `logspace`: Values spaced logarithmically in interval.
+- `zeros`: Array filled with zeros.
+- `ones`: Array filled with ones.
+- `full`: Array filled with constant value.
+- `empty`: Uninitialized array.
+- `array`: Create from Python object or scalar.
 """
 
+# TODO: Implement axis argument for creation functions.
+# TODO: Separate `array(object)` and `NDArray.__init__(shape)`.
+# TODO: Use `ShapeLike` trait to reduce function overloads.
+# TODO: Simplify complex number overloads into real method composition.
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
 from max.algorithm import parallelize
 from std.math import pow
@@ -57,9 +62,9 @@ from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import ComplexScalar, Shape
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Numerical ranges
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def arange[
     dtype: DType = DType.float64
 ](
@@ -224,9 +229,9 @@ def arange[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Linear Spacing NDArray Generation
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def linspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
@@ -529,9 +534,9 @@ def _linspace_parallel[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Logarithmic Spacing NDArray Generation
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def logspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
@@ -975,9 +980,9 @@ def geomspace[
         return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Commonly used NDArray Generation routines
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def empty[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -1759,9 +1764,9 @@ def full_like[
     return full[cdtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Building matrices
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def diag[
     dtype: DType = DType.float64
 ](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
@@ -2183,9 +2188,9 @@ def vander[
     )
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Construct array by changing the data type
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 # TODO: Check whether inplace cast is needed.
@@ -2274,9 +2279,9 @@ def astype[
     )
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Construct array from other objects
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def fromstring[
@@ -2430,14 +2435,14 @@ def fromstring[
 #     return a
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Overloads of `array` function
 # Construct array from various objects.
 # - String
 # - List of Scalars
 # - Numpy array
 # - Tensor
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def array[

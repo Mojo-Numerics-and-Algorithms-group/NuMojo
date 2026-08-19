@@ -5,15 +5,30 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Slicing (numojo.core.indexing.slicing)
---------------------------------------
-This module defines internal data structures and utilities for handling slicing operations in NuMojo.
+"""
+Slicing (numojo.core.indexing.slicing)
+=======================================
+
+Internal data structures and utilities for handling array slicing operations.
+
+This module provides the internal infrastructure for slicing arrays, including
+type information tracking for different index types (integer, slice, ellipsis, newaxis).
+
+Notes:
+    - This module is internal to NuMojo and not part of the public API.
+    - Used internally for slice parsing and validation.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.math import ceil
 
-from numojo.core.layout.ndshape import NDArrayShape
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
+from numojo.core.layout.ndshape import NDArrayShape
 
 
 # ===----------------------------------------------------------------------=== #

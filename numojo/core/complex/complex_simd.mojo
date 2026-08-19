@@ -5,21 +5,34 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""ComplexSIMD (numojo.core.complex.complex_simd)
-----------------------------------------------
-Implement the ComplexSIMD type and its operations.
+"""
+ComplexSIMD (numojo.core.complex.complex_simd)
+===============================================
 
-This module provides a ComplexSIMD type that represents complex numbers using SIMD
-operations for efficient computation. It supports basic arithmetic operations
-like addition, subtraction, multiplication, and division, as well as other
-complex number operations like conjugation and absolute value.
+SIMD-optimized complex number representation and operations.
+
+This module provides the ComplexSIMD type for representing complex numbers
+using SIMD operations for efficient vectorized computation. Supports arithmetic
+operations (addition, subtraction, multiplication, division), conjugation,
+absolute value, and other complex number functions.
+
+Notes:
+    - ComplexSIMD uses SoA (Struct of Arrays) layout for SIMD efficiency.
+    - Parameter `cdtype` determines component precision (e.g., cf32, cf64).
+    - Parameter `width` is SIMD lane count; width=1 acts as scalar complex.
 """
 
-from std.math import sqrt, sin, cos
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.math import cos, sin, sqrt
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.dtype import ComplexDType
-from numojo.core.type_aliases import ComplexScalar
 from numojo.core.dtype.complex_dtype import cf64
+from numojo.core.type_aliases import ComplexScalar
 
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].

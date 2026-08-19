@@ -5,79 +5,70 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-""""ComplexNDArray (numojo.core.complex.complex_ndarray)
-----------------------------------------------------
-Complex NDArray support for NuMojo.
-
-This module provides the `ComplexNDArray` type, which represents N-dimensional arrays
-of complex numbers. It includes lifecycle methods, indexing and slicing, operator
-overloads, IO, trait, and iterator methods, as well as other utility functions.
 """
-# ===----------------------------------------------------------------------===#
-# SECTIONS OF THE FILE:
+ComplexNDArray (numojo.core.complex.complex_ndarray)
+=====================================================
 
-# `ComplexNDArray` type
-# 1. Life cycle methods.
-# 2. Indexing and slicing (get and set dunders and relevant methods).
-# 3. Operator dunders.
-# 4. IO, trait, and iterator dunders.
-# 5. Other methods (Sorted alphabetically).
-# ===----------------------------------------------------------------------===#
+N-dimensional arrays of complex numbers with full indexing and operations.
 
-# ===----------------------------------------------------------------------===#
-# === Stdlib ===
-# ===----------------------------------------------------------------------===#
-from std.algorithm import vectorize
-from max.algorithm import parallelize
+This module provides the `ComplexNDArray` type representing N-dimensional arrays
+of complex numbers. It includes lifecycle methods, indexing and slicing,
+operator overloads, I/O, trait implementations, and iterator methods.
+
+Notes:
+    Structure of the ComplexNDArray implementation:
+    - Lifecycle methods (construction, initialization)
+    - Indexing and slicing (getters, setters, dunder methods)
+    - Operator overloads (arithmetic, comparison, etc.)
+    - I/O, trait, and iterator dunders
+    - Other methods (sorted alphabetically)
+"""
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.builtin.bool as builtin_bool
 import std.math as builtin_math
+from max.algorithm import parallelize
+from std.algorithm import vectorize
 from std.collections.optional import Optional
 from std.math import log10, sqrt
-from std.memory import unsafe_memset_zero, unsafe_memcpy, UnsafePointer
+from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 from std.python import Python, PythonObject
 from std.sys import simd_width_of
 from std.utils import Variant
 
-# ===----------------------------------------------------------------------===#
-# === numojo core ===
-# ===----------------------------------------------------------------------===#
-from numojo.core.dtype.complex_dtype import ComplexDType, _concise_dtype_str
-from numojo.core.layout.flags import Flags
-from numojo.core.indexing.item import Item
-from numojo.core.layout.ndshape import NDArrayShape
-from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.dtype.complex_dtype import ComplexDType, _concise_dtype_str
-from numojo.core.layout.flags import Flags
-from numojo.core.indexing.item import Item
-from numojo.core.layout.ndshape import NDArrayShape
-from numojo.core.layout.ndstrides import NDArrayStrides
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core.type_aliases import ComplexScalar, CScalar
-from numojo.core.memory.data_container import DataContainer
+from numojo.core.dtype.complex_dtype import ComplexDType, _concise_dtype_str
+from numojo.core.error import NumojoError
 from numojo.core.indexing import (
     IndexMethods,
     TraverseMethods,
-    to_numpy,
     bool_to_numeric,
+    to_numpy,
 )
-from numojo.core.error import NumojoError
+from numojo.core.indexing.item import Item
+from numojo.core.layout.flags import Flags
+from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.memory.data_container import DataContainer
+from numojo.core.type_aliases import CScalar, ComplexScalar
 
-# ===----------------------------------------------------------------------===#
-# === numojo routines (creation / io / logic) ===
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo Routines
+# ===----------------------------------------------------------------------=== #
+import numojo.routines.bitwise as bitwise
 import numojo.routines.creation as creation
-from numojo.routines.io.formatting import (
-    format_value,
-    PrintOptions,
-)
 import numojo.routines.logic.comparison as comparison
 import numojo.routines.logic.logical_ops as logical_ops
-
-# ===----------------------------------------------------------------------===#
-# === numojo routines (math / bitwise / searching) ===
-# ===----------------------------------------------------------------------===#
-import numojo.routines.bitwise as bitwise
 import numojo.routines.math.arithmetic as arithmetic
+from numojo.routines.io.formatting import (
+    PrintOptions,
+    format_value,
+)
 import numojo.routines.math.rounding as rounding
 import numojo.routines.math.trig as trig
 import numojo.routines.math.exponents as exponents

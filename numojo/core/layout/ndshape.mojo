@@ -9,11 +9,14 @@
 NDArrayShape (numojo.core.layout.ndshape)
 ==========================================
 
-Represents the shape (dimensions) of an NDArray.
+Array shape representation and operations.
 
-The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim)
-tracked separately. The NDArrayShape provides methods for element access, shape transformations
-(e.g., permute, reverse), and properties like size and rank.
+Represents array dimensions with efficient storage, shape transformations
+(permute, reverse), and dimension access.
+
+Exports
+-------
+- `NDArrayShape`: Shape container for N-dimensional arrays.
 
 Notes:
     - The number of elements in the shape must be positive.

@@ -9,11 +9,15 @@
 NDArrayStrides (numojo.core.layout.ndstrides)
 ===============================================
 
-Represents the strides (memory layout) of an NDArray.
+Memory layout and indexing strides.
 
-Strides are used to calculate the memory offset for each dimension when indexing into an array.
-For example, strides [12, 4] mean each element in dimension 1 is 12 bytes apart, and each
-element in dimension 2 is 4 bytes apart.
+Represents memory strides for calculating offsets when indexing into arrays.
+For example, strides [12, 4] mean each element in dimension 1 is 12 bytes apart,
+and each element in dimension 2 is 4 bytes apart.
+
+Exports
+-------
+- `NDArrayStrides`: Stride container for memory layout.
 
 Notes:
     - The number of elements in the strides must match the number of dimensions.

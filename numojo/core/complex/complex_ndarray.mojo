@@ -9,11 +9,14 @@
 ComplexNDArray (numojo.core.complex.complex_ndarray)
 =====================================================
 
-N-dimensional arrays of complex numbers with full indexing and operations.
+Multi-dimensional arrays of complex numbers.
 
-This module provides the `ComplexNDArray` type representing N-dimensional arrays
-of complex numbers. It includes lifecycle methods, indexing and slicing,
-operator overloads, I/O, trait implementations, and iterator methods.
+N-dimensional arrays of complex numbers with full indexing, slicing, and
+operations. Includes lifecycle methods, operators, I/O, and iterators.
+
+Exports
+-------
+- `ComplexNDArray`: Complex-valued N-dimensional array type.
 
 Notes:
     Structure of the ComplexNDArray implementation:

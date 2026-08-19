@@ -23,9 +23,9 @@ Currently we have a few common error categories like
 
 We can expand this list in the future as needed.
 """
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.format.tstring import TString
 from std.os import abort
 
@@ -39,12 +39,14 @@ struct NumojoError(Writable):
     """
     Unified error type for all Numojo operations.
 
-    Parameters:
-
     Args:
         category: Type of error (e.g., "ShapeError", "IndexError").
         message: Main error description and suggestion.
         location: Optional context about where error occurred.
+
+    Notes:
+        All NumojoErrors use a single unified type with different categories for better organization.
+        Error messages follow the format: "Category: Specific problem. Expected X but got Y."
     """
 
     comptime ErrorDict: Dict[String, String] = {
@@ -102,6 +104,7 @@ struct NumojoError(Writable):
         self.location = location
 
     def __str__(self) -> String:
+        """Return string representation of the error with formatting."""
         var result = (
             RED_COLOR + String(self.category) + String(": ") + self.message
         )
@@ -120,7 +123,15 @@ struct NumojoError(Writable):
         writer.write(END_COLOR)
 
 
-# Use this for fatal errors that should abort the program.
 def terminate(message: String):
-    """Abort the program with the given error message."""
+    """
+    Abort the program with the given error message.
+
+    Args:
+        message: The error message to display before aborting.
+
+    Notes:
+        This function is used for fatal, unrecoverable errors that require immediate termination.
+        The message will be displayed in red color before the program exits.
+    """
     abort(RED_COLOR + message + END_COLOR)

@@ -1,18 +1,30 @@
 # ===----------------------------------------------------------------------=== #
+# NuMojo: Type aliases and constants
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
+# ===----------------------------------------------------------------------=== #
 """
-Type aliases for commonly used data types in NuMojo.
+Type aliases (numojo.core.type_aliases)
+========================================
+
+Type aliases and symbolic constants for commonly used data types in NuMojo.
 
 This module provides convenient, user-friendly aliases for core types such as shapes,
 strides, and complex scalars, as well as a symbolic constant for the imaginary unit.
+
+Exports
+-------
+- `Shape`: Alias for NDArrayShape.
+- `Strides`: Alias for NDArrayStrides.
+- `ComplexScalar`, `CScalar`: Aliases for scalar complex numbers.
+- `1j`: Imaginary unit constant (0 + 1j).
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex.complex_simd import (
     ComplexSIMD,
     ImaginaryUnit,

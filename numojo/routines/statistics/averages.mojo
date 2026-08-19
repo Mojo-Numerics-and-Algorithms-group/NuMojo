@@ -4,30 +4,43 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Averages and dispersion routines for NuMojo (numojo.routines.statistics.averages).
+# ===----------------------------------------------------------------------=== #
+"""
+Averages (numojo.routines.statistics.averages).
+===============================================
+Statistical averages and dispersion measures for arrays.
 
-Implements mean, median, mode, variance, and standard deviation helpers for NDArrays and Matrices.
+Implements mean, median, mode, variance, and standard deviation for NDArrays.
+
+Exports
+-------
+- `mean`: Arithmetic mean.
+- `median`: Median value.
+- `mode`: Most frequent value.
+- `var`: Variance.
+- `std`: Standard deviation.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.collections.optional import Optional
 import std.math as mt
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
-from numojo.routines.logic.comparison import greater, less
-from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
-from numojo.routines.math.arithmetic import add
-from numojo.routines.math.sums import sum, cumsum
-import numojo.routines.math.misc as misc
-from numojo.routines.sorting import binary_sort, sort
 from numojo.routines.functional import (
-    apply_along_axis_reduce_with_dtype,
     apply_along_axis_reduce,
+    apply_along_axis_reduce_with_dtype,
 )
-from numojo.routines.manipulation import ravel
-
-
-# not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
+from numojo.routines.logic.comparison import greater, less
+from numojo.routines.manipulation import _broadcast_back_to, broadcast_to, ravel
+from numojo.routines.math.arithmetic import add
+import numojo.routines.math.misc as misc
+from numojo.routines.math.sums import cumsum, sum
+from numojo.routines.sorting import binary_sort, sort
 def mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:

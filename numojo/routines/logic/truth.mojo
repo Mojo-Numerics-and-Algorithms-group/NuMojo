@@ -4,19 +4,32 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Truth value testing (numojo.routines.logic.truth)
-----------------------------------------------------
-This module implements the truth value testing functions, such as `all` and `any`, for `NDArray`.
+# ===----------------------------------------------------------------------=== #
+"""
+Truth Testing (numojo.routines.logic.truth).
+============================================
+Truth value testing for arrays.
+
+Functions for testing truth values (`all` and `any`) for NDArray types.
+
+Exports
+-------
+- `all`: Test if all elements are truthy.
+- `any`: Test if any element is truthy.
 """
 
+# TODO: Add all and any algorithm to backend.
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
-from max.algorithm import parallelize
 from std.sys import simd_width_of
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
-
-# TODO: Add all and any algorithm to backend.
 
 # ===----------------------------------------------------------------------=== #
 # Truth operations for NDArray

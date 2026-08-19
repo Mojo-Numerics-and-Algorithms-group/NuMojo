@@ -4,24 +4,44 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Comparison routines (numojo.routines.logic.comparison)
----------------------------------------------------------
-Implements comparison math routines for NDArrays and Matrices.
+# ===----------------------------------------------------------------------=== #
+"""
+Comparison (numojo.routines.logic.comparison).
+===============================================
+Comparison operations for NDArrays.
+
+Element-wise comparison operators (greater, less, equal, etc.) returning
+boolean arrays for NDArrays.
+
+Exports
+-------
+- `greater`: Greater than comparison.
+- `less`: Less than comparison.
+- `equal`: Equality comparison.
+- `greater_equal`: Greater than or equal comparison.
+- `less_equal`: Less than or equal comparison.
+- `not_equal`: Not equal comparison.
+- `allclose`: All close comparison.
 """
 
+# TODO: Define allclose and isclose with correct behavior for ComplexNDArray.
+# TODO: Define array_equiv with correct broadcast semantics.
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as math
 
-from numojo.routines import HostExecutor
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
+from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
-# TODO: define the allclose, isclose with correct behaviour for ComplexNDArray.
-# TODO: define array_equiv with correct broadcast semantics.
-
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Simple Element-wise Comparisons
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def greater[
@@ -522,9 +542,9 @@ def not_equal[
     return HostExecutor.apply_binary_predicate[dtype, ne_kernel](array1, scalar)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Tolerance-based Comparisons
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def allclose[
@@ -664,6 +684,11 @@ def isclose[
             res.store(i, False)
 
     return res^
+
+
+# ===----------------------------------------------------------------------=== #
+# Exact Equality Comparisons
+# ===----------------------------------------------------------------------=== #
 
 
 def array_equal[

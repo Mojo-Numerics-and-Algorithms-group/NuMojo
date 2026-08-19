@@ -5,26 +5,42 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Manipulation routines (numojo.routines.manipulation)
-----------------------------------------------------
-This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
+"""
+Manipulation routines (numojo.routines.manipulation)
+======================================================
+
+Array shape and layout manipulation operations.
+
+Routines for reshaping, transposing, broadcasting, flipping, concatenating,
+and other shape-changing operations on arrays.
+
+Exports
+-------
+- `reshape`, `ravel`: Shape changes.
+- `transpose`, `flip`: Layout changes.
+- `broadcast_to`: Broadcasting.
+- `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
+- `ndim`, `shape`, `size`: Array properties.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.algorithm import vectorize
 from std.memory import UnsafePointer, unsafe_memcpy
 from std.sys import simd_width_of
-from std.algorithm import vectorize
 
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex import ComplexNDArray
-from numojo.core.layout import NDArrayShape
-from numojo.core.layout import NDArrayStrides
-from numojo.core.type_aliases import Shape
-from numojo.core.indexing import TraverseMethods
-from numojo.core.indexing.utility import (
-    _list_of_flipped_range,
-)
 from numojo.core.dtype.complex_dtype import ComplexDType
 from numojo.core.error import NumojoError
+from numojo.core.indexing import TraverseMethods
+from numojo.core.indexing.utility import _list_of_flipped_range
+from numojo.core.layout import NDArrayShape, NDArrayStrides
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations

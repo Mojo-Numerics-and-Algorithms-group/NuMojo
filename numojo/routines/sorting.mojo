@@ -5,22 +5,30 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Sorting routines (numojo.routines.sorting)
-------------------------------------------
-This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
-
-SECTIONS OF THIS FILE:
-1. `sort` and `argsort` functions exposed to users.
-2. Backend multiple sorting methods that can be used in `sort`.
-    - Binary sort.
-    - Bubble sort.
-    - Quick sort (instable).
 """
-# ===----------------------------------------------------------------------=== #
-# TODO: Add more sorting algorithms.
-# ===----------------------------------------------------------------------=== #
+Sorting routines (numojo.routines.sorting)
+===========================================
 
+Array sorting and indexing operations.
 
+Sorting routines for NDArrays including sort and argsort functions
+using multiple backend algorithms (binary sort, bubble sort, quick sort).
+
+Exports
+-------
+- `sort`: Sort array elements in-place.
+- `argsort`: Return indices that would sort array.
+
+Notes:
+    - Multiple sorting methods available: binary sort, bubble sort, quick sort.
+    - Quick sort is unstable but efficient.
+"""
+
+# TODO: Add more sorting algorithms (merge sort, heap sort).
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math
 from std.algorithm import vectorize
 

@@ -34,6 +34,7 @@ from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 
+
 # ===----------------------------------------------------------------------=== #
 # Logical operations for NDArray
 # ===----------------------------------------------------------------------=== #

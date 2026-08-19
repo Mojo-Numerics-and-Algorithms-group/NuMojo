@@ -41,6 +41,8 @@ from numojo.routines.math.arithmetic import add
 import numojo.routines.math.misc as misc
 from numojo.routines.math.sums import cumsum, sum
 from numojo.routines.sorting import binary_sort, sort
+
+
 def mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:

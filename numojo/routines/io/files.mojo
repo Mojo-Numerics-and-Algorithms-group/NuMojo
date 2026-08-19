@@ -5,10 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""File I/O (numojo.routines.io.files)
---------------------------------------
-This module provides functions for reading and writing arrays to and from files.
 """
+Files (numojo.routines.io.files)
+=================================
+
+File I/O for arrays.
+
+Functions for reading and writing arrays to and from files.
+
+Exports
+-------
+- `loadtxt`: Load array from text file.
+- `savetxt`: Save array to text file.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.collections.optional import Optional
 from std.python import Python, PythonObject
 from std.memory import UnsafePointer

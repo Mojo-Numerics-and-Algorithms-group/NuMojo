@@ -5,13 +5,24 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Formatting (numojo.routines.io.formatting)
-------------------------------------------
-This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
 """
-# ===----------------------------------------------------------------------===#
+Formatting (numojo.routines.io.formatting)
+===========================================
+
+Array and value formatting utilities.
+
+Functions for formatting arrays and values for printing with options for
+precision, scientific notation, and complex number formatting.
+
+Exports
+-------
+- `format_array`: Format array for display.
+- `format_value`: Format scalar value.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.math import pow
 import std.math as mt
 from std.utils.numerics import (

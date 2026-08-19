@@ -5,13 +5,22 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Math operations backend (numojo.routines.operations.backend).
-----------------------------------------------------------------
-Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
-# ===----------------------------------------------------------------------===#
+Operations Backend (numojo.routines.operations.backend)
+=======================================================
+
+Vectorized backend for math operations.
+
+Defines backend structures and SIMD primitives for math operations.
+
+Exports
+-------
+- `HostExecutor`: CPU backend executor.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
 

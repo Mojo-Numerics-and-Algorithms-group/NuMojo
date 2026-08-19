@@ -6,35 +6,37 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Error handling for Numojo library operations.
+Error Handling (numojo.core.error)
+==================================
 
-This module provides a simple, unified error system for the Numojo library.
-All errors use a single NumojoError type with different categories for
-better organization while keeping the implementation simple. This provides a better user experience by
-providing clear error message and suggestions for fixing the error.
+Unified error system for NuMojo operations.
 
-Currently we have a few common error categories like
-- IndexError
-- ShapeError
-- BroadcastError
-- MemoryError
-- ValueError
-- ArithmeticError
+Provides a simple, categorized error type for all NuMojo operations with
+clear error messages and suggestions for fixing issues.
 
-We can expand this list in the future as needed.
+Exports
+-------
+- `NumojoError`: Unified error type with categories and suggestions.
+
+Categories:
+    - index: Indexing errors
+    - shape: Shape mismatch errors
+    - broadcast: Broadcasting errors
+    - memory: Memory allocation errors
+    - value: Value errors
+    - arithmetic: Arithmetic operation errors
 """
+
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
 from std.format.tstring import TString
 from std.os import abort
 
-
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
 
-
-# TODO: remove suggestion field and remove it from existing instances.
+# TODO: Remove suggestion field and remove it from existing instances.
 struct NumojoError(Writable):
     """
     Unified error type for all Numojo operations.

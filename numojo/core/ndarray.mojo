@@ -5,31 +5,28 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""NDArray (numojo.core.ndarray)
---------------------------------
-This module implements the core `NDArray` type, which is the fundamental data structure for multi-dimensional arrays in NuMojo.
-It provides efficient storage, indexing, slicing, and basic operations on N-dimensional arrays. The `NDArray` is designed to be flexible and performant, supporting various memory layouts and data types.
-
-SECTIONS OF THE FILE:
-`NDArray` type
-    1. Life cycle methods.
-    2. Indexing and slicing (get and set dunders and relevant methods).
-    3. Operator dunders.
-    4. IO, trait, and iterator dunders.
-    5. Other methods (Sorted alphabetically).
-
-Iterators of `NDArray`:
-    1. `_NDArrayIter` type
-    2. `_NDAxisIter` type
-    3. `_NDIter` type
 """
-# ===----------------------------------------------------------------------===#
-# TODO: Special checks for 0d array (numojo scalar).
-# ===----------------------------------------------------------------------===#
+NDArray (numojo.core.ndarray)
+=============================
 
-# ===----------------------------------------------------------------------===#
+Multi-dimensional array implementation for NuMojo.
+
+Core data structure for N-dimensional arrays with efficient storage, indexing,
+slicing, and operations. Supports various memory layouts and data types.
+
+Exports
+-------
+- `NDArray`: Multi-dimensional array type.
+- `_NDArrayIter`: Iterator for NDArray traversal.
+- `_NDAxisIter`: Iterator along specific axis.
+- `_NDIter`: Generic NDArray iterator.
+"""
+
+# TODO: Special checks for 0d array (numojo scalar).
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
 from max.algorithm import parallelize
 from std.sys.info import num_performance_cores
@@ -43,9 +40,9 @@ from std.sys import simd_width_of
 from std.utils import Variant
 from std.builtin.type_aliases import EllipsisType
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # numojo core
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
 from numojo.core.layout.ndshape import NDArrayShape
@@ -65,9 +62,9 @@ from numojo.core.error import NumojoError, terminate
 from numojo.core.layout.array_methods import NewAxis
 from numojo.core.indexing.slicing import IndexTypeInfo
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # numojo routines (creation / io / logic)
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
     format_value,
@@ -75,9 +72,9 @@ from numojo.routines.io.formatting import (
 )
 import numojo.routines.logic.comparison as comparison
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # numojo routines (math / bitwise / searching)
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math.arithmetic as arithmetic
 import numojo.routines.math.rounding as rounding
@@ -164,9 +161,9 @@ struct NDArray[dtype: DType = DType.float64](
     var print_options: PrintOptions
     """Per-instance print options (formerly global)."""
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Life cycle methods
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     # default constructor
     @always_inline("nodebug")
@@ -425,12 +422,12 @@ struct NDArray[dtype: DType = DType.float64](
         """Destroys all elements and frees memory."""
         _ = self._buf^
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Indexing and slicing
     # Getter and setter dunders and other methods
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Getter dunders and other getter methods
     #
     # 1. Basic Indexing Operations
@@ -459,7 +456,7 @@ struct NDArray[dtype: DType = DType.float64](
     # def load(self, var index: Int) raises -> Scalar[dtype]                   # Load with bounds check
     # def load[width: Int](self, index: Int) raises -> SIMD[dtype, width]        # Load SIMD value
     # def load[width: Int](self, *indices: Int) raises -> SIMD[dtype, width]     # Load SIMD at coordinates
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     @always_inline
     def normalize(self, idx: Int, dim: Int) -> Int:
@@ -2113,7 +2110,7 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = IndexMethods.get_1d_index(indices_list, self.strides)
         return self._buf.load[width=width](self.offset + idx)
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Setter dunders and other setter methods
     #
     # NOTE: Mojo cannot resolve __setitem__ overloads where the RHS type
@@ -2148,7 +2145,7 @@ struct NDArray[dtype: DType = DType.float64](
     # def store(mut self, index: Int, val: Scalar[dtype])
     # def store[width](mut self, index: Int, val: SIMD[dtype, width])
     # def store[width=1](mut self, *indices: Int, val: SIMD[dtype, width])
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     def _setitem(mut self, *indices: Int, val: Scalar[Self.dtype]):
         """Sets item at indices, bypassing all boundary checks.
@@ -3510,9 +3507,9 @@ struct NDArray[dtype: DType = DType.float64](
         var idx: Int = IndexMethods.get_1d_index(indices, self.strides)
         self._buf.store[width=width](self.offset + idx, val)
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Operator dunders
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     # TODO: We should make a version that checks nonzero/not_nan
     def __bool__(self) raises -> Bool:
@@ -3763,9 +3760,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return comparison.greater_equal[Self.dtype](self, other)
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # ARITHMETIC OPERATORS
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     def __add__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `array + scalar`.
@@ -4212,10 +4209,10 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return math.mod[Self.dtype](other, self)
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # IO dunders and relevant methods
     # Trait implementations
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     def __str__(self) -> String:
         """Returns the string representation of the array.
 
@@ -4324,9 +4321,9 @@ struct NDArray[dtype: DType = DType.float64](
         # this method.
         writer.write(self.__repr__())
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Trait dunders and iterator dunders
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     def __len__(self) -> Int:
         """Returns the length of the 0-th dimension."""
@@ -4378,11 +4375,11 @@ struct NDArray[dtype: DType = DType.float64](
             dimension=0,
         )
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # Internal layout-aware block I/O helpers used by boolean-mask getter/setter
     # paths. These respect `self.strides` so they work for C-contig, F-contig,
     # and arbitrary strided views.
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     def _trailing_is_contig(self, axis_start: Int) -> Bool:
         """Returns True iff dims [axis_start, ndim) form a contiguous block in
@@ -4681,7 +4678,7 @@ struct NDArray[dtype: DType = DType.float64](
                     current_axis + 1,
                 )
 
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
     # OTHER METHODS
     # (Sorted alphabetically)
     #
@@ -4690,7 +4687,7 @@ struct NDArray[dtype: DType = DType.float64](
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
     # # tobyets, tofile, view
-    # ===-------------------------------------------------------------------===#
+    # ===----------------------------------------------------------------------=== #
 
     def all(
         self,
@@ -6214,9 +6211,9 @@ struct NDArray[dtype: DType = DType.float64](
         self.ndim -= 1
 
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # NDArrayIterator
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 struct _NDArrayIter[

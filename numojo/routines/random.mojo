@@ -15,6 +15,14 @@ Random number generation and sampling.
 Functions for creating arrays populated with random samples from various
 distributions.
 
+Exports
+-------
+- `rand`: Uniform distribution [0, 1).
+- `randint`: Random integers in range.
+- `randn`: Standard normal distribution.
+- `exponential`: Exponential distribution.
+- `randbool`: Random boolean values.
+
 Notes:
     Similar to numpy.random but shape is always the first argument.
 """

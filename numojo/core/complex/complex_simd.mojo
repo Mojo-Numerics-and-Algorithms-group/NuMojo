@@ -16,6 +16,10 @@ using SIMD operations for efficient vectorized computation. Supports arithmetic
 operations (addition, subtraction, multiplication, division), conjugation,
 absolute value, and other complex number functions.
 
+Exports
+-------
+- `ComplexSIMD`: SIMD-based complex number type.
+
 Notes:
     - ComplexSIMD uses SoA (Struct of Arrays) layout for SIMD efficiency.
     - Parameter `cdtype` determines component precision (e.g., cf32, cf64).

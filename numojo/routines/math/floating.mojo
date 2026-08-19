@@ -4,20 +4,36 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Floating-point routines for NuMojo (numojo.routines.math.floating)
----------------------------------------------------------------------
-Implements floating-point specific helpers on NDArrays, such as `copysign`.
+# ===----------------------------------------------------------------------=== #
+
+"""
+Floating (numojo.routines.math.floating)
+=========================================
+
+Floating-point specific operations for NDArrays.
+
+Implements floating-point helper functions such as `copysign` for element-wise
+sign manipulation.
+
+Exports
+-------
+- `copysign`: Copy sign from one array to another.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as math
 
-from numojo.routines import HostExecutor
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Sign Copy
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def copysign[

@@ -4,20 +4,30 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Summation routines for NuMojo (numojo.routines.math.sums).
-
-Provides sum reductions along axes for NDArrays and Matrices, covering both flattened and axis-aware workflows.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
+Summation (numojo.routines.math.sums).
+======================================
+Sum reductions and cumulative sums for arrays.
+
+Computes sum reductions along axes and cumulative sums for NDArrays, with
+both flattened and axis-aware variants.
+
+Exports
+-------
+- `sum`: Sum of all elements or along an axis.
+- `cumsum`: Cumulative sum along an axis or flattened.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
 from std.sys import simd_width_of
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing import TraverseMethods
 from numojo.core.layout.ndshape import NDArrayShape

@@ -4,20 +4,30 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Product routines for NuMojo (numojo.routines.math.products).
-
-Implements product and cumulative product reductions for NDArrays and Matrices.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
+Products (numojo.routines.math.products).
+=========================================
+Product reductions and cumulative products for arrays.
+
+Computes products along axes and cumulative products for NDArrays, with
+both flattened and axis-aware variants.
+
+Exports
+-------
+- `prod`: Product of all elements or along an axis.
+- `cumprod`: Cumulative product along an axis or flattened.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.algorithm.functional import vectorize
 from std.sys import simd_width_of
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.indexing import TraverseMethods
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray

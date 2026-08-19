@@ -4,22 +4,40 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Rounding routines for NuMojo (numojo.routines.math.rounding).
+# ===----------------------------------------------------------------------=== #
+"""
+Rounding (numojo.routines.math.rounding).
+=========================================
+Rounding, truncation, and floating-point operations.
 
-Implements rounding, truncation, absolute value, and next-after helpers for NDArrays.
+Element-wise rounding (floor, ceiling, truncation), absolute value, banker's
+rounding, and next-after floating-point operations for NDArrays.
+
+Exports
+-------
+- `tabs`: Absolute value.
+- `tfloor`: Floor.
+- `tceil`: Ceiling.
+- `ttrunc`: Truncation.
+- `tround`: Rounding.
+- `roundeven`: Banker's rounding.
+- `nextafter`: Next representable value.
 """
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.utils.numerics import nextafter as builtin_nextafter
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
+
+# ===----------------------------------------------------------------------=== #
+# Absolute Value
+# ===----------------------------------------------------------------------=== #
 
 
 def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -45,9 +63,9 @@ def tabs[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Rounding (NDArray)
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def tfloor[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -206,9 +224,9 @@ def roundeven[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 #         dtype, math.round_half_up
 #     ](NDArray)
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Next After
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def nextafter[

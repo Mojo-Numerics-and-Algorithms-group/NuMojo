@@ -327,11 +327,11 @@ def transpose[
 
     var new_shape: NDArrayShape = NDArrayShape(shape=A.shape)
     for i in range(A.ndim):
-        new_shape._buf[i] = A.shape[axes[i]]
+        new_shape.unsafe_set(i, A.shape[axes[i]])
 
     var new_strides: NDArrayStrides = NDArrayStrides(strides=A.strides)
     for i in range(A.ndim):
-        new_strides._buf[i] = A.strides[axes[i]]
+        new_strides.unsafe_set(i, A.strides[axes[i]])
 
     var array_order: String = "C" if A.is_c_contiguous() else "F"
     var I = NDArray[DType.int](Shape(A.size), order=array_order)

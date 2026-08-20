@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Array-like (numojo.core.traits.array_like)
+Array-like (numojo.core.traits.array_like).
 ===========================================
 
 Trait definitions for array-like behaviors.

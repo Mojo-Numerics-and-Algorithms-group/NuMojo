@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Backend Traits (numojo.core.traits.backend)
+Backend Traits (numojo.core.traits.backend).
 ============================================
 
 Computational backend trait definitions.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Indexing routines (numojo.routines.indexing)
+Indexing routines (numojo.routines.indexing).
 ==============================================
 
 Advanced indexing operations for arrays.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Default Datatypes (numojo.core.dtype.default_dtype)
+Default Datatypes (numojo.core.dtype.default_dtype).
 ====================================================
 
 Type aliases for common Mojo data types.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-NDArrayShape (numojo.core.layout.ndshape)
+NDArrayShape (numojo.core.layout.ndshape).
 ==========================================
 
 Array shape representation and operations.

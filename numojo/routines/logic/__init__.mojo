@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Logic routines (numojo.routines.logic)
+Logic routines (numojo.routines.logic).
 ======================================
 
 Comparison operations, logical operators, and truth value evaluations for arrays.

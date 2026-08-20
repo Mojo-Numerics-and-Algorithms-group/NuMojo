@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-ComplexNDArray (numojo.core.complex.complex_ndarray)
+ComplexNDArray (numojo.core.complex.complex_ndarray).
 =====================================================
 
 Multi-dimensional arrays of complex numbers.

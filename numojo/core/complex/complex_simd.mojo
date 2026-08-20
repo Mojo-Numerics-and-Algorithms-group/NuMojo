@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-ComplexSIMD (numojo.core.complex.complex_simd)
+ComplexSIMD (numojo.core.complex.complex_simd).
 ===============================================
 
 SIMD-optimized complex number representation and operations.

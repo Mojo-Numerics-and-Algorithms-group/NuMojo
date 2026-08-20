@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-AcceleratorNDArray (numojo.core.accelerator_ndarray)
+AcceleratorNDArray (numojo.core.accelerator_ndarray).
 =====================================================
 
 Device-aware NDArray with accelerator support.

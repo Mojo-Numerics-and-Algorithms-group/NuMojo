@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Creation routines (numojo.routines.creation)
+Creation routines (numojo.routines.creation).
 ==============================================
 
 Functions for creating and initializing NDArray and ComplexNDArray objects.

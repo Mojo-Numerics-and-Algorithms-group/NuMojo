@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Unary Ops Kernels (numojo.core.accelerator.kernels.unary_ops)
+Unary Ops Kernels (numojo.core.accelerator.kernels.unary_ops).
 ==============================================================
 
 GPU kernels for unary operations.

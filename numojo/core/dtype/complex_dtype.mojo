@@ -9,7 +9,7 @@
 # Original source: https://github.com/modularml/mojo
 # ===----------------------------------------------------------------------=== #
 """
-Complex Datatype (numojo.core.dtype.complex_dtype)
+Complex Datatype (numojo.core.dtype.complex_dtype).
 ===================================================
 
 Complex number type definitions and utilities.

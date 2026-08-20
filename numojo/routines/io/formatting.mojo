@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Formatting (numojo.routines.io.formatting)
+Formatting (numojo.routines.io.formatting).
 ===========================================
 
 Array and value formatting utilities.

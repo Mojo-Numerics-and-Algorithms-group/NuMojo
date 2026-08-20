@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Differences (numojo.routines.math.differences)
+Differences (numojo.routines.math.differences).
 ===============================================
 
 Numerical differentiation and integration helpers.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Math routines (numojo.routines.math)
+Math routines (numojo.routines.math).
 =====================================
 
 Arithmetic, trigonometric, hyperbolic, exponential, and utility mathematical operations for arrays.

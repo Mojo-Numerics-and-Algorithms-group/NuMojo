@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Sorting routines (numojo.routines.sorting)
+Sorting routines (numojo.routines.sorting).
 ===========================================
 
 Array sorting and indexing operations.

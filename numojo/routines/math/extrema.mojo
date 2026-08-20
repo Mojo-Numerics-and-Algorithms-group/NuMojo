@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Extrema routines (numojo.routines.math.extrema)
+Extrema routines (numojo.routines.math.extrema).
 ================================================
 
 Minimum and maximum operations for arrays.

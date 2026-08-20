@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Datatype Utilities (numojo.core.dtype.utility)
+Datatype Utilities (numojo.core.dtype.utility).
 ===============================================
 
 Type checking utilities for DType inspection.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Reduction Ops Kernels (numojo.core.accelerator.kernels.reduction_ops)
+Reduction Ops Kernels (numojo.core.accelerator.kernels.reduction_ops).
 ======================================================================
 
 GPU kernels for reduction operations.

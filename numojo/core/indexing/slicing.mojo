@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Slicing (numojo.core.indexing.slicing)
+Slicing (numojo.core.indexing.slicing).
 =======================================
 
 Internal data structures and utilities for handling array slicing operations.

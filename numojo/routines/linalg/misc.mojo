@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Miscellaneous (numojo.routines.linalg.misc)
+Miscellaneous (numojo.routines.linalg.misc).
 ============================================
 
 Miscellaneous linear algebra operations.

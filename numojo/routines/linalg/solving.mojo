@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Solving (numojo.routines.linalg.solving)
+Solving (numojo.routines.linalg.solving).
 ========================================
 
 Linear equation solvers.

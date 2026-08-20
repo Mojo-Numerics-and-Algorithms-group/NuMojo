@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Dtype (numojo.core.dtype)
+Dtype (numojo.core.dtype).
 =========================
 
 Dtype aliases and dtype-related utilities used across NuMojo.

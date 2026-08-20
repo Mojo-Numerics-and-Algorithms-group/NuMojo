@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-NDArrayStrides (numojo.core.layout.ndstrides)
+NDArrayStrides (numojo.core.layout.ndstrides).
 ===============================================
 
 Memory layout and indexing strides.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Item (numojo.core.indexing.item)
+Item (numojo.core.indexing.item).
 =================================
 
 Multi-dimensional index representation for N-dimensional array access.

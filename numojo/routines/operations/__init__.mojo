@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Operations (numojo.routines.operations)
+Operations (numojo.routines.operations).
 ========================================
 
 Vectorized operation execution backends for unary, binary, and predicate operations.

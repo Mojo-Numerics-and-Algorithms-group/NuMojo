@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Operations Backend (numojo.routines.operations.backend)
+Operations Backend (numojo.routines.operations.backend).
 =======================================================
 
 Vectorized backend for math operations.

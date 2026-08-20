@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Type aliases (numojo.core.type_aliases)
+Type aliases (numojo.core.type_aliases).
 ========================================
 
 Type aliases and symbolic constants for commonly used data types in NuMojo.

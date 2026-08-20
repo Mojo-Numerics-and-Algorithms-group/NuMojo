@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 Comparison (numojo.routines.logic.comparison).
-===============================================
+==============================================
 Comparison operations for NDArrays.
 
 Element-wise comparison operators (greater, less, equal, etc.) returning

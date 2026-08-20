@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Functional (numojo.routines.functional)
+Functional (numojo.routines.functional).
 ========================================
 
 Functional programming utilities for array operations.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Binary Ops Kernels (numojo.core.accelerator.kernels.binary_ops)
+Binary Ops Kernels (numojo.core.accelerator.kernels.binary_ops).
 ================================================================
 
 GPU kernels for binary operations.

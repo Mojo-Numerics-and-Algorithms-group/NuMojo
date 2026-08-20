@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Files (numojo.routines.io.files)
+Files (numojo.routines.io.files).
 =================================
 
 File I/O for arrays.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Bitwise operations (numojo.routines.bitwise)
+Bitwise operations (numojo.routines.bitwise).
 ==============================================
 
 Bitwise operations for integer arrays.

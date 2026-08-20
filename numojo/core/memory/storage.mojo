@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Storage (numojo.core.memory.storage)
+Storage (numojo.core.memory.storage).
 =====================================
 
 Backend storage containers for accelerator-aware data management.

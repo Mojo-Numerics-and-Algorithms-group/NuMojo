@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Accelerator kernels (numojo.core.accelerator.kernels)
+Accelerator kernels (numojo.core.accelerator.kernels).
 ======================================================
 
 GPU kernel functions for `AcceleratorNDArray` operation dispatch.

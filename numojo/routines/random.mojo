@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Random (numojo.routines.random)
+Random (numojo.routines.random).
 ================================
 
 Random number generation and sampling.

@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Exponential routines (numojo.routines.math.exponents)
+Exponential routines (numojo.routines.math.exponents).
 ======================================================
 
 Exponential and logarithmic functions for arrays.

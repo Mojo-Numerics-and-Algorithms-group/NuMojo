@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-DLPack Interoperability (numojo.core.memory.dlpack)
+DLPack Interoperability (numojo.core.memory.dlpack).
 ====================================================
 
 Zero-copy tensor exchange via DLPack protocol.

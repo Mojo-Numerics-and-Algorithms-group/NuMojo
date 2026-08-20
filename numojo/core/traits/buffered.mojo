@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Buffered Trait (numojo.core.traits.buffered)
+Buffered Trait (numojo.core.traits.buffered).
 ==============================================
 
 Trait for buffer ownership semantics.

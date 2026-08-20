@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-NDArray (numojo.core.ndarray)
+NDArray (numojo.core.ndarray).
 =============================
 
 Multi-dimensional array implementation for NuMojo.

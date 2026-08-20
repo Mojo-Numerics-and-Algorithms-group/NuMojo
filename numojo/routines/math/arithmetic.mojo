@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Arithmetic routines (numojo.routines.math.arithmetic)
+Arithmetic routines (numojo.routines.math.arithmetic).
 ======================================================
 
 Basic arithmetic operations: addition, subtraction, multiplication, division, and related functions.

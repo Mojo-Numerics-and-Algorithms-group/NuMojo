@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
 """
-Constants (numojo.routines.constants)
+Constants (numojo.routines.constants).
 ======================================
 
 Mathematical and physical constants.

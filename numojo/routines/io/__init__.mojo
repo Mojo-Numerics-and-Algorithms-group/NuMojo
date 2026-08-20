@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-I/O routines (numojo.routines.io)
+I/O routines (numojo.routines.io).
 ==================================
 
 File I/O operations and array formatting for NuMojo.

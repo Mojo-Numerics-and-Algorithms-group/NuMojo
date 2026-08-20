@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Indexer Collection Element (numojo.core.traits.indexer_collection_element)
+Indexer Collection Element (numojo.core.traits.indexer_collection_element).
 ==========================================================================
 
 Trait composition for indexer collection elements.

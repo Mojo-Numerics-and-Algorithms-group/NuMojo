@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 
 """
-Floating (numojo.routines.math.floating)
+Floating (numojo.routines.math.floating).
 =========================================
 
 Floating-point specific operations for NDArrays.

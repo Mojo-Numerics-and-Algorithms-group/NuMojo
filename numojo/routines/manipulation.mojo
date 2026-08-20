@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Manipulation routines (numojo.routines.manipulation)
+Manipulation routines (numojo.routines.manipulation).
 ======================================================
 
 Array shape and layout manipulation operations.

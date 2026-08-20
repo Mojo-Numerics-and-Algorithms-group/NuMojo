@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Layout (numojo.core.layout)
+Layout (numojo.core.layout).
 ============================
 
 Layout metadata types used by NuMojo arrays and matrices (shape, strides, and flags).

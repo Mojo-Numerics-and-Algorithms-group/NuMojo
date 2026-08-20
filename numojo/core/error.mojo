@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Error Handling (numojo.core.error)
+Error Handling (numojo.core.error).
 ==================================
 
 Unified error system for NuMojo operations.
@@ -35,6 +35,7 @@ from std.os import abort
 
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
+
 
 # TODO: Remove suggestion field and remove it from existing instances.
 struct NumojoError(Writable):

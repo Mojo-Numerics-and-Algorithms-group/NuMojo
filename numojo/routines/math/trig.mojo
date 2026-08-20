@@ -4,10 +4,10 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
+# ===----------------------------------------------------------------------=== #
 """
 Trigonometric routines (numojo.routines.math.trig).
-====================================================
+===================================================
 Trigonometric and inverse trigonometric functions for arrays.
 
 Element-wise trigonometric functions (sin, cos, tan) and their inverse/hyperbolic

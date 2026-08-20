@@ -206,13 +206,13 @@ def test_rand_exponential() raises:
     # Test that all values are non-negative
     for i in range(arr_variadic.size):
         assert_true(
-            arr_variadic._buf.ptr[unsafe_offset=i] >= 0,
+            arr_variadic.unsafe_get(i) >= 0,
             "Exponential distribution should only produce non-negative values",
         )
 
     for i in range(arr_list.size):
         assert_true(
-            arr_list._buf.ptr[unsafe_offset=i] >= 0,
+            arr_list.unsafe_get(i) >= 0,
             "Exponential distribution should only produce non-negative values",
         )
 
@@ -229,7 +229,7 @@ def test_randbool() raises:
     var all_true = nm.random.randbool(10, 10, p=1.0)
     for i in range(all_true.size):
         assert_true(
-            all_true._buf.ptr[unsafe_offset=i] == True,
+            all_true.unsafe_get(i) == True,
             "All values should be True with p=1.0",
         )
 
@@ -237,7 +237,7 @@ def test_randbool() raises:
     var all_false = nm.random.randbool(10, 10, p=0.0)
     for i in range(all_false.size):
         assert_true(
-            all_false._buf.ptr[unsafe_offset=i] == False,
+            all_false.unsafe_get(i) == False,
             "All values should be False with p=0.0",
         )
 
@@ -245,7 +245,7 @@ def test_randbool() raises:
     var big = nm.random.randbool(Shape(50, 50), p=0.5)
     var count_true: Int = 0
     for i in range(big.size):
-        if big._buf.ptr[unsafe_offset=i]:
+        if big.unsafe_get(i):
             count_true += 1
     var frac = Float64(count_true) / Float64(big.size)
     assert_true(

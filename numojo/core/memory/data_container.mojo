@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """DataContainer (numojo.core.memory.data_container)
 -----------------------------------
-A reference-counted container for contiguous data buffers, used for NDArray and Matrix.
+A reference-counted container for contiguous data buffers, used by array containers.
 DataContainer manages memory ownership and reference counting for shared or external data.
 """
 # ===----------------------------------------------------------------------===#

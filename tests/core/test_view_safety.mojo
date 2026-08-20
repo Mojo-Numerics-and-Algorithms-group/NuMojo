@@ -9,7 +9,6 @@ Phase 1, 3 & 4 — contiguous guards and offset-aware accessors across the codeb
 
 import numojo as nm
 from numojo.prelude import *
-from numojo.core.matrix import Matrix
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.routines.math.extrema import minimum
 from std.python import Python, PythonObject
@@ -45,27 +44,6 @@ def check_scalar_close[
 ](value: Scalar[dtype], np_sol: PythonObject, st: String) raises:
     var np = Python.import_module("numpy")
     assert_true(np.isclose(value, np_sol, atol=PythonObject(0.001)), st)
-
-
-def check_matrix_close[
-    dtype: DType
-](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
-    var np = Python.import_module("numpy")
-    assert_true(
-        np.all(
-            np.isclose(
-                np.matrix(matrix.to_numpy()), np_sol, atol=PythonObject(0.01)
-            )
-        ),
-        st,
-    )
-
-
-def check_matrix_equal[
-    dtype: DType
-](matrix: Matrix[dtype], np_sol: PythonObject, st: String) raises:
-    var np = Python.import_module("numpy")
-    assert_true(np.all(np.equal(np.matrix(matrix.to_numpy()), np_sol)), st)
 
 
 def check_value_close[
@@ -384,191 +362,8 @@ def test_ndarray_pow_view() raises:
 
 
 # ===-----------------------------------------------------------------------===#
-# Matrix: sum, prod, cumsum on F-order matrices
+# Sorting a non-contiguous view
 # ===-----------------------------------------------------------------------===#
-
-
-def test_matrix_sums_products_view() raises:
-    """Test sum, prod, cumsum on F-order Matrices."""
-    var np = Python.import_module("numpy")
-
-    var A = Matrix.rand[nm.f64](shape=(3, 4), order="F")
-    var Anp = np.matrix(A.to_numpy())
-    assert_true(
-        not A.is_c_contiguous(), "F-order Matrix should not be C-contiguous"
-    )
-
-    # sum (flattened)
-    check_value_close(
-        nm.sum(A),
-        np.sum(Anp),
-        "`sum` on F-order Matrix is broken",
-    )
-
-    # sum along axis
-    check_matrix_close(
-        nm.sum(A, axis=0),
-        np.sum(Anp, axis=0),
-        "`sum(axis=0)` on F-order Matrix is broken",
-    )
-    check_matrix_close(
-        nm.sum(A, axis=1),
-        np.sum(Anp, axis=1),
-        "`sum(axis=1)` on F-order Matrix is broken",
-    )
-
-    # prod (flattened)
-    check_value_close(
-        nm.prod(A),
-        np.prod(Anp),
-        "`prod` on F-order Matrix is broken",
-    )
-
-    # cumsum (flattened)
-    var cs = nm.cumsum(A)
-    var cs_np = np.cumsum(Anp)
-    check_matrix_close(
-        cs,
-        np.matrix(cs_np),
-        "`cumsum` on F-order Matrix is broken",
-    )
-
-
-# ===-----------------------------------------------------------------------===#
-# Matrix: logic (all, any) on F-order matrices
-# ===-----------------------------------------------------------------------===#
-
-
-def test_matrix_logic_view() raises:
-    """Test all, any on F-order Matrices."""
-    var np = Python.import_module("numpy")
-
-    # Matrix with all ones (F-order) - use i8 since all/any need integral type
-    var A = Matrix.ones[nm.i8](shape=(3, 4), order="F")
-    assert_true(
-        not A.is_c_contiguous(), "F-order Matrix should not be C-contiguous"
-    )
-
-    assert_true(nm.all(A), "`all` on F-order Matrix of ones should be True")
-    assert_true(nm.any(A), "`any` on F-order Matrix of ones should be True")
-
-    # Matrix with all zeros (F-order)
-    var B = Matrix.zeros[nm.i8](shape=(3, 4), order="F")
-    assert_true(
-        not nm.all(B),
-        "`all` on F-order Matrix of zeros should be False",
-    )
-    assert_true(
-        not nm.any(B),
-        "`any` on F-order Matrix of zeros should be False",
-    )
-
-
-# ===-----------------------------------------------------------------------===#
-# Matrix: __pow__ on F-order matrices
-# ===-----------------------------------------------------------------------===#
-
-
-def test_matrix_pow_view() raises:
-    """Test __pow__ on F-order Matrices."""
-    var np = Python.import_module("numpy")
-
-    # Create F-order Matrix via NDArray conversion (fromstring ignores order)
-    var nd = nm.arange[nm.f64](1, 7).reshape(Shape(2, 3), order="F")
-    var A = Matrix[nm.f64](nd)
-    var Anp = np.matrix(A.to_numpy())
-    assert_true(
-        not A.is_c_contiguous(), "F-order Matrix should not be C-contiguous"
-    )
-
-    # __pow__ with Int
-    var result = A**2
-    var expected = np.power(Anp, 2)
-    check_matrix_close(
-        result,
-        expected,
-        "`__pow__` on F-order Matrix is broken",
-    )
-
-
-# ===-----------------------------------------------------------------------===#
-# Matrix: astype, flatten, to_ndarray on F-order matrices
-# ===-----------------------------------------------------------------------===#
-
-
-def test_matrix_conversion_view() raises:
-    """Test astype, flatten, to_ndarray on F-order Matrices."""
-    var np = Python.import_module("numpy")
-
-    # Create F-order Matrix via NDArray conversion
-    var nd_src = nm.arange[nm.f64](1, 7).reshape(Shape(2, 3), order="F")
-    var A = Matrix[nm.f64](nd_src)
-    var Anp = np.matrix(A.to_numpy())
-    assert_true(
-        not A.is_c_contiguous(), "F-order Matrix should not be C-contiguous"
-    )
-
-    # astype
-    var A32 = A.astype[nm.f32]()
-    var A32np = np.matrix(A32.to_numpy())
-    assert_true(
-        np.all(np.isclose(A32np, Anp, atol=PythonObject(0.01))),
-        "`astype` on F-order Matrix is broken",
-    )
-
-    # flatten
-    var flat = A.flatten()
-    var flat_np = np.array(Anp).flatten()
-    assert_true(
-        np.all(
-            np.isclose(
-                np.matrix(flat.to_numpy()),
-                np.matrix(flat_np),
-                atol=PythonObject(0.01),
-            )
-        ),
-        "`flatten` on F-order Matrix is broken",
-    )
-
-    # to_ndarray
-    var nd = A.to_ndarray()
-    var nd_np = nd.to_numpy()
-    assert_true(
-        np.all(np.isclose(nd_np, np.array(Anp), atol=PythonObject(0.01))),
-        "`to_ndarray` on F-order Matrix is broken",
-    )
-
-
-# ===-----------------------------------------------------------------------===#
-# Matrix: rounding on F-order matrices
-# ===-----------------------------------------------------------------------===#
-
-
-def test_matrix_rounding_view() raises:
-    """Test round on F-order Matrices."""
-    var np = Python.import_module("numpy")
-
-    # Use rand to create F-order Matrix with random values to test rounding
-    var A = Matrix.rand[nm.f64](shape=(3, 4), order="F")
-    var Anp = np.matrix(A.to_numpy())
-    assert_true(
-        not A.is_c_contiguous(), "F-order Matrix should not be C-contiguous"
-    )
-
-    var result = nm.math.round(A, decimals=1)
-    var expected = np.around(Anp, 1)
-    check_matrix_close(
-        result,
-        expected,
-        "`round` on F-order Matrix is broken",
-    )
-
-
-# ===-----------------------------------------------------------------------===#
-# NDArray: mutating original is not affected by sort on view
-# ===-----------------------------------------------------------------------===#
-
-
 def test_sort_does_not_mutate_original() raises:
     """Test that sorting a view does not mutate the original array."""
     var np = Python.import_module("numpy")
@@ -1334,7 +1129,7 @@ def test_offset_view_slice_setitem() raises:
 
 
 # ===-----------------------------------------------------------------------===#
-# Phase 4+ tests: In-place operators, Matrix view safety, where, ravel
+# Phase 4+ tests: in-place operators, where, ravel
 # ===-----------------------------------------------------------------------===#
 
 
@@ -1446,108 +1241,6 @@ def test_inplace_imod_scalar_view() raises:
     assert_true(parent.load(4) == 1.0, "imod parent[4]")
     assert_true(parent.load(5) == 2.0, "imod parent[5]")
     assert_true(parent.load(6) == 6.0, "imod parent[6] unchanged")
-
-
-def test_matrix_view_fill() raises:
-    """Test Matrix.fill on a view with offset."""
-    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
-    for i in range(3):
-        for j in range(4):
-            parent[i, j] = Scalar[nm.f64](i * 4 + j)
-
-    # Create a view of row 1 (offset = 4)
-    var view = parent.get(1)
-    view.fill(99.0)
-
-    # Row 0 should be unchanged
-    assert_true(parent[0, 0] == 0.0, "matrix fill parent[0,0] unchanged")
-    assert_true(parent[0, 3] == 3.0, "matrix fill parent[0,3] unchanged")
-    # Row 1 should be filled
-    assert_true(parent[1, 0] == 99.0, "matrix fill parent[1,0]")
-    assert_true(parent[1, 1] == 99.0, "matrix fill parent[1,1]")
-    assert_true(parent[1, 2] == 99.0, "matrix fill parent[1,2]")
-    assert_true(parent[1, 3] == 99.0, "matrix fill parent[1,3]")
-    # Row 2 should be unchanged
-    assert_true(parent[2, 0] == 8.0, "matrix fill parent[2,0] unchanged")
-
-
-def test_matrix_view_getset() raises:
-    """Test Matrix __getitem__/__setitem__(x,y) respect offset."""
-    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
-    for i in range(3):
-        for j in range(4):
-            parent[i, j] = Scalar[nm.f64](i * 4 + j)
-
-    # Get a view of row 2 (offset = 8, shape 1x4)
-    var view = parent.get(2)
-    # Reading via [0, j] on the view should return row 2 values
-    assert_true(view[0, 0] == 8.0, "matrix view get [0,0]")
-    assert_true(view[0, 1] == 9.0, "matrix view get [0,1]")
-    assert_true(view[0, 2] == 10.0, "matrix view get [0,2]")
-    assert_true(view[0, 3] == 11.0, "matrix view get [0,3]")
-
-    # Writing via [0, j] on the view should modify the parent
-    view[0, 2] = 999.0
-    assert_true(parent[2, 2] == 999.0, "matrix view set parent[2,2]")
-
-
-def test_matrix_view_iadd() raises:
-    """Test Matrix += on a row view with offset."""
-    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
-    for i in range(3):
-        for j in range(4):
-            parent[i, j] = Scalar[nm.f64](i * 4 + j)
-
-    # Get a view of row 1 (offset = 4)
-    var view = parent.get(1)
-    view += Scalar[nm.f64](100.0)
-
-    # Row 0 should be unchanged
-    assert_true(parent[0, 0] == 0.0, "matrix iadd parent[0,0] unchanged")
-    # Row 1 should have 100 added
-    assert_true(parent[1, 0] == 104.0, "matrix iadd parent[1,0]")
-    assert_true(parent[1, 1] == 105.0, "matrix iadd parent[1,1]")
-    assert_true(parent[1, 2] == 106.0, "matrix iadd parent[1,2]")
-    assert_true(parent[1, 3] == 107.0, "matrix iadd parent[1,3]")
-    # Row 2 should be unchanged
-    assert_true(parent[2, 0] == 8.0, "matrix iadd parent[2,0] unchanged")
-
-
-def test_matrix_view_load_store() raises:
-    """Test Matrix load/store with offset."""
-    var parent = Matrix[nm.f64](shape=(2, 4), order="C")
-    for i in range(2):
-        for j in range(4):
-            parent[i, j] = Scalar[nm.f64](i * 4 + j)
-
-    # Get a view of row 1 (offset = 4)
-    var view = parent.get(1)
-    # load(0) on the view should return the first element of row 1
-    assert_true(view.load(0) == 4.0, "matrix load view[0]")
-    assert_true(view.load(1) == 5.0, "matrix load view[1]")
-    assert_true(view.load(3) == 7.0, "matrix load view[3]")
-
-    # store on the view should write to the parent's row 1
-    view.store(1, Scalar[nm.f64](555.0))
-    assert_true(parent[1, 1] == 555.0, "matrix store parent[1,1]")
-
-
-def test_matrix_view_reshape() raises:
-    """Test Matrix reshape on a view with offset."""
-    var parent = Matrix[nm.f64](shape=(3, 4), order="C")
-    for i in range(3):
-        for j in range(4):
-            parent[i, j] = Scalar[nm.f64](i * 4 + j)
-
-    # Get view of rows 1-2 (offset=4, shape 2x4)
-    var view = parent.get(Slice(1, 3), Slice(0, 4))
-    # Reshape 2x4 -> 4x2
-    var reshaped = view.reshape((4, 2))
-    # Should contain [4,5,6,7,8,9,10,11]
-    assert_true(reshaped[0, 0] == 4.0, "matrix reshape [0,0]")
-    assert_true(reshaped[0, 1] == 5.0, "matrix reshape [0,1]")
-    assert_true(reshaped[1, 0] == 6.0, "matrix reshape [1,0]")
-    assert_true(reshaped[3, 1] == 11.0, "matrix reshape [3,1]")
 
 
 def test_ndarray_ravel_offset_view() raises:

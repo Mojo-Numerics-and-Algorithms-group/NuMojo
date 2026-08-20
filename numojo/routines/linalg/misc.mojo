@@ -13,7 +13,6 @@ This module provides miscellaneous linear algebra routines, such as extracting d
 # numojo
 # ===----------------------------------------------------------------------===#
 from numojo.core.layout import NDArrayShape
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 
@@ -176,42 +175,3 @@ def diagonal[
             result.unsafe_set(outer * diag_len + i, a.unsafe_get(src_offset))
 
     return result^
-
-
-def issymmetric[
-    dtype: DType
-](
-    A: Matrix[dtype],
-    rtol: Scalar[dtype] = 1e-5,
-    atol: Scalar[dtype] = 1e-8,
-) -> Bool:
-    """
-    Returns True if A is symmetric, False otherwise.
-
-    Parameters:
-        dtype: Data type of the Matrix Elements.
-
-    Args:
-        A: A Matrix.
-        rtol: Relative tolerance for comparison.
-        atol: Absolute tolerance for comparison.
-
-    Returns:
-        True if the array is symmetric, False otherwise.
-    """
-
-    if A.shape[0] != A.shape[1]:
-        return False
-
-    var n = A.shape[0]
-
-    for i in range(n):
-        for j in range(i + 1, n):
-            var a_ij = A._load(i, j)
-            var a_ji = A._load(j, i)
-            var diff = abs(a_ij - a_ji)
-            var allowed_error = atol + rtol * max(abs(a_ij), abs(a_ji))
-            if diff > allowed_error:
-                return False
-
-    return True

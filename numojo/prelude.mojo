@@ -15,7 +15,7 @@ Why it exists:
 - Importing every symbol manually makes headers long and repetitive.
 
 What it exports:
-- Core container types like `Matrix` and `NDArray`
+- Core container types like `NDArray`
 - Shape/index helpers like `Shape`, `NDArrayShape`, and `Item`
 - Common dtype aliases (e.g. `f32`, `f64`, `i32`, `boolean`)
 - Complex number helpers (`ComplexSIMD`, `ComplexScalar`, `CScalar`, `1j`)
@@ -37,7 +37,6 @@ For more functions (math, linalg, statistics, etc.), import them from
 import numojo as nm
 
 from numojo.core.indexing.item import Item
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.accelerator_ndarray import AcceleratorNDArray
 from numojo.core.layout import NDArrayShape

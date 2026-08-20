@@ -8,7 +8,6 @@
 """
 Extrema routines (numojo.routines.math.extrema).
 ================================================
-
 Minimum and maximum operations for arrays.
 
 Element-wise min/max comparisons and axis-aware reduction operations

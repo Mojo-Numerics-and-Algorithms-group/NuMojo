@@ -8,7 +8,6 @@
 """
 Math routines (numojo.routines.math).
 =====================================
-
 Arithmetic, trigonometric, hyperbolic, exponential, and utility mathematical operations for arrays.
 
 Exports

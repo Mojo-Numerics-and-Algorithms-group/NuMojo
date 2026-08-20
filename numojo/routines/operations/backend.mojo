@@ -8,7 +8,6 @@
 """
 Operations Backend (numojo.routines.operations.backend).
 =======================================================
-
 Vectorized backend for math operations.
 
 Defines backend structures and SIMD primitives for math operations.

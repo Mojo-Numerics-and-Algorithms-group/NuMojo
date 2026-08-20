@@ -8,7 +8,6 @@
 """
 Logic routines (numojo.routines.logic).
 ======================================
-
 Comparison operations, logical operators, and truth value evaluations for arrays.
 
 Exports

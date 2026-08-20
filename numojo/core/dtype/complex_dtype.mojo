@@ -11,7 +11,6 @@
 """
 Complex Datatype (numojo.core.dtype.complex_dtype).
 ===================================================
-
 Complex number type definitions and utilities.
 
 Type aliases and utilities for working with complex data types in NuMojo,

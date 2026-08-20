@@ -8,7 +8,6 @@
 """
 NDArray (numojo.core.ndarray).
 =============================
-
 Multi-dimensional array implementation for NuMojo.
 
 Core data structure for N-dimensional arrays with efficient storage, indexing,

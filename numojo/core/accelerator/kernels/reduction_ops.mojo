@@ -8,7 +8,6 @@
 """
 Reduction Ops Kernels (numojo.core.accelerator.kernels.reduction_ops).
 ======================================================================
-
 GPU kernels for reduction operations.
 
 GPU kernel functions and launch helpers for full-array reduction operations.

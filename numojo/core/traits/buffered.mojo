@@ -9,7 +9,6 @@
 """
 Buffered Trait (numojo.core.traits.buffered).
 ==============================================
-
 Trait for buffer ownership semantics.
 
 Trait to denote whether a data buffer is owned or referenced. Implementations

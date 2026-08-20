@@ -8,7 +8,6 @@
 """
 ComplexSIMD (numojo.core.complex.complex_simd).
 ===============================================
-
 SIMD-optimized complex number representation and operations.
 
 This module provides the ComplexSIMD type for representing complex numbers

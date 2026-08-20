@@ -8,7 +8,6 @@
 """
 Operations (numojo.routines.operations).
 ========================================
-
 Vectorized operation execution backends for unary, binary, and predicate operations.
 
 Exports

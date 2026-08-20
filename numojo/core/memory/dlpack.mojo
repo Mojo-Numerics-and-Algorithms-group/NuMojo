@@ -8,7 +8,6 @@
 """
 DLPack Interoperability (numojo.core.memory.dlpack).
 ====================================================
-
 Zero-copy tensor exchange via DLPack protocol.
 
 Implements the DLPack protocol for zero-copy data exchange between NuMojo

@@ -8,7 +8,6 @@
 """
 ComplexNDArray (numojo.core.complex.complex_ndarray).
 =====================================================
-
 Multi-dimensional arrays of complex numbers.
 
 N-dimensional arrays of complex numbers with full indexing, slicing, and

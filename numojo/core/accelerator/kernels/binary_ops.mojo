@@ -8,7 +8,6 @@
 """
 Binary Ops Kernels (numojo.core.accelerator.kernels.binary_ops).
 ================================================================
-
 GPU kernels for binary operations.
 
 GPU kernel functions and launch helpers for element-wise binary operations

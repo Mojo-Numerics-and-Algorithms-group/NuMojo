@@ -8,7 +8,6 @@
 """
 Miscellaneous (numojo.routines.linalg.misc).
 ============================================
-
 Miscellaneous linear algebra operations.
 
 Additional linear algebra utilities (diagonals, symmetry checks).

@@ -8,7 +8,6 @@
 """
 Constants (numojo.routines.constants).
 ======================================
-
 Mathematical and physical constants.
 
 Physical and mathematical constants (pi, e, c) defined for compile-time

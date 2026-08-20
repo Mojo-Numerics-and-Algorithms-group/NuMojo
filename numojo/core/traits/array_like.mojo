@@ -9,7 +9,6 @@
 """
 Array-like (numojo.core.traits.array_like).
 ===========================================
-
 Trait definitions for array-like behaviors.
 
 Defines traits for array-like operations including loading/storing SIMD elements

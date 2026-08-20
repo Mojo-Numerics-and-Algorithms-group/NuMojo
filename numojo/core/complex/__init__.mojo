@@ -8,7 +8,6 @@
 """
 Complex (numojo.core.complex).
 =============================
-
 Complex number support for NuMojo, including SIMD complex types and complex NDArrays.
 
 Exports

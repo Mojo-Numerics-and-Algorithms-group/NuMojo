@@ -8,7 +8,6 @@
 """
 Sorting routines (numojo.routines.sorting).
 ===========================================
-
 Array sorting and indexing operations.
 
 Sorting routines for NDArrays including sort and argsort functions

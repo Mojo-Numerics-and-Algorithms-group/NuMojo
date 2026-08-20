@@ -9,7 +9,6 @@
 """
 Random (numojo.routines.random).
 ================================
-
 Random number generation and sampling.
 
 Functions for creating arrays populated with random samples from various

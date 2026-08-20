@@ -8,7 +8,6 @@
 """
 NDArrayStrides (numojo.core.layout.ndstrides).
 ===============================================
-
 Memory layout and indexing strides.
 
 Represents memory strides for calculating offsets when indexing into arrays.

@@ -8,7 +8,6 @@
 """
 Arithmetic routines (numojo.routines.math.arithmetic).
 ======================================================
-
 Basic arithmetic operations: addition, subtraction, multiplication, division, and related functions.
 
 This module provides element-wise arithmetic operations for NDArrays supporting both

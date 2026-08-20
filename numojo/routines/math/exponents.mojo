@@ -8,7 +8,6 @@
 """
 Exponential routines (numojo.routines.math.exponents).
 ======================================================
-
 Exponential and logarithmic functions for arrays.
 
 Element-wise exponential functions (exp, exp2, expm1) and logarithmic functions

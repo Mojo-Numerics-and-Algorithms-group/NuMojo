@@ -8,7 +8,6 @@
 """
 Solving (numojo.routines.linalg.solving).
 ========================================
-
 Linear equation solvers.
 
 Solver for `Ax = y` systems using LU decomposition algorithm, and matrix

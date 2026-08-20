@@ -8,7 +8,6 @@
 """
 Creation routines (numojo.routines.creation).
 ==============================================
-
 Functions for creating and initializing NDArray and ComplexNDArray objects.
 
 This module provides convenient factory functions for creating arrays with various

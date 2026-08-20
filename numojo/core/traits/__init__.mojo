@@ -8,7 +8,6 @@
 """
 Traits (numojo.core.traits).
 ===========================
-
 Trait and protocol abstractions used across NuMojo core containers and internals.
 
 Exports

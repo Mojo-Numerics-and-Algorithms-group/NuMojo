@@ -8,7 +8,6 @@
 """
 AcceleratorNDArray (numojo.core.accelerator_ndarray).
 =====================================================
-
 Device-aware NDArray with accelerator support.
 
 Device-aware NDArray that stores data in AcceleratorDataContainer with

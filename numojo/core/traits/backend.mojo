@@ -9,7 +9,6 @@
 """
 Backend Traits (numojo.core.traits.backend).
 ============================================
-
 Computational backend trait definitions.
 
 Defines traits for different computation backends to standardize how

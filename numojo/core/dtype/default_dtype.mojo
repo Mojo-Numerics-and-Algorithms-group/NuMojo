@@ -8,7 +8,6 @@
 """
 Default Datatypes (numojo.core.dtype.default_dtype).
 ====================================================
-
 Type aliases for common Mojo data types.
 
 Rust-like and NumPy-like aliases for built-in Mojo data types with runtime

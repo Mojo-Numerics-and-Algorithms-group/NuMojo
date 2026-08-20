@@ -8,7 +8,6 @@
 """
 Indexing routines (numojo.routines.indexing).
 ==============================================
-
 Advanced indexing operations for arrays.
 
 Functions for generating index arrays, fancy indexing, selecting elements,

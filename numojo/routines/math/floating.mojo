@@ -9,7 +9,6 @@
 """
 Floating (numojo.routines.math.floating).
 =========================================
-
 Floating-point specific operations for NDArrays.
 
 Implements floating-point helper functions such as `copysign` for element-wise

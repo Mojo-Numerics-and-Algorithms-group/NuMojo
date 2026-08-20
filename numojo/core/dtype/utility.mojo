@@ -8,7 +8,6 @@
 """
 Datatype Utilities (numojo.core.dtype.utility).
 ===============================================
-
 Type checking utilities for DType inspection.
 
 Functions for checking properties of data types (DType) at both compile time

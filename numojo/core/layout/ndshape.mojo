@@ -8,7 +8,6 @@
 """
 NDArrayShape (numojo.core.layout.ndshape).
 ==========================================
-
 Array shape representation and operations.
 
 Represents array dimensions with efficient storage, shape transformations

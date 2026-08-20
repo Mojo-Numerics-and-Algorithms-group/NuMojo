@@ -8,7 +8,6 @@
 """
 Files (numojo.routines.io.files).
 =================================
-
 File I/O for arrays.
 
 Functions for reading and writing arrays to and from files.

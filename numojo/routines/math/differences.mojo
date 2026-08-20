@@ -9,7 +9,6 @@
 """
 Differences (numojo.routines.math.differences).
 ===============================================
-
 Numerical differentiation and integration helpers.
 
 Implements gradient computation and finite differences for numerical differentiation

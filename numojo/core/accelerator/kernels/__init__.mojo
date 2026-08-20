@@ -8,7 +8,6 @@
 """
 Accelerator kernels (numojo.core.accelerator.kernels).
 ======================================================
-
 GPU kernel functions for `AcceleratorNDArray` operation dispatch.
 
 Exports

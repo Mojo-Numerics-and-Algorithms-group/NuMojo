@@ -9,7 +9,6 @@
 """
 Functional (numojo.routines.functional).
 ========================================
-
 Functional programming utilities for array operations.
 
 Implements functional utilities for NDArray operations such as `apply_along_axis`,

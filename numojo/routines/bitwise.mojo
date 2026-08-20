@@ -8,7 +8,6 @@
 """
 Bitwise operations (numojo.routines.bitwise).
 ==============================================
-
 Bitwise operations for integer arrays.
 
 Element-wise bitwise operations (AND, OR, XOR, NOT/invert) for integer NDArrays.

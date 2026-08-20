@@ -8,7 +8,6 @@
 """
 I/O routines (numojo.routines.io).
 ==================================
-
 File I/O operations and array formatting for NuMojo.
 
 Exports

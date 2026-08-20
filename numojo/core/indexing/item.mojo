@@ -8,7 +8,6 @@
 """
 Item (numojo.core.indexing.item).
 =================================
-
 Multi-dimensional index representation for N-dimensional array access.
 
 The `Item` struct holds a sequence of integer indices (one per dimension) used to specify

@@ -8,7 +8,6 @@
 """
 Manipulation routines (numojo.routines.manipulation).
 ======================================================
-
 Array shape and layout manipulation operations.
 
 Routines for reshaping, transposing, broadcasting, flipping, concatenating,

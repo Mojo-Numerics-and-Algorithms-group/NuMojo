@@ -8,7 +8,6 @@
 """
 Slicing (numojo.core.indexing.slicing).
 =======================================
-
 Internal data structures and utilities for handling array slicing operations.
 
 This module provides the internal infrastructure for slicing arrays, including

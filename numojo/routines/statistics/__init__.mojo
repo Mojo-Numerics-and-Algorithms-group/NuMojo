@@ -8,7 +8,6 @@
 """
 Statistics routines (numojo.routines.statistics).
 =================================================
-
 Statistical functions including averages, dispersion measures, and order statistics.
 
 Exports

@@ -8,7 +8,6 @@
 """
 Formatting (numojo.routines.io.formatting).
 ===========================================
-
 Array and value formatting utilities.
 
 Functions for formatting arrays and values for printing with options for

@@ -8,7 +8,6 @@
 """
 Storage (numojo.core.memory.storage).
 =====================================
-
 Backend storage containers for accelerator-aware data management.
 
 Provides reference-counted and device-aware memory storage with unified

@@ -14,7 +14,7 @@ and a curated set of NumPy-inspired routines.
 Exports
 -------
 Core container types:
-- `Matrix` and `NDArray`
+- `NDArray`
 - `Shape` / `NDArrayShape`, `Strides` / `NDArrayStrides`
 
 Core utilities:
@@ -30,7 +30,7 @@ Notes
 -----
 - This module is intended to provide a stable import surface for users.
 - Internal code should prefer importing directly from the canonical submodules/packages
-  (`numojo.core.matrix`, `numojo.core.layout`, `numojo.routines.math`, etc.) rather than relying on
+  (`numojo.core.ndarray`, `numojo.core.layout`, `numojo.routines.math`, etc.) rather than relying on
   extensive top-level re-exports.
 - Public APIs in this module adhere to the Mojo docstring style guide to keep documentation precise
   and predictable for users.
@@ -61,7 +61,6 @@ from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.layout import newaxis
 from numojo.core.indexing.item import Item
 from numojo.core.indexing import IndexMethods
-from numojo.core.matrix import Matrix
 from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.accelerator.device import Device, cpu, cuda, mps, rocm
 

@@ -13,13 +13,7 @@ Provides sum reductions along axes for NDArrays and Matrices, covering both flat
 # Stdlib
 # ===----------------------------------------------------------------------===#
 from std.algorithm import vectorize
-from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
-
-# ===----------------------------------------------------------------------===#
-# External
-# ===----------------------------------------------------------------------===#
-from max.algorithm import parallelize
 
 # ===----------------------------------------------------------------------===#
 # numojo
@@ -27,7 +21,6 @@ from max.algorithm import parallelize
 from numojo.core.error import NumojoError
 from numojo.core.indexing import TraverseMethods
 from numojo.core.layout.ndshape import NDArrayShape
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import zeros
@@ -135,112 +128,6 @@ def sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return result^
 
 
-def sum[dtype: DType](A: Matrix[dtype]) -> Scalar[dtype]:
-    """
-    Sum up all items in the Matrix.
-
-    Args:
-        A: Matrix.
-
-    Example:
-    ```mojo
-    from numojo import Matrix
-    import numojo.routines.math as mat
-
-    var A = Matrix.rand(shape=(100, 100))
-    print(mat.sum(A))
-    ```
-    """
-    if not A.is_c_contiguous():
-        return sum(A.contiguous())
-    var res = Scalar[dtype](0)
-    comptime width: Int = simd_width_of[dtype]()
-
-    def cal_vec[width: Int](i: Int) {mut res, A}:
-        res = res + A._buf.load[width=width](i).reduce_add()
-
-    vectorize[width](A.size, cal_vec)
-    return res
-
-
-def sum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
-    """
-    Sum up the items in a Matrix along the axis.
-
-    Args:
-        A: Matrix.
-        axis: 0 or 1.
-
-    Example:
-    ```mojo
-    from numojo import Matrix
-    import numojo.routines.math as mat
-
-    var A = Matrix.rand(shape=(100, 100))
-    print(mat.sum(A, axis=0))
-    print(mat.sum(A, axis=1))
-    ```
-    """
-
-    comptime width: Int = simd_width_of[dtype]()
-
-    if axis == 0:
-        var B = Matrix.zeros[dtype](shape=(1, A.shape[1]), order=A.order())
-
-        if A.is_f_contiguous():
-
-            @parameter
-            def calc_columns(j: Int):
-                def col_sum[width: Int](i: Int) {mut B, j, A}:
-                    B._store(
-                        0,
-                        j,
-                        B._load(0, j) + A._load[width=width](i, j).reduce_add(),
-                    )
-
-                vectorize[width](A.shape[0], col_sum)
-
-            parallelize[calc_columns](A.shape[1], A.shape[1])
-        else:
-            for i in range(A.shape[0]):
-
-                def cal_vec_sum[width: Int](j: Int) {mut B, i, A}:
-                    B._store[width](
-                        0, j, B._load[width](0, j) + A._load[width](i, j)
-                    )
-
-                vectorize[width](A.shape[1], cal_vec_sum)
-
-        return B^
-
-    elif axis == 1:
-        var B = Matrix.zeros[dtype](shape=(A.shape[0], 1), order=A.order())
-
-        if A.is_c_contiguous():
-
-            @parameter
-            def cal_rows(i: Int):
-                def cal_vec[width: Int](j: Int) {mut B, i, A}:
-                    B._store(
-                        i,
-                        0,
-                        B._load(i, 0) + A._load[width=width](i, j).reduce_add(),
-                    )
-
-                vectorize[width](A.shape[1], cal_vec)
-
-            parallelize[cal_rows](A.shape[0], A.shape[0])
-        else:
-            for i in range(A.shape[0]):
-                for j in range(A.shape[1]):
-                    B._store(i, 0, B._load(i, 0) + A._load(i, j))
-
-        return B^
-
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
-
-
 def cumsum[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Returns cumsum of all items of an array.
@@ -309,108 +196,3 @@ def cumsum[
             B.unsafe_set(next, B.unsafe_get(next) + B.unsafe_get(current))
 
     return B^
-
-
-def cumsum[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Cumsum of flattened matrix.
-
-    Args:
-        A: Matrix.
-
-    Example:
-    ```mojo
-    from numojo import Matrix
-    import numojo.routines.math as mat
-
-    var A = Matrix.rand(shape=(100, 100))
-    print(mat.cumsum(A))
-    ```
-    """
-    if not A.is_c_contiguous():
-        return cumsum(A.contiguous())
-    var reorder = False
-    var order = "C" if A.is_c_contiguous() else "F"
-    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
-    unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
-
-    if A.is_f_contiguous():
-        reorder = True
-        result = result.reorder_layout()
-
-    result.resize(shape=(1, A.size))
-
-    for i in range(1, A.size):
-        result._buf[i] += result._buf[i - 1]
-
-    if reorder:
-        result = result.reorder_layout()
-
-    return result^
-
-
-def cumsum[dtype: DType](A: Matrix[dtype], axis: Int) raises -> Matrix[dtype]:
-    """
-    Cumsum of Matrix along the axis.
-
-    Args:
-        A: Matrix.
-        axis: 0 or 1.
-
-    Example:
-    ```mojo
-    from numojo import Matrix
-    import numojo.routines.math as mat
-
-    var A = Matrix.rand(shape=(100, 100))
-    print(mat.cumsum(A, axis=0))
-    print(mat.cumsum(A, axis=1))
-    ```
-    """
-
-    comptime width: Int = simd_width_of[dtype]()
-    var order = "C" if A.is_c_contiguous() else "F"
-    var result: Matrix[dtype] = Matrix.zeros[dtype](A.shape, order)
-    unsafe_memcpy(dest=result._buf.ptr, src=A._buf.ptr, count=A.size)
-
-    if axis == 0:
-        if result.is_c_contiguous():
-            for i in range(1, A.shape[0]):
-
-                def cal_vec_sum_column[width: Int](j: Int) {mut result, i}:
-                    result._store[width](
-                        i,
-                        j,
-                        result._load[width](i - 1, j)
-                        + result._load[width](i, j),
-                    )
-
-                vectorize[width](result.shape[1], cal_vec_sum_column)
-            return result^
-        else:
-            for j in range(A.shape[1]):
-                for i in range(1, A.shape[0]):
-                    result[i, j] = result[i - 1, j] + result[i, j]
-            return result^
-
-    elif axis == 1:
-        if A.is_c_contiguous():
-            for i in range(A.shape[0]):
-                for j in range(1, A.shape[1]):
-                    result[i, j] = result[i, j - 1] + result[i, j]
-            return result^
-        else:
-            for j in range(1, A.shape[1]):
-
-                def cal_vec_sum_row[width: Int](i: Int) {mut result, j}:
-                    result._store[width](
-                        i,
-                        j,
-                        result._load[width](i, j - 1)
-                        + result._load[width](i, j),
-                    )
-
-                vectorize[width](A.shape[0], cal_vec_sum_row)
-            return result^
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))

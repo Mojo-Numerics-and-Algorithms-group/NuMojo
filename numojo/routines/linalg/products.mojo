@@ -5,7 +5,7 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Matrix and vector products (numojo.routines.linalg.products)
+"""Array and vector products (numojo.routines.linalg.products)
 ---------------------------------------------------------------
 This module provides functions for computing products of vectors and matrices, such as cross product, dot product, and matrix multiplication.
 """
@@ -28,7 +28,6 @@ from max.algorithm import parallelize
 # numojo
 # ===----------------------------------------------------------------------===#
 from numojo.core.layout import NDArrayShape
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import zeros
@@ -144,7 +143,7 @@ def matmul_tiled_unrolled_parallelized[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Matrix multiplication vectorized, tiled, unrolled, and parallelized.
+    Array multiplication vectorized, tiled, unrolled, and parallelized.
     """
     if not A.is_c_contiguous():
         return matmul_tiled_unrolled_parallelized(A.contiguous(), B)
@@ -407,110 +406,11 @@ def matmul[
     return result^
 
 
-def matmul[
-    dtype: DType
-](A: Matrix[dtype], B: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Matrix multiplication.
-
-    Example:
-    ```mojo
-    from numojo import Matrix
-    from numojo.routines.linalg import matmul
-    var A = Matrix.rand(shape=(1000, 1000))
-    var B = Matrix.rand(shape=(1000, 1000))
-    var result = matmul(A, B)
-    ```
-    """
-
-    comptime width = max(simd_width_of[dtype](), 16)
-
-    if A.shape[1] != B.shape[0]:
-        raise Error(
-            String("resultannot matmul {}x{} matrix with {}x{} matrix.").format(
-                A.shape[0], A.shape[1], B.shape[0], B.shape[1]
-            )
-        )
-
-    var result: Matrix[dtype]
-
-    if A.is_c_contiguous() and B.is_c_contiguous():
-        result = Matrix.zeros[dtype](
-            shape=(A.shape[0], B.shape[1]), order=B.order()
-        )
-
-        @parameter
-        def calculate_resultresult(m: Int):
-            for k in range(A.shape[1]):
-
-                def dot[
-                    simd_width: Int
-                ](n: Int) {mut result, imm A, imm B, imm m, imm k} -> None:
-                    result._store[simd_width](
-                        m,
-                        n,
-                        result._load[simd_width](m, n)
-                        + A._load(m, k) * B._load[simd_width](k, n),
-                    )
-
-                vectorize[width](B.shape[1], dot)
-
-        parallelize[calculate_resultresult](A.shape[0], A.shape[0])
-    elif A.is_f_contiguous() and B.is_f_contiguous():
-        result = Matrix.zeros[dtype](
-            shape=(A.shape[0], B.shape[1]), order=B.order()
-        )
-
-        @parameter
-        def calculate_FF(n: Int):
-            for k in range(A.shape[1]):
-
-                def dot_F[
-                    simd_width: Int
-                ](m: Int) {mut result, imm A, imm B, imm n, imm k} -> None:
-                    result._store[simd_width](
-                        m,
-                        n,
-                        result._load[simd_width](m, n)
-                        + A._load[simd_width](m, k) * B._load(k, n),
-                    )
-
-                vectorize[width](A.shape[0], dot_F)
-
-        parallelize[calculate_FF](B.shape[1], B.shape[1])
-    elif A.is_c_contiguous() and B.is_f_contiguous():
-        result = Matrix.zeros[dtype](
-            shape=(A.shape[0], B.shape[1]), order=B.order()
-        )
-
-        @parameter
-        def calculate_resultF(m: Int):
-            for n in range(B.shape[1]):
-                var sum: Scalar[dtype] = 0.0
-
-                def dot_product[
-                    simd_width: Int
-                ](k: Int) {mut sum, imm A, imm B, imm m, imm n} -> None:
-                    sum += (
-                        A._load[simd_width](m, k) * B._load[simd_width](k, n)
-                    ).reduce_add()
-
-                vectorize[width](A.shape[1], dot_product)
-                result._store(m, n, sum)
-
-        parallelize[calculate_resultF](A.shape[0], A.shape[0])
-
-    else:
-        result = matmul(A.reorder_layout(), B)
-
-    return result^
-
-
 def matmul_naive[
     dtype: DType
 ](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
     """
-    Matrix multiplication with three nested loops.
+    Array multiplication with three nested loops.
     """
     var result: NDArray[dtype]
     if B.ndim == 1:

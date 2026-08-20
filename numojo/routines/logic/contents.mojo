@@ -15,7 +15,6 @@ from std.utils.numerics import neg_inf, inf
 
 from numojo.routines import HostExecutor
 from numojo.core.ndarray import NDArray
-from numojo.core.matrix import Matrix
 
 # TODO: Add scalar overloads of these functions.
 # TODO: Remove matrix operations in future.
@@ -208,41 +207,3 @@ def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         return x.eq(SIMD[dtype, simd_width](inf[dtype]()))
 
     return HostExecutor.apply_unary_predicate[dtype, is_posinf](array)
-
-
-def isneginf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
-    """
-    Checks if each element of the input Matrix is negative infinity.
-
-    Parameters:
-        dtype: DType - Data type of the input Matrix.
-
-    Args:
-        matrix: Input Matrix to check.
-
-    Returns:
-        A Matrix of the same shape as `matrix` with True for negative infinite elements and False for others.
-    """
-    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
-    for i in range(result_array.size):
-        result_array.store(i, neg_inf[dtype]() == matrix.load(i))
-    return result_array^
-
-
-def isposinf[dtype: DType](matrix: Matrix[dtype]) raises -> Matrix[DType.bool]:
-    """
-    Checks if each elements of the input Matrix is positive infinity.
-
-    Parameters:
-        dtype: DType - Data type of the input Matrix.
-
-    Args:
-        matrix: Input Matrix to check.
-
-    Returns:
-        A Matrix of the same shape as `Matrix` with True for positive infinite elements and False for others.
-    """
-    var result_array: Matrix[DType.bool] = Matrix[DType.bool](matrix.shape)
-    for i in range(result_array.size):
-        result_array.store(i, inf[dtype]() == matrix.load(i))
-    return result_array^

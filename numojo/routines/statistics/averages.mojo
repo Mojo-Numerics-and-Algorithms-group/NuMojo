@@ -38,7 +38,6 @@ from numojo.routines.functional import (
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import _broadcast_back_to, broadcast_to, ravel
 from numojo.routines.math.arithmetic import add
-import numojo.routines.math.misc as misc
 from numojo.routines.math.sums import cumsum, sum
 from numojo.routines.sorting import binary_sort, sort
 

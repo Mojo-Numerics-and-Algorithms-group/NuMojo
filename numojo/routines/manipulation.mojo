@@ -19,8 +19,6 @@ from numojo.core.complex import ComplexNDArray
 from numojo.core.layout import NDArrayShape
 from numojo.core.layout import NDArrayStrides
 from numojo.core.type_aliases import Shape
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
 from numojo.core.indexing import TraverseMethods
 from numojo.core.indexing.utility import (
     _list_of_flipped_range,
@@ -376,68 +374,6 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
-def transpose[dtype: DType](A: Matrix[dtype]) -> Matrix[dtype]:
-    """
-    Transpose of matrix.
-    """
-    var order: String = "F"
-    if A.is_c_contiguous():
-        order = "C"
-
-    var B = Matrix[dtype](Tuple(A.shape[1], A.shape[0]), order=order)
-
-    if A.shape[0] == 1 or A.shape[1] == 1:
-        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
-    else:
-        for i in range(B.shape[0]):
-            for j in range(B.shape[1]):
-                B._store(i, j, A._load(j, i))
-    return B^
-
-
-def reorder_layout[dtype: DType](A: Matrix[dtype]) raises -> Matrix[dtype]:
-    """
-    Create a new Matrix with the opposite layout from A:
-    if A is C-contiguous, then create a new F-contiguous matrix of the same shape.
-    If A is F-contiguous, create a new C-contiguous matrix.
-
-    Copy data into the new layout.
-    """
-
-    var rows: Int = A.shape[0]
-    var cols: Int = A.shape[1]
-
-    var new_order: String
-    if A.flags["C_CONTIGUOUS"]:
-        new_order = "F"
-    elif A.flags["F_CONTIGUOUS"]:
-        new_order = "C"
-    else:
-        raise Error(
-            String(
-                "Matrix is neither C-contiguous nor F-contiguous. Cannot"
-                " reorder layout!"
-            )
-        )
-
-    var B = Matrix[dtype](Tuple(rows, cols), new_order)
-    if new_order == "C":
-        for i in range(rows):
-            for j in range(cols):
-                B._buf[i * cols + j] = A._buf[i + j * rows]
-    else:
-        for j in range(cols):
-            for i in range(rows):
-                B._buf[j * rows + i] = A._buf[i * cols + j]
-
-    return B^
-
-
-# ===----------------------------------------------------------------------=== #
-# Changing number of dimensions
-# ===----------------------------------------------------------------------=== #
-
-
 def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -491,86 +427,6 @@ def broadcast_to[
 
     # view.
     return a.view_with_layout(shape, b_strides, a.offset)
-
-
-def broadcast_to[
-    dtype: DType
-](
-    A: Matrix[dtype],
-    shape: Tuple[Int, Int],
-    override_order: String = "",
-) raises -> Matrix[dtype]:
-    """
-    Broadcasts the vector to the given shape.
-
-    Example:
-
-    ```console
-    > from numojo import Matrix
-    > a = Matrix.fromstring("1 2 3", shape=(1, 3))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   2.0     3.0]
-     [1.0   2.0     3.0]
-     [1.0   2.0     3.0]]
-    > a = Matrix.fromstring("1 2 3", shape=(3, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [2.0   2.0     2.0]
-     [3.0   3.0     3.0]]
-    > a = Matrix.fromstring("1", shape=(1, 1))
-    > print(mat.broadcast_to(a, (3, 3)))
-    [[1.0   1.0     1.0]
-     [1.0   1.0     1.0]
-     [1.0   1.0     1.0]]
-    > a = Matrix.fromstring("1 2", shape=(1, 2))
-    > print(mat.broadcast_to(a, (1, 2)))
-    [[1.0   2.0]]
-    > a = Matrix.fromstring("1 2 3 4", shape=(2, 2))
-    > print(mat.broadcast_to(a, (4, 2)))
-    Unhandled exception caught during execution: Cannot broadcast shape 2x2 to shape 4x2!
-    ```
-    """
-    var ord: String
-    if override_order == "":
-        ord = A.order()
-    else:
-        ord = override_order
-
-    var B: Matrix[dtype] = Matrix[dtype](shape, order=ord)
-    if (A.shape[0] == shape[0]) and (A.shape[1] == shape[1]):
-        unsafe_memcpy(dest=B._buf.ptr, src=A._buf.ptr, count=A.size)
-    elif (A.shape[0] == 1) and (A.shape[1] == 1):
-        B = Matrix[dtype].full(shape, A[0, 0], order=ord)
-    elif (A.shape[0] == 1) and (A.shape[1] == shape[1]):
-        for i in range(shape[0]):
-            unsafe_memcpy(
-                dest=B._buf.offset(shape[1] * i),
-                src=A._buf.ptr,
-                count=shape[1],
-            )
-    elif (A.shape[1] == 1) and (A.shape[0] == shape[0]):
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                B._store(i, j, A._buf[i])
-    else:
-        var message = String(
-            "Cannot broadcast shape {}x{} to shape {}x{}!"
-        ).format(A.shape[0], A.shape[1], shape[0], shape[1])
-        raise Error(message)
-    return B^
-
-
-def broadcast_to[
-    dtype: DType
-](A: Scalar[dtype], shape: Tuple[Int, Int], order: String) raises -> Matrix[
-    dtype
-]:
-    """
-    Broadcasts the scalar to the given shape.
-    """
-
-    var B: Matrix[dtype] = Matrix[dtype].full(shape, A, order=order)
-    return B^
 
 
 def _broadcast_back_to[

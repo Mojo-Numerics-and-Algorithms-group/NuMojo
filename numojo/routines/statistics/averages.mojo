@@ -14,8 +14,6 @@ from std.collections.optional import Optional
 import std.math as mt
 
 from numojo.core.ndarray import NDArray
-import numojo.core.matrix as matrix
-from numojo.core.matrix import Matrix
 from numojo.routines.logic.comparison import greater, less
 from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
 from numojo.routines.math.arithmetic import add
@@ -102,56 +100,6 @@ def mean[
     return apply_along_axis_reduce_with_dtype[
         dtype, returned_dtype=returned_dtype, func1d=mean_1d
     ](a=a, axis=normalized_axis)
-
-
-def mean[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype]) -> Scalar[returned_dtype]:
-    """
-    Calculate the arithmetic average of all items in the Matrix.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        a: A matrix.
-
-    Returns:
-        A scalar of the returned data type.
-    """
-
-    return sum(a).cast[returned_dtype]() / Scalar[returned_dtype](a.size)
-
-
-def mean[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](a: Matrix[dtype], axis: Int) raises -> Matrix[returned_dtype]:
-    """
-    Calculate the arithmetic average of a Matrix along the axis.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        a: A matrix.
-        axis: The axis along which the mean is performed.
-
-    Returns:
-        A matrix of the returned data type.
-    """
-
-    if axis == 0:
-        return sum(a, axis=0).astype[returned_dtype]() / Scalar[returned_dtype](
-            a.shape[0]
-        )
-    elif axis == 1:
-        return sum(a, axis=1).astype[returned_dtype]() / Scalar[returned_dtype](
-            a.shape[1]
-        )
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))
 
 
 def median_1d[
@@ -383,50 +331,6 @@ def stddev[
     ) ** Scalar[returned_dtype](0.5)
 
 
-def stddev[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
-    """
-    Compute the standard deviation.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        A: Matrix.
-        ddof: Delta degree of freedom.
-    """
-
-    if ddof >= A.size:
-        raise Error(
-            String("ddof {} should be smaller than size {}").format(
-                ddof, A.size
-            )
-        )
-
-    return variance[returned_dtype](A, ddof=ddof) ** 0.5
-
-
-def stddev[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
-    """
-    Compute the standard deviation along axis.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        A: Matrix.
-        axis: 0 or 1.
-        ddof: Delta degree of freedom.
-    """
-
-    return variance[returned_dtype](A, axis, ddof=ddof) ** 0.5
-
-
 def variance[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](A: NDArray[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
@@ -513,70 +417,3 @@ def variance[
         ),
         axis=normalized_axis,
     ) / Scalar[returned_dtype](A.shape[normalized_axis] - ddof)
-
-
-def variance[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], ddof: Int = 0) raises -> Scalar[returned_dtype]:
-    """
-    Compute the variance.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        A: Matrix.
-        ddof: Delta degree of freedom.
-    """
-
-    if ddof >= A.size:
-        raise Error(
-            String("ddof {} should be smaller than size {}").format(
-                ddof, A.size
-            )
-        )
-
-    return sum(
-        (A.astype[returned_dtype]() - mean[returned_dtype](A))
-        * (A.astype[returned_dtype]() - mean[returned_dtype](A))
-    ) / Scalar[returned_dtype](A.size - ddof)
-
-
-def variance[
-    dtype: DType, //, returned_dtype: DType = DType.float64
-](A: Matrix[dtype], axis: Int, ddof: Int = 0) raises -> Matrix[returned_dtype]:
-    """
-    Compute the variance along axis.
-
-    Parameters:
-        dtype: The element type.
-        returned_dtype: The returned data type, defaulting to float64.
-
-    Args:
-        A: Matrix.
-        axis: 0 or 1.
-        ddof: Delta degree of freedom.
-    """
-
-    if (ddof >= A.shape[0]) or (ddof >= A.shape[1]):
-        raise Error(
-            String("ddof {} should be smaller than size {}x{}").format(
-                ddof, A.shape[0], A.shape[1]
-            )
-        )
-
-    if axis == 0:
-        return sum(
-            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0))
-            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=0)),
-            axis=0,
-        ) / Scalar[returned_dtype](A.shape[0] - ddof)
-    elif axis == 1:
-        return sum(
-            (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1))
-            * (A.astype[returned_dtype]() - mean[returned_dtype](A, axis=1)),
-            axis=1,
-        ) / Scalar[returned_dtype](A.shape[1] - ddof)
-    else:
-        raise Error(String("The axis can either be 1 or 0!"))

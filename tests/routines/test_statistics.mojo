@@ -5,7 +5,6 @@ from std.testing import TestSuite
 
 import numojo as nm
 from numojo.prelude import *
-from numojo.core.matrix import Matrix
 
 # ===-----------------------------------------------------------------------===#
 # Statistics

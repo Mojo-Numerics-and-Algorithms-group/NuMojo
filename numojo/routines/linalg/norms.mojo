@@ -12,7 +12,6 @@ This module provides functions for computing quantities related to linear algebr
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
-from numojo.core.matrix import Matrix
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.linalg.decompositions import (
@@ -29,7 +28,7 @@ def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     if A.ndim != 2:
         raise Error(String("Array must be 2d."))
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Matrix is not square."))
+        raise Error(String("Array is not square."))
 
     var det_L: Scalar[dtype] = 1
     var det_U: Scalar[dtype] = 1
@@ -59,36 +58,6 @@ def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
         return -det_L * det_U
 
 
-def det[dtype: DType](A: Matrix[dtype]) raises -> Scalar[dtype]:
-    """
-    Find the determinant of A using LUP decomposition.
-    """
-    var det_L: Scalar[dtype] = 1
-    var det_U: Scalar[dtype] = 1
-    var n = A.shape[0]  # Dimension of the matrix
-
-    var U: Matrix[dtype]
-    var L: Matrix[dtype]
-    var A_pivoted_s = partial_pivoting(A.copy())
-    var A_pivoted = A_pivoted_s[0].copy()
-    var s = A_pivoted_s[2].copy()
-    var L_U: Tuple[Matrix[dtype], Matrix[dtype]] = lu_decomposition[dtype](
-        A_pivoted
-    )
-    L = L_U[0].copy()
-    U = L_U[1].copy()
-
-    for i in range(n):
-        det_L = det_L * L[i, i]
-        det_U = det_U * U[i, i]
-
-    if s % 2 == 0:
-        return det_L * det_U
-    else:
-        return -det_L * det_U
-
-
-# TODO: implement for arbitrary axis
 def trace[
     dtype: DType
 ](
@@ -132,29 +101,3 @@ def trace[
         )
 
     return result^
-
-
-def trace[
-    dtype: DType
-](A: Matrix[dtype], offset: Int = 0) raises -> Scalar[dtype]:
-    """
-    Return the sum along diagonals of the array.
-
-    Similar to `numpy.trace`.
-    """
-    var m: Int = A.shape[0]
-    var n: Int = A.shape[1]
-
-    if offset >= max(m, n):  # Offset beyond the shape of the matrix
-        return 0
-
-    var result: Scalar[dtype] = Scalar[dtype](0)
-
-    if offset >= 0:
-        for i in range(n - offset):
-            result = result + A[i, i + offset]
-    else:
-        for i in range(m + offset):
-            result = result + A[i - offset, i]
-
-    return result

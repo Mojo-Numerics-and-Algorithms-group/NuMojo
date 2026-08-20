@@ -1851,9 +1851,7 @@ struct NDArray[dtype: DType = DType.float64](
         var item = Item(ndim=self.ndim)
 
         for i in range(self.ndim - 1, -1, -1):
-            (item._buf.ptr.unsafe_offset(i)).unsafe_write(
-                Scalar[DType.int](remainder % self.shape[i])
-            )
+            item.unsafe_set(i, Scalar[DType.int](remainder % self.shape[i]))
             remainder = remainder // self.shape[i]
 
         return self._buf[
@@ -6311,13 +6309,17 @@ struct _NDArrayIter[
                     # (item._buf.ptr + i).init_pointee_copy(
                     #     Scalar[DType.int](remainder % self.shape[i])
                     # )
-                    item._buf[i] = Scalar[DType.int](remainder % self.shape[i])
+                    item.unsafe_set(
+                        i, Scalar[DType.int](remainder % self.shape[i])
+                    )
                     remainder = remainder // self.shape[i]
                 else:
                     # (item._buf.ptr + self.dimension).init_pointee_copy(
                     #     Scalar[DType.int](current_index)
                     # )
-                    item._buf[self.dimension] = Scalar[DType.int](current_index)
+                    item.unsafe_set(
+                        self.dimension, Scalar[DType.int](current_index)
+                    )
 
             # (result._buf.ptr + offset).init_pointee_copy(
             #     self._buf[IndexMethods.get_1d_index(item, self.strides)]
@@ -6368,14 +6370,14 @@ struct _NDArrayIter[
 
                 for i in range(self.ndim - 1, -1, -1):
                     if i != self.dimension:
-                        (item._buf.ptr.unsafe_offset(i)).unsafe_write(
-                            Scalar[DType.int](remainder % self.shape[i])
+                        item.unsafe_set(
+                            i, Scalar[DType.int](remainder % self.shape[i])
                         )
                         remainder = remainder // self.shape[i]
                     else:
-                        (
-                            item._buf.ptr.unsafe_offset(self.dimension)
-                        ).unsafe_write(Scalar[DType.int](index))
+                        item.unsafe_set(
+                            self.dimension, Scalar[DType.int](index)
+                        )
 
                 (result._buf.ptr.unsafe_offset(offset)).unsafe_write(
                     self._buf[
@@ -6550,25 +6552,27 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(
+                    item.unsafe_set(
+                        i,
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
-                        )
+                        ),
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(0)
+                    item.unsafe_set(i, 0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(
+                    item.unsafe_set(
+                        i,
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
-                        )
+                        ),
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(0)
+                    item.unsafe_set(i, 0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -6590,7 +6594,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item._buf[self.axis] += 1
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return res^
 
@@ -6623,25 +6627,27 @@ struct _NDAxisIter[
         if self.order == "C":
             for i in range(self.ndim):
                 if i != self.axis:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(
+                    item.unsafe_set(
+                        i,
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
-                        )
+                        ),
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(0)
+                    item.unsafe_set(i, 0)
         else:
             for i in range(self.ndim - 1, -1, -1):
                 if i != self.axis:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(
+                    item.unsafe_set(
+                        i,
                         Scalar[DType.int](
                             remainder // self.strides_compatible[i]
-                        )
+                        ),
                     )
                     remainder %= self.strides_compatible[i]
                 else:
-                    (item._buf.ptr.unsafe_offset(i)).unsafe_write(0)
+                    item.unsafe_set(i, 0)
 
         if ((self.axis == self.ndim - 1) or (self.axis == 0)) & (
             (self.shape[self.axis] == 1) or (self.strides[self.axis] == 1)
@@ -6662,7 +6668,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item._buf[self.axis] += 1
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return elements^
 
@@ -6698,10 +6704,10 @@ struct _NDAxisIter[
         var remainder: Int = index * self.size_of_item
         var item: Item = Item(ndim=self.ndim)
         for i in range(self.axis):
-            item._buf[i] = remainder // self.strides_compatible[i]
+            item.unsafe_set(i, remainder // self.strides_compatible[i])
             remainder %= self.strides_compatible[i]
         for i in range(self.axis + 1, self.ndim):
-            item._buf[i] = remainder // self.strides_compatible[i]
+            item.unsafe_set(i, remainder // self.strides_compatible[i])
             remainder %= self.strides_compatible[i]
 
         var new_strides: NDArrayStrides = NDArrayStrides(self.shape, order="C")
@@ -6740,7 +6746,7 @@ struct _NDAxisIter[
                         IndexMethods.get_1d_index(item, new_strides)
                     )
                 )
-                item._buf[self.axis] += 1
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         else:
             for j in range(self.size_of_item):
@@ -6755,7 +6761,7 @@ struct _NDAxisIter[
                         + IndexMethods.get_1d_index(item, self.strides)
                     ]
                 )
-                item._buf[self.axis] += 1
+                item.unsafe_set(self.axis, item.unsafe_get(self.axis) + 1)
 
         return Tuple(offsets^, elements^)
 

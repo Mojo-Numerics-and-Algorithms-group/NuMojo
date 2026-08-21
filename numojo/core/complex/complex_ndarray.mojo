@@ -524,8 +524,12 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             normalized_axis += self.ndim
         if (normalized_axis < 0) or (normalized_axis >= self.ndim):
             raise Error(
-                String("Axis {} is out of bounds for ndim {}.").format(
-                    axis, self.ndim
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Axis {} is out of bounds for ndim {}."
+                    ).format(axis, self.ndim),
+                    location="ComplexNDArray._normalize_axis",
                 )
             )
         return normalized_axis
@@ -541,7 +545,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     def _inverse_permutation(self, axes: List[Int]) raises -> List[Int]:
         if len(axes) != self.ndim:
-            raise Error("Invalid permutation length.")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid permutation length.",
+                    location="ComplexNDArray._inverse_permutation",
+                )
+            )
         var inv = List[Int](capacity=self.ndim)
         for _ in range(self.ndim):
             inv.append(0)
@@ -1970,7 +1980,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     slice_list[i].start.value(),
                     slice_list[i].end.value(),
                 )
-                raise Error(message)
+                raise Error(
+                    NumojoError(
+                        category="index",
+                        message=message,
+                        location="ComplexNDArray.__getitem__",
+                    )
+                )
             # if slice_list[i].step is None:
             #     raise Error(String("Step of slice is None."))
             var slice_len: Int = (
@@ -2018,7 +2034,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                     "The size of the array is {}.\n"
                     "The size of the input value is {}."
                 ).format(i, nshape[i], val.shape[i])
-                raise Error(message)
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=message,
+                        location="ComplexNDArray.__setitem__",
+                    )
+                )
 
         var noffset: Int = 0
         if self.flags["C_CONTIGUOUS"]:
@@ -2120,7 +2142,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             var message = String(
                 "Shape of mask does not match the shape of array."
             )
-            raise Error(message)
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=message,
+                    location="ComplexNDArray.__setitem__",
+                )
+            )
 
         var mask_c = mask.contiguous()
         for i in range(mask_c.size):
@@ -2133,8 +2161,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         if Self.dtype == DType.bool:
             raise Error(
-                "complex_ndarray:ComplexNDArray:__pos__: pos does not accept"
-                " bool type arrays"
+                NumojoError(
+                    category="value",
+                    message=(
+                        "complex_ndarray:ComplexNDArray:__pos__: pos does not"
+                        " accept bool type arrays"
+                    ),
+                    location="ComplexNDArray.__pos__",
+                )
             )
         return self.copy()
 
@@ -2146,8 +2180,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         if Self.dtype == DType.bool:
             raise Error(
-                "complex_ndarray:ComplexNDArray:__neg__: neg does not accept"
-                " bool type arrays"
+                NumojoError(
+                    category="value",
+                    message=(
+                        "complex_ndarray:ComplexNDArray:__neg__: neg does not"
+                        " accept bool type arrays"
+                    ),
+                    location="ComplexNDArray.__neg__",
+                )
             )
         return self * ComplexSIMD[Self.cdtype](-1.0, -1.0)
 
@@ -2179,11 +2219,17 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return Bool((re_val != 0.0) or (im_val != 0.0))
         else:
             raise Error(
-                "\nError in `ComplexNDArray.__bool__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to Bool. "
-                "The truth value of an array with more than one element is "
-                "ambiguous. Use a.any() or a.all()."
+                NumojoError(
+                    category="value",
+                    message=(
+                        "\nError in `ComplexNDArray.__bool__(self)`: Only 0-D"
+                        " arrays (numojo scalar) or length-1 arrays can be"
+                        " converted to Bool. The truth value of an array with"
+                        " more than one element is ambiguous. Use a.any() or"
+                        " a.all()."
+                    ),
+                    location="ComplexNDArray.__bool__",
+                )
             )
 
     def __int__(self) raises -> Int:
@@ -2212,9 +2258,15 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return Int(self._re.unsafe_get(0))
         else:
             raise Error(
-                "\nError in `ComplexNDArray.__int__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to scalars."
+                NumojoError(
+                    category="value",
+                    message=(
+                        "\nError in `ComplexNDArray.__int__(self)`: "
+                        "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                        "can be converted to scalars."
+                    ),
+                    location="ComplexNDArray.__int__",
+                )
             )
 
     def __float__(self) raises -> Float64:
@@ -2246,9 +2298,15 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             return sqrt(magnitude_sq)
         else:
             raise Error(
-                "\nError in `ComplexNDArray.__float__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to scalars."
+                NumojoError(
+                    category="value",
+                    message=(
+                        "\nError in `ComplexNDArray.__float__(self)`: "
+                        "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                        "can be converted to scalars."
+                    ),
+                    location="ComplexNDArray.__float__",
+                )
             )
 
     def __abs__(self) raises -> NDArray[Self.dtype]:
@@ -2368,12 +2426,16 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         if self.size != p.size:
             raise Error(
-                String(
-                    "\nError in `ComplexNDArray.__pow__(self, p)`: "
-                    "Both arrays must have same number of elements! "
-                    "Self array has {} elements. "
-                    "Other array has {} elements"
-                ).format(self.size, p.size)
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "\nError in `ComplexNDArray.__pow__(self, p)`: "
+                        "Both arrays must have same number of elements! "
+                        "Self array has {} elements. "
+                        "Other array has {} elements"
+                    ).format(self.size, p.size),
+                    location="ComplexNDArray.__pow__",
+                )
             )
 
         var mag = misc.sqrt[Self.dtype](
@@ -3714,7 +3776,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         if normalized_axis < 0:
             normalized_axis += self.ndim
         if (normalized_axis < 0) or (normalized_axis >= self.ndim):
-            raise Error("Axis out of range in ComplexNDArray.mean(axis)")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Axis out of range in ComplexNDArray.mean(axis).",
+                    location="ComplexNDArray.mean",
+                )
+            )
         var n = Scalar[Self.dtype](self.shape[normalized_axis])
         return Self(s._re / n, s._im / n)
 
@@ -3736,7 +3804,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Returns the element with maximum |z| = sqrt(re^2 + im^2).
         """
         if self.size == 0:
-            raise Error("Cannot find max of empty array")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Cannot find max of empty array.",
+                    location="ComplexNDArray.max",
+                )
+            )
 
         var best = self._flat_load(0)
         for i in range(1, self.size):
@@ -3781,7 +3855,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Returns the element with minimum |z| = sqrt(re^2 + im^2).
         """
         if self.size == 0:
-            raise Error("Cannot find min of empty array")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Cannot find min of empty array.",
+                    location="ComplexNDArray.min",
+                )
+            )
 
         var best = self._flat_load(0)
         for i in range(1, self.size):
@@ -3826,7 +3906,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Compares by magnitude: |z| = sqrt(re^2 + im^2).
         """
         if self.size == 0:
-            raise Error("Cannot find argmax of empty array")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Cannot find argmax of empty array.",
+                    location="ComplexNDArray.argmax",
+                )
+            )
 
         var max_idx = 0
 
@@ -3875,7 +3961,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Compares by magnitude: |z| = sqrt(re^2 + im^2).
         """
         if self.size == 0:
-            raise Error("Cannot find argmin of empty array")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Cannot find argmin of empty array.",
+                    location="ComplexNDArray.argmin",
+                )
+            )
 
         var min_idx = 0
 
@@ -4429,7 +4521,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
 
     def median(self) raises -> ComplexSIMD[Self.cdtype]:
         if self.size == 0:
-            raise Error("Cannot compute median of empty ComplexNDArray.")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Cannot compute median of empty ComplexNDArray.",
+                    location="ComplexNDArray.median",
+                )
+            )
         var a = self.flatten("C")
         a.sort(axis=0)
         if self.size % 2 == 1:

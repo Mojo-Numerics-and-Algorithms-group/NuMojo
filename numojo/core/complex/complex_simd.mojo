@@ -35,6 +35,7 @@ from std.math import cos, sin, sqrt
 # ===----------------------------------------------------------------------=== #
 from numojo.core.dtype import ComplexDType
 from numojo.core.dtype.complex_dtype import cf64
+from numojo.core.error import NumojoError
 from numojo.core.type_aliases import ComplexScalar
 
 
@@ -879,7 +880,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var d = self.norm()
         if d == 0:
             raise Error(
-                "Cannot compute reciprocal of zero norm complex number."
+                NumojoError(
+                    category="arithmetic",
+                    message=(
+                        "Cannot compute reciprocal of zero norm complex number."
+                    ),
+                    location="ComplexSIMD.reciprocal",
+                )
             )
         return Self(self.re / d, -self.im / d)
 
@@ -1174,7 +1181,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.__getitem__",
+                )
+            )
         return ComplexScalar[Self.cdtype](self.re[idx], self.im[idx])
 
     def __setitem__(
@@ -1199,7 +1212,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.__setitem__",
+                )
+            )
         self.re[idx] = value.re
         self.im[idx] = value.im
 
@@ -1229,14 +1248,26 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.item",
+                )
+            )
 
         comptime if name == "re":
             return self.re[idx]
         elif name == "im":
             return self.im[idx]
         else:
-            raise Error("Invalid component name: {}".format(name))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid component name: {}.".format(name),
+                    location="ComplexSIMD.item",
+                )
+            )
 
     def itemset[
         name: String
@@ -1264,14 +1295,26 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.itemset",
+                )
+            )
 
         comptime if name == "re":
             self.re[idx] = val
         elif name == "im":
             self.im[idx] = val
         else:
-            raise Error("Invalid component name: {}".format(name))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid component name: {}.".format(name),
+                    location="ComplexSIMD.itemset",
+                )
+            )
 
     def real(self) -> SIMD[Self.dtype, Self.width]:
         """

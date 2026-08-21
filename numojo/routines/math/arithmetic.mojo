@@ -34,6 +34,7 @@ from std.utils import Variant
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 
@@ -157,8 +158,14 @@ def add[
             scalar_part += values[i].copy().unsafe_unwrap[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
-            "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
-            " No arrays in arguaments"
+            NumojoError(
+                category="value",
+                message=(
+                    "math:arithmetic:add(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
+                    " No arrays in arguaments"
+                ),
+                location="add",
+            )
         )
     var result_array: NDArray[dtype] = NDArray[dtype](array_list[0].shape)
     for array in array_list:
@@ -465,8 +472,14 @@ def mul[
             scalar_part *= values[i].copy().unsafe_unwrap[Scalar[dtype]]()
     if len(array_list) == 0:
         raise Error(
-            "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
-            " No arrays in arguments"
+            NumojoError(
+                category="value",
+                message=(
+                    "math:arithmetic:mul(*values:Variant[NDArray[dtype],Scalar[dtype]]):"
+                    " No arrays in arguments"
+                ),
+                location="mul",
+            )
         )
     var result_array: NDArray[dtype] = array_list[0].copy()
     for i in range(1, len(array_list)):

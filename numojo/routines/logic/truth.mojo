@@ -96,6 +96,3 @@ def any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
     return result
 
 
-# ===----------------------------------------------------------------------=== #
-# Truth operations for NDArray
-# ===----------------------------------------------------------------------=== #

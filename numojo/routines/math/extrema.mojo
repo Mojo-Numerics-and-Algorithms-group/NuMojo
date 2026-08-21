@@ -30,6 +30,7 @@ from std.math import max as builtin_max
 from std.math import min as builtin_min
 from std.sys import simd_width_of
 
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
 from numojo.routines.creation import full
@@ -159,8 +160,12 @@ def max[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `max`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `max`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="max",
             )
         )
 
@@ -227,8 +232,12 @@ def min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `min`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `min`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="min",
             )
         )
 

@@ -82,8 +82,8 @@ def sum[dtype: DType](A: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     ```
 
     Raises:
-        Error: If the axis is out of bound.
-        Error: If the number of dimensions is 1.
+        NumojoError: If the axis is out of bound.
+        NumojoError: If the number of dimensions is 1.
 
     Args:
         A: NDArray.
@@ -186,7 +186,13 @@ def cumsum[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "Invalid index: index out of bound [0, {})."
+                ).format(A.ndim),
+                location="cumsum",
+            )
         )
 
     var I = NDArray[DType.int](Shape(A.size))

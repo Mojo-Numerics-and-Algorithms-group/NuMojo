@@ -28,6 +28,7 @@ from std.sys import simd_width_of
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.indexing import TraverseMethods
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray
@@ -88,7 +89,13 @@ def prod[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "Invalid index: index out of bound [0, {})."
+                ).format(A.ndim),
+                location="prod",
+            )
         )
 
     var result_shape: List[Int] = List[Int]()
@@ -157,7 +164,13 @@ def cumprod[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "Invalid index: index out of bound [0, {})."
+                ).format(A.ndim),
+                location="cumprod",
+            )
         )
 
     var I = NDArray[DType.int](Shape(A.size))

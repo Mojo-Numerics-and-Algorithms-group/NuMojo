@@ -4,10 +4,10 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
+# ===----------------------------------------------------------------------=== #
 """
 NDArray (numojo.core.ndarray).
-=============================
+==============================
 Multi-dimensional array implementation for NuMojo.
 
 Core data structure for N-dimensional arrays with efficient storage, indexing,
@@ -40,7 +40,7 @@ from std.utils import Variant
 from std.builtin.type_aliases import EllipsisType
 
 # ===----------------------------------------------------------------------=== #
-# numojo core
+# NuMojo
 # ===----------------------------------------------------------------------=== #
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.layout.flags import Flags
@@ -61,7 +61,7 @@ from numojo.core.layout.array_methods import NewAxis
 from numojo.core.indexing.slicing import IndexTypeInfo
 
 # ===----------------------------------------------------------------------=== #
-# numojo routines (creation / io / logic)
+# NuMojo Routines (Creation / IO / Logic)
 # ===----------------------------------------------------------------------=== #
 import numojo.routines.creation as creation
 from numojo.routines.io.formatting import (
@@ -71,7 +71,7 @@ from numojo.routines.io.formatting import (
 import numojo.routines.logic.comparison as comparison
 
 # ===----------------------------------------------------------------------=== #
-# numojo routines (math / bitwise / searching)
+# NuMojo Routines (Math / Bitwise / Searching)
 # ===----------------------------------------------------------------------=== #
 import numojo.routines.bitwise as bitwise
 import numojo.routines.math.arithmetic as arithmetic
@@ -707,7 +707,7 @@ struct NDArray[dtype: DType = DType.float64](
             )
             return result^
         # (F-order or arbitrary stride layout)
-        # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod)
+        # TODO: Optimize this further (multi-axis unrolling / smarter linear index without div/mod).
         else:
             self._copy_first_axis_slice(self, norm, result)
             return result^
@@ -2552,7 +2552,7 @@ struct NDArray[dtype: DType = DType.float64](
             ncoefficients.append(self.strides[j] * slice_list[j].step)
             j += 1
 
-        # TODO: We can remove this check after we have support for broadcasting
+        # TODO: We can remove this check after we have support for broadcasting.
         for i in range(ndims):
             if nshape[i] != val.shape[i]:
                 raise Error(
@@ -3509,7 +3509,7 @@ struct NDArray[dtype: DType = DType.float64](
     # Operator dunders
     # ===----------------------------------------------------------------------=== #
 
-    # TODO: We should make a version that checks nonzero/not_nan
+    # TODO: We should make a version that checks nonzero/not_nan.
     def __bool__(self) raises -> Bool:
         """Returns `True` if all elements are truthy.
 
@@ -4720,7 +4720,7 @@ struct NDArray[dtype: DType = DType.float64](
     # OTHER METHODS
     # (Sorted alphabetically)
     #
-    # TODO: Implement axis parameter for all operations that are along an axis
+    # TODO: Implement axis parameter for all operations that are along an axis.
     #
     # # not urgent: argpartition, byteswap, choose, conj, dump, getfield
     # # partition, put, repeat, searchsorted, setfield, squeeze, swapaxes, take,
@@ -4857,7 +4857,7 @@ struct NDArray[dtype: DType = DType.float64](
     def compress(
         self, condition: NDArray[DType.bool], axis: Int
     ) raises -> Self:
-        # TODO: @forFudan try using parallelization for this function
+        # TODO: @forFudan try using parallelization for this function.
         """Returns selected slices of an array along a given axis.
 
         If no axis is provided, the array is flattened before use.
@@ -5000,7 +5000,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return result^
 
-    # TODO: Remove this function, use slicing instead
+    # TODO: Remove this function, use slicing instead.
     def col(self, id: Int) raises -> Self:
         """Gets the i-th column of the matrix.
 
@@ -5876,7 +5876,7 @@ struct NDArray[dtype: DType = DType.float64](
 
         return numojo_math.prod(self, axis=axis)
 
-    # TODO: make it inplace?
+    # TODO: Make it inplace?
     def reshape(
         self, shape: NDArrayShape, order: String = "C"
     ) raises -> NDArray[Self.dtype]:
@@ -6137,7 +6137,7 @@ struct NDArray[dtype: DType = DType.float64](
 
     #     return to_tensor(self)
 
-    # TODO: add axis parameter
+    # TODO: Add axis parameter.
     def trace(
         self, offset: Int = 0, axis1: Int = 0, axis2: Int = 1
     ) raises -> NDArray[Self.dtype]:
@@ -6277,9 +6277,8 @@ struct _NDArrayIter[
     dtype: DType,
     forward: Bool = True,
 ](Copyable, Movable):
-    # TODO:
-    # Return a view instead of copy where possible
-    # (when Bufferable is supported).
+    # TODO: Return a view instead of copy where possible (when Bufferable is
+    # supported).
     """An iterator yielding `ndim-1` array slices over the given dimension.
 
     It is the default iterator of the `NDArray.__iter__()` method and for loops.
@@ -6453,9 +6452,8 @@ struct _NDAxisIter[
     dtype: DType,
     forward: Bool = True,
 ](Copyable, Movable):
-    # TODO:
-    # Return a view instead of copy where possible
-    # (when Bufferable is supported).
+    # TODO: Return a view instead of copy where possible (when Bufferable is
+    # supported).
     """An iterator yielding 1-D array slices along the given axis.
 
     The yielded array slices are guaranteed to be contiguous in memory. It tries

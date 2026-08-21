@@ -55,7 +55,6 @@ from numojo.core.indexing import (
     Validator,
     to_numpy,
     bool_to_numeric,
-    newaxis,
 )
 from numojo.core.error import NumojoError, terminate
 from numojo.core.layout.array_methods import NewAxis

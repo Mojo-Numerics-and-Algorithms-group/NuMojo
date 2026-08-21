@@ -18,7 +18,6 @@ Exports
 - `InternalSlice`: Internal slice representation.
 - `TraverseMethods`: Array traversal methods.
 - `Validator`: Index validation utilities.
-- `newaxis`: Marker for expanding dimensions.
 - `bool_to_numeric`, `to_numpy`: Conversion utilities.
 """
 
@@ -32,7 +31,6 @@ from .slicing import InternalSlice
 from .traversal import TraverseMethods
 from .utility import (
     bool_to_numeric,
-    newaxis,
     to_numpy,
 )
 from .validation import Validator

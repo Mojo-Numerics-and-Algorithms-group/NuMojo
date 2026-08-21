@@ -35,6 +35,7 @@ from std.sys import simd_width_of
 # ===----------------------------------------------------------------------=== #
 import numojo.routines.manipulation as manipulation
 from numojo import broadcast_to
+from numojo.core.error import NumojoError
 from numojo.core.indexing import IndexMethods
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
@@ -92,7 +93,15 @@ def `where`[
 
     """
     if x.shape != y.shape:
-        raise Error("Shape mismatch error: x and y must have the same shape")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "Shape mismatch error: x and y must have the same shape"
+                ),
+                location="where",
+            )
+        )
 
     var mask_c = mask.contiguous()
     var y_c = y.contiguous()
@@ -325,10 +334,14 @@ def fancy_index[
     var n_idx = len(index_arrays)
     if n_idx != a.ndim:
         raise Error(
-            String(
-                "\nError in `fancy_index`: expected {} index arrays (one per"
-                " axis), got {}."
-            ).format(a.ndim, n_idx)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `fancy_index`: expected {} index arrays (one"
+                    " per axis), got {}."
+                ).format(a.ndim, n_idx),
+                location="fancy_index",
+            )
         )
 
     # Broadcast all index arrays to a common shape.
@@ -338,11 +351,15 @@ def fancy_index[
             out_shape = out_shape.broadcast(index_arrays[k].shape)
         except e:
             raise Error(
-                String(
-                    "\nError in `fancy_index`: index arrays are not"
-                    " broadcast-compatible: "
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "\nError in `fancy_index`: index arrays are not"
+                        " broadcast-compatible: "
+                    )
+                    + String(e),
+                    location="fancy_index",
                 )
-                + String(e)
             )
 
     # Materialise each broadcast index array as a contiguous buffer.
@@ -360,10 +377,14 @@ def fancy_index[
             var ax_size = a.shape[k]
             if raw < -ax_size or raw >= ax_size:
                 raise Error(
-                    String(
-                        "\nError in `fancy_index`: index {} is out of bounds"
-                        " for axis {} with size {}."
-                    ).format(raw, k, ax_size)
+                    NumojoError(
+                        category="index",
+                        message=String(
+                            "\nError in `fancy_index`: index {} is out of"
+                            " bounds for axis {} with size {}."
+                        ).format(raw, k, ax_size),
+                        location="fancy_index",
+                    )
                 )
             if raw < 0:
                 raw += ax_size
@@ -454,24 +475,36 @@ def compress[
         normalized_axis = a.ndim + normalized_axis
     if (normalized_axis >= a.ndim) or (normalized_axis < 0):
         raise Error(
-            String(
-                "\nError in `compress`: Axis {} is out of bound for array with"
-                " {} dimensions"
-            ).format(axis, a.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `compress`: Axis {} is out of bound for array"
+                    " with {} dimensions"
+                ).format(axis, a.ndim),
+                location="compress",
+            )
         )
 
     if condition.ndim != 1:
         raise Error(
-            String(
-                "\nError in `compress`: Condition must be 1-D array, got {}"
-            ).format(condition.ndim)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `compress`: Condition must be 1-D array, got {}"
+                ).format(condition.ndim),
+                location="compress",
+            )
         )
     if condition.size > a.shape[normalized_axis]:
         raise Error(
-            String(
-                "\nError in `compress`: Condition length {} is out of bound for"
-                " axis {} with size {}"
-            ).format(condition.size, axis, a.shape[normalized_axis])
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `compress`: Condition length {} is out of bound"
+                    " for axis {} with size {}"
+                ).format(condition.size, axis, a.shape[normalized_axis]),
+                location="compress",
+            )
         )
 
     var number_of_true: Int = 0
@@ -555,9 +588,13 @@ def compress[
 
     if condition.ndim != 1:
         raise Error(
-            String(
-                "\nError in `compress`: Condition must be 1-D array, got {}"
-            ).format(condition.ndim)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `compress`: Condition must be 1-D array, got {}"
+                ).format(condition.ndim),
+                location="compress",
+            )
         )
 
     if a.ndim == 1:
@@ -617,19 +654,27 @@ def take_along_axis[
         normalized_axis = arr.ndim + normalized_axis
     if (normalized_axis >= arr.ndim) or (normalized_axis < 0):
         raise Error(
-            String(
-                "\nError in `take_along_axis`: Axis {} is out of bound for"
-                " array with {} dimensions"
-            ).format(axis, arr.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `take_along_axis`: Axis {} is out of bound for"
+                    " array with {} dimensions"
+                ).format(axis, arr.ndim),
+                location="take_along_axis",
+            )
         )
 
     # Check if the ndim of arr and indices are same
     if arr.ndim != indices.ndim:
         raise Error(
-            String(
-                "\nError in `take_along_axis`: The ndim of arr and indices must"
-                " be same. Got {} and {}."
-            ).format(arr.ndim, indices.ndim)
+            NumojoError(
+                category="shape",
+                message=String(
+                    "\nError in `take_along_axis`: The ndim of arr and indices"
+                    " must be same. Got {} and {}."
+                ).format(arr.ndim, indices.ndim),
+                location="take_along_axis",
+            )
         )
 
     # broadcast indices to the shape of arr if necessary
@@ -648,10 +693,14 @@ def take_along_axis[
             broadcasted_indices = broadcast_to(indices, arr_shape_new)
         except e:
             raise Error(
-                String(
-                    "\nError in `take_along_axis`: Shape of indices must match"
-                    " shape of array except along the given axis. "
-                    + String(e)
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "\nError in `take_along_axis`: Shape of indices must"
+                        " match shape of array except along the given axis. "
+                        + String(e)
+                    ),
+                    location="take_along_axis",
                 )
             )
 
@@ -753,10 +802,14 @@ def take[
         norm_axis = a.ndim + norm_axis
     if norm_axis < 0 or norm_axis >= a.ndim:
         raise Error(
-            String(
-                "\nError in `take`: axis {} is out of bounds for array with"
-                " {} dimensions."
-            ).format(axis, a.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `take`: axis {} is out of bounds for array with"
+                    " {} dimensions."
+                ).format(axis, a.ndim),
+                location="take",
+            )
         )
 
     # a.shape[:axis] + indices.shape + a.shape[axis+1:]
@@ -788,10 +841,14 @@ def take[
             var raw = Int(indices_c.unsafe_get(i))
             if raw < -axis_size or raw >= axis_size:
                 raise Error(
-                    String(
-                        "\nError in `take`: index {} is out of bounds for"
-                        " axis {} with size {}."
-                    ).format(raw, norm_axis, axis_size)
+                    NumojoError(
+                        category="index",
+                        message=String(
+                            "\nError in `take`: index {} is out of bounds for"
+                            " axis {} with size {}."
+                        ).format(raw, norm_axis, axis_size),
+                        location="take",
+                    )
                 )
             var norm_idx = raw
             if norm_idx < 0:
@@ -934,10 +991,14 @@ def put[
 
     if values.size == 0:
         raise Error(
-            String(
-                "\nError in `put`: values is empty but indices has {}"
-                " element(s)."
-            ).format(indices.size)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `put`: values is empty but indices has {}"
+                    " element(s)."
+                ).format(indices.size),
+                location="put",
+            )
         )
 
     var indices_c = indices.contiguous()
@@ -947,10 +1008,14 @@ def put[
         var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
-                String(
-                    "\nError in `put`: index {} is out of bounds for array"
-                    " of size {}."
-                ).format(raw, a.size)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `put`: index {} is out of bounds for array"
+                        " of size {}."
+                    ).format(raw, a.size),
+                    location="put",
+                )
             )
         var norm_idx = raw
         if norm_idx < 0:
@@ -1004,10 +1069,14 @@ def put[
         var raw = Int(indices_c.unsafe_get(i))
         if raw < -a.size or raw >= a.size:
             raise Error(
-                String(
-                    "\nError in `put`: index {} is out of bounds for array"
-                    " of size {}."
-                ).format(raw, a.size)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `put`: index {} is out of bounds for array"
+                        " of size {}."
+                    ).format(raw, a.size),
+                    location="put",
+                )
             )
         var norm_idx = raw
         if norm_idx < 0:
@@ -1041,17 +1110,25 @@ def unravel_index(
     var size = shape.size()
     if order != "C" and order != "F":
         raise Error(
-            String(
-                "\nError in `unravel_index`: order must be 'C' or 'F', got"
-                " '{}'."
-            ).format(order)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                    " '{}'."
+                ).format(order),
+                location="unravel_index",
+            )
         )
     if index < 0 or index >= size:
         raise Error(
-            String(
-                "\nError in `unravel_index`: index {} is out of bounds for"
-                " array with size {}."
-            ).format(index, size)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `unravel_index`: index {} is out of bounds for"
+                    " array with size {}."
+                ).format(index, size),
+                location="unravel_index",
+            )
         )
 
     var result = List[Int](capacity=shape.ndim)
@@ -1096,10 +1173,14 @@ def unravel_index(
     var size = shape.size()
     if order != "C" and order != "F":
         raise Error(
-            String(
-                "\nError in `unravel_index`: order must be 'C' or 'F', got"
-                " '{}'."
-            ).format(order)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `unravel_index`: order must be 'C' or 'F', got"
+                    " '{}'."
+                ).format(order),
+                location="unravel_index",
+            )
         )
     var indices_c = indices.contiguous()
 
@@ -1111,10 +1192,14 @@ def unravel_index(
         var raw = Int(indices_c.unsafe_get(i))
         if raw < 0 or raw >= size:
             raise Error(
-                String(
-                    "\nError in `unravel_index`: index {} is out of bounds for"
-                    " array with size {}."
-                ).format(raw, size)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `unravel_index`: index {} is out of bounds"
+                        " for array with size {}."
+                    ).format(raw, size),
+                    location="unravel_index",
+                )
             )
 
         var rem = raw
@@ -1173,23 +1258,37 @@ def ravel_multi_index(
     var n_idx = len(multi_index)
     if n_idx != shape.ndim:
         raise Error(
-            String(
-                "\nError in `ravel_multi_index`: expected {} coordinate"
-                " arrays, got {}."
-            ).format(shape.ndim, n_idx)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `ravel_multi_index`: expected {} coordinate"
+                    " arrays, got {}."
+                ).format(shape.ndim, n_idx),
+                location="ravel_multi_index",
+            )
         )
 
     if order != "C" and order != "F":
         raise Error(
-            String(
-                "\nError in `ravel_multi_index`: order must be 'C' or 'F', got"
-                " '{}'."
-            ).format(order)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `ravel_multi_index`: order must be 'C' or 'F',"
+                    " got '{}'."
+                ).format(order),
+                location="ravel_multi_index",
+            )
         )
     if n_idx == 0:
         raise Error(
-            "\nError in `ravel_multi_index`: expected at least one coordinate"
-            " array."
+            NumojoError(
+                category="value",
+                message=(
+                    "\nError in `ravel_multi_index`: expected at least one"
+                    " coordinate array."
+                ),
+                location="ravel_multi_index",
+            )
         )
 
     var out_shape = multi_index[0].shape
@@ -1198,11 +1297,15 @@ def ravel_multi_index(
             out_shape = out_shape.broadcast(multi_index[k].shape)
         except e:
             raise Error(
-                String(
-                    "\nError in `ravel_multi_index`: coordinate arrays are not"
-                    " broadcast-compatible: "
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "\nError in `ravel_multi_index`: coordinate arrays are"
+                        " not broadcast-compatible: "
+                    )
+                    + String(e),
+                    location="ravel_multi_index",
                 )
-                + String(e)
             )
 
     var bc_indices = List[NDArray[DType.int]](capacity=n_idx)
@@ -1218,10 +1321,14 @@ def ravel_multi_index(
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
-                        String(
-                            "\nError in `ravel_multi_index`: coordinate {} is"
-                            " out of bounds for axis {} with size {}."
-                        ).format(coord, d, dim)
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "\nError in `ravel_multi_index`: coordinate {}"
+                                " is out of bounds for axis {} with size {}."
+                            ).format(coord, d, dim),
+                            location="ravel_multi_index",
+                        )
                     )
                 flat = flat * dim + coord
         elif order == "F":
@@ -1231,10 +1338,14 @@ def ravel_multi_index(
                 var dim = shape[d]
                 if coord < 0 or coord >= dim:
                     raise Error(
-                        String(
-                            "\nError in `ravel_multi_index`: coordinate {} is"
-                            " out of bounds for axis {} with size {}."
-                        ).format(coord, d, dim)
+                        NumojoError(
+                            category="index",
+                            message=String(
+                                "\nError in `ravel_multi_index`: coordinate {}"
+                                " is out of bounds for axis {} with size {}."
+                            ).format(coord, d, dim),
+                            location="ravel_multi_index",
+                        )
                     )
                 flat += coord * stride
                 stride *= dim
@@ -1388,17 +1499,25 @@ def searchsorted[
     """
     if a.ndim != 1:
         raise Error(
-            String(
-                "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
-                " dimensions."
-            ).format(a.ndim)
+            NumojoError(
+                category="shape",
+                message=String(
+                    "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
+                    " dimensions."
+                ).format(a.ndim),
+                location="searchsorted",
+            )
         )
     if side != "left" and side != "right":
         raise Error(
-            String(
-                "\nError in `searchsorted`: `side` must be 'left' or"
-                " 'right', got '{}'."
-            ).format(side)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `searchsorted`: `side` must be 'left' or"
+                    " 'right', got '{}'."
+                ).format(side),
+                location="searchsorted",
+            )
         )
 
     var a_c = a.contiguous()
@@ -1467,17 +1586,25 @@ def searchsorted[
     """
     if a.ndim != 1:
         raise Error(
-            String(
-                "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
-                " dimensions."
-            ).format(a.ndim)
+            NumojoError(
+                category="shape",
+                message=String(
+                    "\nError in `searchsorted`: `a` must be a 1-D array, got {}"
+                    " dimensions."
+                ).format(a.ndim),
+                location="searchsorted",
+            )
         )
     if side != "left" and side != "right":
         raise Error(
-            String(
-                "\nError in `searchsorted`: `side` must be 'left' or"
-                " 'right', got '{}'."
-            ).format(side)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `searchsorted`: `side` must be 'left' or"
+                    " 'right', got '{}'."
+                ).format(side),
+                location="searchsorted",
+            )
         )
 
     var a_c = a.contiguous()

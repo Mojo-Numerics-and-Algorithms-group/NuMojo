@@ -32,6 +32,10 @@ Notes:
 import std.math as mt
 from std.random import random as builtin_random
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.dtype.default_dtype import f64
 from numojo.core.layout.ndshape import NDArrayShape
@@ -69,7 +73,14 @@ def rand[
 
     comptime if not dtype.is_floating_point():
         raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
+            NumojoError(
+                category="value",
+                message=(
+                    "Invalid type provided. dtype must be a floating-point"
+                    " type."
+                ),
+                location="rand",
+            )
         )
 
     var result: NDArray[dtype] = NDArray[dtype](shape)
@@ -149,7 +160,14 @@ def rand[
 
     comptime if not dtype.is_floating_point():
         raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
+            NumojoError(
+                category="value",
+                message=(
+                    "Invalid type provided. dtype must be a floating-point"
+                    " type."
+                ),
+                location="rand",
+            )
         )
 
     var result: NDArray[dtype] = NDArray[dtype](shape)
@@ -223,10 +241,24 @@ def randint[
     """
 
     comptime if not dtype.is_integral():
-        raise Error("Only Integral values can be sampled using this function.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "Only Integral values can be sampled using this function."
+                ),
+                location="randint",
+            )
+        )
 
     if high <= low:
-        raise Error("High must be greater than low.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="High must be greater than low.",
+                location="randint",
+            )
+        )
 
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
@@ -276,7 +308,13 @@ def randint[
     """
 
     if high <= 0:
-        raise Error("High must be greater than 0.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="High must be greater than 0.",
+                location="randint",
+            )
+        )
 
     var result: NDArray[dtype] = NDArray[dtype](shape)
 
@@ -427,7 +465,14 @@ def exponential[
 
     comptime if not dtype.is_floating_point():
         raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
+            NumojoError(
+                category="value",
+                message=(
+                    "Invalid type provided. dtype must be a floating-point"
+                    " type."
+                ),
+                location="exponential",
+            )
         )
 
     builtin_random.seed()
@@ -500,7 +545,13 @@ def randbool(
     """
 
     if p < 0.0 or p > 1.0:
-        raise Error("p must be in the range [0.0, 1.0], got " + String(p))
+        raise Error(
+            NumojoError(
+                category="value",
+                message="p must be in the range [0.0, 1.0], got " + String(p),
+                location="randbool",
+            )
+        )
 
     builtin_random.seed()
     var result = NDArray[DType.bool](shape)

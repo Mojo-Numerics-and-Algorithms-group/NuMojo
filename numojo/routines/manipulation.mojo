@@ -191,7 +191,13 @@ def reshape[
         Array of the same data with a new shape.
     """
     if A.size != shape.size():
-        raise Error("Cannot reshape: Number of elements do not match.")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Cannot reshape: Number of elements do not match.",
+                location="reshape",
+            )
+        )
 
     # View safety guard: ensure input is C-contiguous before memcpy.
     if not A.is_c_contiguous():
@@ -239,7 +245,13 @@ def ravel[
         axis = 0
     else:
         raise Error(
-            String("\nError in `ravel()`: Invalid order: {}").format(order)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `ravel()`: Invalid order: {}"
+                ).format(order),
+                location="ravel",
+            )
         )
     var iterator = a.iter_along_axis(axis=axis, order=order)
     var res: NDArray[dtype] = NDArray[dtype](Shape(a.size))
@@ -320,18 +332,26 @@ def transpose[
     """
     if len(axes) != A.ndim:
         raise Error(
-            String(
-                "Length of `axes` ({}) does not match `ndim` of array ({})"
-            ).format(len(axes), A.ndim)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Length of `axes` ({}) does not match `ndim` of array ({})"
+                ).format(len(axes), A.ndim),
+                location="transpose",
+            )
         )
 
     for i in range(A.ndim):
         if i not in axes:
             raise Error(
-                String(
-                    "`axes` is not a valid permutation of axes of the array. "
-                    "It does not contain index {}"
-                ).format(i)
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "`axes` is not a valid permutation of axes of the"
+                        " array. It does not contain index {}"
+                    ).format(i),
+                    location="transpose",
+                )
             )
 
     # View safety guard: ensure input is C-contiguous.
@@ -415,8 +435,12 @@ def broadcast_to[
     """
     if a.shape.ndim > shape.ndim:
         raise Error(
-            String("Cannot broadcast shape {} to shape {}!").format(
-                a.shape, shape
+            NumojoError(
+                category="broadcast",
+                message=String("Cannot broadcast shape {} to shape {}!").format(
+                    a.shape, shape
+                ),
+                location="broadcast_to",
             )
         )
 
@@ -433,8 +457,12 @@ def broadcast_to[
             b_strides[shape.ndim - 1 - i] = 0
         else:
             raise Error(
-                String("Cannot broadcast shape {} to shape {}!").format(
-                    a.shape, shape
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "Cannot broadcast shape {} to shape {}!"
+                    ).format(a.shape, shape),
+                    location="broadcast_to",
                 )
             )
     for i in range(shape.ndim - a.shape.ndim):
@@ -519,7 +547,13 @@ def flip[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "Invalid index: index out of bound [0, {})."
+                ).format(A.ndim),
+                location="flip",
+            )
         )
 
     var I = NDArray[DType.int](Shape(A.size))

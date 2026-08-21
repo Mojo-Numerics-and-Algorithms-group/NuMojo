@@ -54,6 +54,7 @@ from std.sys import simd_width_of
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.error import NumojoError
 from numojo.core.layout import Flags, NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
 from numojo.core.memory import DataContainer
@@ -175,9 +176,13 @@ def arange[
     var num_im: Int = ((stop.im - start.im) / step.im).__int__()
     if num_re != num_im:
         raise Error(
-            String(
-                "Number of real and imaginary parts are not equal {} != {}"
-            ).format(num_re, num_im)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Number of real and imaginary parts are not equal {} != {}"
+                ).format(num_re, num_im),
+                location="arange",
+            )
         )
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num_re))
     for idx in range(num_re):
@@ -213,9 +218,13 @@ def arange[
     var size_im = Int(stop.im)
     if size_re != size_im:
         raise Error(
-            String(
-                "Number of real and imaginary parts are not equal {} != {}"
-            ).format(size_re, size_im)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Number of real and imaginary parts are not equal {} != {}"
+                ).format(size_re, size_im),
+                location="arange",
+            )
         )
 
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(size_re))
@@ -1833,7 +1842,13 @@ def diag[
                 )
         return result^
     else:
-        raise Error("Arrays bigger than 2D are not supported")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Arrays bigger than 2D are not supported.",
+                location="diag",
+            )
+        )
 
 
 def diag[
@@ -2033,7 +2048,14 @@ def tril[
                     )
     else:
         raise Error(
-            "Arrays smaller than 2D are not supported for this operation."
+            NumojoError(
+                category="shape",
+                message=(
+                    "Arrays smaller than 2D are not supported for this"
+                    " operation."
+                ),
+                location="triu",
+            )
         )
     return result^
 
@@ -2097,7 +2119,14 @@ def triu[
                     )
     else:
         raise Error(
-            "Arrays smaller than 2D are not supported for this operation."
+            NumojoError(
+                category="shape",
+                message=(
+                    "Arrays smaller than 2D are not supported for this"
+                    " operation."
+                ),
+                location="tril",
+            )
         )
     return result^
 
@@ -2144,7 +2173,13 @@ def vander[
         A Vandermonde matrix.
     """
     if x.ndim != 1:
-        raise Error("x must be a 1-D array")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="x must be a 1-D array.",
+                location="vander",
+            )
+        )
 
     var n_rows = x.size
     var n_cols = N.value() if N else n_rows
@@ -2524,7 +2559,14 @@ def array[
         size = size * shape[i]
     if len(data) != size:
         raise Error(
-            "Error in array: Real and imaginary data must have the same length!"
+            NumojoError(
+                category="shape",
+                message=(
+                    "Error in array: Real and imaginary data must have the same"
+                    " length!"
+                ),
+                location="array",
+            )
         )
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
@@ -2641,7 +2683,14 @@ def array[
     var shape: List[Int] = List[Int]()
     if real.shape != imag.shape:
         raise Error(
-            "Error in array: Real and imaginary data must have the same shape!"
+            NumojoError(
+                category="shape",
+                message=(
+                    "Error in array: Real and imaginary data must have the same"
+                    " shape!"
+                ),
+                location="array",
+            )
         )
     for i in range(len):
         if Int(py=real.shape[i]) == 1:
@@ -2730,10 +2779,22 @@ def meshgrid[
     """
     var n: Int = len(arrays)
     if n < 2:
-        raise Error("meshgrid requires at least two input arrays.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="meshgrid requires at least two input arrays.",
+                location="meshgrid",
+            )
+        )
     for i in range(len(arrays)):
         if arrays[i].ndim != 1:
-            raise Error("meshgrid only supports 1-D input arrays.")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="meshgrid only supports 1-D input arrays.",
+                    location="meshgrid",
+                )
+            )
 
     var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
     var final_shape: List[Int] = List[Int](capacity=n)

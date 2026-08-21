@@ -38,6 +38,7 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
+from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
@@ -82,10 +83,16 @@ def cross[
         return array3^
     else:
         raise Error(
-            "resultross product is not supported for arrays of shape "
-            + array1.shape.__str__()
-            + " and "
-            + array2.shape.__str__()
+            NumojoError(
+                category="shape",
+                message=(
+                    "resultross product is not supported for arrays of shape "
+                )
+                + array1.shape.__str__()
+                + " and "
+                + array2.shape.__str__(),
+                location="cross",
+            )
         )
 
 
@@ -132,10 +139,16 @@ def dot[
         return result^
     else:
         raise Error(
-            "resultross product is not supported for arrays of shape "
-            + array1.shape.__str__()
-            + " and "
-            + array2.shape.__str__()
+            NumojoError(
+                category="shape",
+                message=(
+                    "resultross product is not supported for arrays of shape "
+                )
+                + array1.shape.__str__()
+                + " and "
+                + array2.shape.__str__(),
+                location="dot",
+            )
         )
 
 
@@ -214,13 +227,23 @@ def matmul_1darray[
     var result = NDArray[dtype](Shape(1, 1))
 
     if A.ndim * B.ndim != 1:
-        raise Error("The dimensions of the arrays should be 1.")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The dimensions of the arrays should be 1.",
+                location="matmul_1darray",
+            )
+        )
     elif A.size != B.size:
         raise Error(
-            String(
-                "matmul: a mismatch in core dimension 0: "
-                "size {} is different from {}"
-            ).format(A.size, B.size)
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matmul: a mismatch in core dimension 0: "
+                    "size {} is different from {}"
+                ).format(A.size, B.size),
+                location="matmul_1darray",
+            )
         )
     else:
         result.unsafe_set(0, sum(A * B))
@@ -282,16 +305,24 @@ def matmul_2darray[
 
     if (A.ndim == 1) or (B.ndim == 1):
         raise Error(
-            String(
-                "matmul: a mismatch in shapes: {} is different from {}"
-            ).format(A.shape[-1], B.shape[0])
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matmul: a mismatch in shapes: {} is different from {}"
+                ).format(A.shape[-1], B.shape[0]),
+                location="matmul_2darray",
+            )
         )
 
     if A.shape[1] != B.shape[0]:
         raise Error(
-            String(
-                "matmul: a mismatch in shapes: {} is different from {}"
-            ).format(A.shape[1], B.shape[0])
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matmul: a mismatch in shapes: {} is different from {}"
+                ).format(A.shape[1], B.shape[0]),
+                location="matmul_2darray",
+            )
         )
 
     var result: NDArray[dtype] = zeros[dtype](Shape(A.shape[0], B.shape[1]))
@@ -363,24 +394,36 @@ def matmul[
 
     if A.ndim != B.ndim:
         raise Error(
-            String("matmul: dimension {} is different from {}").format(
-                A.ndim, B.ndim
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matmul: dimension {} is different from {}"
+                ).format(A.ndim, B.ndim),
+                location="matmul",
             )
         )
 
     for i in range(A.ndim - 2):
         if A.shape[i] != B.shape[i]:
             raise Error(
-                String("matmul: {}-th dimensions mismatch: {} vs {}").format(
-                    A.shape[i], B.shape[i]
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "matmul: {}-th dimensions mismatch: {} vs {}"
+                    ).format(A.shape[i], B.shape[i]),
+                    location="matmul",
                 )
             )
 
     if A.shape[-1] != B.shape[-2]:
         raise Error(
-            String(
-                "matmul: a mismatch in shapes: {} is different from {}"
-            ).format(A.shape[-1], B.shape[-2])
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matmul: a mismatch in shapes: {} is different from {}"
+                ).format(A.shape[-1], B.shape[-2]),
+                location="matmul",
+            )
         )
 
     var shape_as_list = List[Int]()
@@ -440,6 +483,12 @@ def matmul_naive[
                         val=result.load(m, n) + A.load(m, k) * B.load(k, n),
                     )
     else:
-        raise Error("Invalid shape for B")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Invalid shape for B",
+                location="matmul_naive",
+            )
+        )
 
     return result^

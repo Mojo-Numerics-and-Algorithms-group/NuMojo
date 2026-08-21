@@ -22,6 +22,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
@@ -74,8 +75,15 @@ def diagonal[
     """
     if a.ndim < 2:
         raise Error(
-            "\nError in `diagonal`: Array must have at least 2 dimensions, got "
-            + String(a.ndim)
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `diagonal`: Array must have at least 2"
+                    " dimensions, got "
+                )
+                + String(a.ndim),
+                location="diagonal",
+            )
         )
 
     var norm_axis1 = axis1
@@ -92,13 +100,25 @@ def diagonal[
         or norm_axis2 >= a.ndim
     ):
         raise Error(
-            String(
-                "\nError in `diagonal`: axis1 {} and axis2 {} must be valid"
-                " axes for an array with {} dimensions."
-            ).format(axis1, axis2, a.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `diagonal`: axis1 {} and axis2 {} must be valid"
+                    " axes for an array with {} dimensions."
+                ).format(axis1, axis2, a.ndim),
+                location="diagonal",
+            )
         )
     if norm_axis1 == norm_axis2:
-        raise Error("\nError in `diagonal`: axis1 and axis2 must be different.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "\nError in `diagonal`: axis1 and axis2 must be different."
+                ),
+                location="diagonal",
+            )
+        )
 
     if not a.is_c_contiguous():
         return diagonal(a.contiguous(), offset, axis1, axis2)
@@ -108,13 +128,17 @@ def diagonal[
 
     if offset > n - 1 or offset < -(m - 1):
         raise Error(
-            "\nError in `diagonal`: Offset "
-            + String(offset)
-            + " is outside the valid range for axes with shape ("
-            + String(m)
-            + ", "
-            + String(n)
-            + ")"
+            NumojoError(
+                category="value",
+                message="\nError in `diagonal`: Offset "
+                + String(offset)
+                + " is outside the valid range for axes with shape ("
+                + String(m)
+                + ", "
+                + String(n)
+                + ")",
+                location="diagonal",
+            )
         )
 
     var diag_len: Int

@@ -7,7 +7,7 @@
 #  ===----------------------------------------------------------------------=== #
 """
 Solving (numojo.routines.linalg.solving).
-========================================
+=========================================
 Linear equation solvers.
 
 Solver for `Ax = y` systems using LU decomposition algorithm, and matrix
@@ -17,10 +17,6 @@ Exports
 -------
 - `solve`: Solve linear system.
 - `inv`: Matrix inverse.
-
-TODOs:
-    - Partial pivot support.
-    - Determinant computation.
 """
 
 # TODO: Add partial pivot support.
@@ -31,9 +27,10 @@ TODOs:
 # ===----------------------------------------------------------------------=== #
 from max.algorithm import parallelize
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (

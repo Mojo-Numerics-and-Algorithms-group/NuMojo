@@ -26,6 +26,7 @@ from std.collections.optional import Optional
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines.functional import apply_along_axis_reduce_to_int
 from numojo.routines.manipulation import ravel
@@ -174,8 +175,12 @@ def argmax[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `argmax`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `argmax`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="argmax",
             )
         )
 
@@ -236,8 +241,12 @@ def argmin[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `argmin`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `argmin`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="argmin",
             )
         )
 

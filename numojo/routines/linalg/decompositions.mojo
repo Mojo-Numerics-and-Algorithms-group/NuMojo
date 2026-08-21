@@ -27,6 +27,7 @@ from std.sys import simd_width_of
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray
@@ -89,12 +90,24 @@ def lu_decomposition[
 
     # Check whether the dimension is 2
     if A.ndim != 2:
-        raise ("The array is not 2-dimensional!")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="lu_decomposition",
+            )
+        )
 
     # Check whether the matrix is square
     var shape_of_array: NDArrayShape = A.shape
     if shape_of_array[0] != shape_of_array[1]:
-        raise ("The matrix is not square!")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The matrix is not square!",
+                location="lu_decomposition",
+            )
+        )
     var n: Int = shape_of_array[0]
 
     # Check whether the matrix is singular
@@ -160,9 +173,21 @@ def partial_pivoting[
     """
 
     if A.ndim != 2:
-        raise Error(String("Array must be 2d."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array must be 2d."),
+                location="partial_pivoting",
+            )
+        )
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Array is not square."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array is not square."),
+                location="partial_pivoting",
+            )
+        )
 
     var n = A.shape[0]
     var P = identity[dtype](n)

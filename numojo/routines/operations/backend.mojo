@@ -31,6 +31,7 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
@@ -1029,7 +1030,14 @@ struct HostExecutor:
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
-                "Shape Mismatch error shapes must match for this function"
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape Mismatch error shapes must match for this"
+                        " function"
+                    ),
+                    location="HostExecutor.apply_ternary",
+                )
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
@@ -1100,7 +1108,14 @@ struct HostExecutor:
 
         if array1.shape != array2.shape:
             raise Error(
-                "Shape Mismatch error shapes must match for this function"
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape Mismatch error shapes must match for this"
+                        " function"
+                    ),
+                    location="HostExecutor.apply_ternary",
+                )
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)

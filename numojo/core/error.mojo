@@ -11,11 +11,11 @@ Error Handling (numojo.core.error).
 Unified error system for NuMojo operations.
 
 Provides a simple, categorized error type for all NuMojo operations with
-clear error messages and suggestions for fixing issues.
+clear, actionable error messages.
 
 Exports
 -------
-- `NumojoError`: Unified error type with categories and suggestions.
+- `NumojoError`: Unified error type with categories.
 
 Categories:
     - index: Indexing errors
@@ -36,14 +36,13 @@ comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
 
 
-# TODO: Remove suggestion field and remove it from existing instances.
 struct NumojoError(Writable):
     """
     Unified error type for all Numojo operations.
 
     Args:
         category: Type of error (e.g., "ShapeError", "IndexError").
-        message: Main error description and suggestion.
+        message: Main error description.
         location: Optional context about where error occurred.
 
     Notes:

@@ -19,19 +19,28 @@ Exports
 - `DeviceStorage`: Device (GPU) memory container.
 - `AcceleratorDataContainer`: Unified container selecting storage by device.
 """
-from std.memory import UnsafePointer
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.atomic import Atomic, Ordering, fence
-from std.os import abort
 from std.collections.optional import Optional
-from std.sys.info import has_accelerator
-from std.memory import unsafe_memcpy
+from std.memory import UnsafePointer, unsafe_memcpy
 from std.memory.alloc import unsafe_alloc
+from std.os import abort
+from std.sys.info import has_accelerator
+
+# ===----------------------------------------------------------------------=== #
+# External
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceBuffer, DeviceContext
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator import Device, DeviceHandle
 from numojo.core.accelerator.device import is_accelerator_available
-from numojo.core.memory.data_container import Ownership
 from numojo.core.error import NumojoError
+from numojo.core.memory.data_container import Ownership
 
 
 # ===----------------------------------------------------------------------=== #

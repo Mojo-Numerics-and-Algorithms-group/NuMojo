@@ -18,10 +18,12 @@ Exports
 - `from_dlpack`: Create NDArray from DLPack tensor.
 - `to_dlpack`: Export NDArray as DLPack tensor.
 
-References:
-    - DLPack Specification: https://dmlc.github.io/dlpack/latest/
+References
+----------
+- DLPack Specification: https://dmlc.github.io/dlpack/latest/
 
-Example:
+Examples
+--------
     ```mojo
     from numojo.prelude import *
     from numojo.core.memory.dlpack import from_dlpack
@@ -45,24 +47,29 @@ Example:
     ```
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.memory import UnsafePointer
 from std.memory.alloc import unsafe_alloc
+from std.python import Python, PythonObject
 from std.sys.info import size_of
-from std.python import PythonObject, Python
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
-from numojo.core.ndarray import NDArray
-from numojo.core.memory.data_container import DataContainer
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.memory.data_container import DataContainer
+from numojo.core.ndarray import NDArray
 
-
-# ===-------------------------------------------------------------------===#
+# TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0.
+# ===----------------------------------------------------------------------=== #
 # DLPack Core Structures
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
-# TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0
 struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """Represents a DLPack version structure for compatibility checking.
 
@@ -113,7 +120,7 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
         ROCM: ROCm device type code (10).
     """
 
-    # TODO: verify all the values apart from cpu, cuda.
+    # TODO: Verify all the values apart from cpu, cuda.
     comptime CPU = 1
     comptime CUDA = 2
     comptime OPENCL = 4
@@ -386,9 +393,9 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
         self.deleter = deleter
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Metadata Management
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
@@ -437,13 +444,13 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
             self.shape.unsafe_free()
         if Int(self.strides) != 0:
             self.strides.unsafe_free()
-        # TODO: note sure if we should free it explicitly, gotta check this with tests.
+        # TODO: Not sure if we should free it explicitly, gotta check this with tests.
         _ = self.data_container^
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Deleter Callbacks
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def _dlpack_deleter_impl[
@@ -464,9 +471,9 @@ def _dlpack_deleter_impl[
     managed_tensor_ptr.unsafe_free()
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Export Functions
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def to_dlpack[
@@ -603,9 +610,9 @@ def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
     )
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Import Functions
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:

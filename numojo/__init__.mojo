@@ -130,7 +130,7 @@ comptime e = Constants.e
 comptime c = Constants.c
 
 # Functions
-# TODO Make explicit imports of each individual function in future
+# TODO: Make explicit imports of each individual function in future
 # to avoid polluting the root namespace.
 from numojo.routines import io
 from numojo.routines.io import (

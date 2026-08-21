@@ -23,9 +23,9 @@ Exports
 # ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator.device import Device
 import numojo.core.accelerator.kernels as kernels
 from numojo.core.dtype.default_dtype import _concise_dtype_str

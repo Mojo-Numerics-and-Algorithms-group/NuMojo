@@ -5,17 +5,20 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Validation (numojo.core.indexing.validation)
---------------------------------------------
-Contains utilities for validating indices, shapes, and axes for various indexing and reduction operations.
+"""
+Validation (numojo.core.indexing.validation).
+==============================================
+Utilities for validating indices, shapes, and axes for various indexing and
+reduction operations.
 
 Exports
 -------
-- `validate_index`: Index validation.
+- `Validator`: Index validation utilities.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 

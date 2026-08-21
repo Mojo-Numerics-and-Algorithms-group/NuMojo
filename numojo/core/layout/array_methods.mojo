@@ -5,22 +5,25 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Array methods (numojo.core.layout.array_methods)
-------------------------------------------------
-This module defines the `NewAxis` struct, which is used to represent the insertion of new axes into array shapes,
-similar to the concept of `None` or `np.newaxis` in NumPy. The `NewAxis` struct can be used to indicate where
-a new singleton dimension should be added to an array, enabling advanced indexing and broadcasting operations.
+"""
+Array methods (numojo.core.layout.array_methods).
+==================================================
+The `NewAxis` struct, used to represent the insertion of new axes into array
+shapes, similar to `None` / `np.newaxis` in NumPy.
 
-Example usage:
-    newaxis = NewAxis()        # Adds a single new axis
-    newaxis3 = NewAxis(3)      # Adds three new axes
-
-Attributes:
-    num (Int): The number of new axes to add. Defaults to 0 (single new axis).
+Indicates where a new singleton dimension should be added to an array,
+enabling advanced indexing and broadcasting operations.
 
 Exports
 -------
 - `NewAxis`: Add singleton dimension.
+- `newaxis`: Default `NewAxis` instance.
+
+Examples:
+    ```mojo
+    var a = NewAxis()      # Adds a single new axis
+    var b = NewAxis(3)     # Adds three new axes
+    ```
 """
 
 comptime newaxis = NewAxis()

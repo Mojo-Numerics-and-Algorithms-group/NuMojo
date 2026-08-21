@@ -50,6 +50,7 @@ from std.memory.alloc import unsafe_alloc
 from std.sys.info import size_of
 from std.python import PythonObject, Python
 
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.memory.data_container import DataContainer
 from numojo.core.layout.ndshape import NDArrayShape
@@ -217,7 +218,13 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 supported).
         """
         if self.lanes != 1:
-            raise Error("DLDataType: vector types not supported")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="DLDataType: vector types not supported",
+                    location="DLDataType.to_dtype",
+                )
+            )
 
         # TODO: Implement other Mojo datatypes if possible.
         if self.code == Self.FLOAT:
@@ -229,8 +236,12 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.float16
             else:
                 raise Error(
-                    "DLDataType: unsupported float bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported float bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         elif self.code == Self.INT:
             if self.bits == 8:
@@ -243,8 +254,12 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.int64
             else:
                 raise Error(
-                    "DLDataType: unsupported int bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported int bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         elif self.code == Self.UINT:
             if self.bits == 8:
@@ -257,12 +272,21 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.uint64
             else:
                 raise Error(
-                    "DLDataType: unsupported uint bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported uint bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         else:
             raise Error(
-                "DLDataType: unsupported type code: " + String(self.code)
+                NumojoError(
+                    category="value",
+                    message="DLDataType: unsupported type code: "
+                    + String(self.code),
+                    location="DLDataType.to_dtype",
+                )
             )
 
 
@@ -555,8 +579,14 @@ def _extract_dlpack_pointer(
 
     if Int(p) == 0:
         raise Error(
-            "_extract_dlpack_pointer: PyCapsule_GetPointer returned NULL"
-            " - capsule may be invalid or already consumed"
+            NumojoError(
+                category="memory",
+                message=(
+                    "_extract_dlpack_pointer: PyCapsule_GetPointer returned"
+                    " NULL - capsule may be invalid or already consumed"
+                ),
+                location="_extract_dlpack_pointer",
+            )
         )
 
     return p.unsafe_bitcast[DLManagedTensor]().unsafe_origin_cast[
@@ -618,24 +648,40 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     var managed_tensor_ptr = _extract_dlpack_pointer(actual_capsule)
 
     if Int(managed_tensor_ptr) == 0:
-        raise Error("from_dlpack: received null DLManagedTensor pointer")
+        raise Error(
+            NumojoError(
+                category="memory",
+                message="from_dlpack: received null DLManagedTensor pointer",
+                location="from_dlpack",
+            )
+        )
 
     var dl_tensor = managed_tensor_ptr[].dl_tensor
 
     if dl_tensor.device.device_type != DLDevice.CPU:
         raise Error(
-            "from_dlpack: only CPU tensors are currently supported, got"
-            " device type "
-            + String(Int(dl_tensor.device.device_type))
+            NumojoError(
+                category="memory",
+                message=(
+                    "from_dlpack: only CPU tensors are currently supported, got"
+                    " device type "
+                )
+                + String(Int(dl_tensor.device.device_type)),
+                location="from_dlpack",
+            )
         )
 
     var received_dtype = dl_tensor.dtype.to_dtype()
     if received_dtype != dtype:
         raise Error(
-            "from_dlpack: dtype mismatch - expected "
-            + String(dtype)
-            + " but got "
-            + String(received_dtype)
+            NumojoError(
+                category="value",
+                message="from_dlpack: dtype mismatch - expected "
+                + String(dtype)
+                + " but got "
+                + String(received_dtype),
+                location="from_dlpack",
+            )
         )
 
     var ndim = Int(dl_tensor.ndim)
@@ -701,8 +747,15 @@ def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
     var device_type = Int(py=device_info[0])
     if device_type != DLDevice.CPU:
         raise Error(
-            "from_numpy: only CPU tensors are supported, got device type "
-            + String(device_type)
+            NumojoError(
+                category="memory",
+                message=(
+                    "from_numpy: only CPU tensors are supported, got device"
+                    " type "
+                )
+                + String(device_type),
+                location="from_numpy",
+            )
         )
 
     var data_ptr = array.__array_interface__[PythonObject("data")][

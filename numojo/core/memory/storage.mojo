@@ -673,15 +673,26 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         elif Self.device.type == "gpu":
             if not is_accelerator_available[Self.device]():
                 raise Error(
-                    "\n Requested GPU device: "
-                    + String(Self.device)
-                    + " is not available. The available devices are: "
-                    + Device.available_devices()
+                    NumojoError(
+                        category="memory",
+                        message="\n Requested GPU device: "
+                        + String(Self.device)
+                        + " is not available. The available devices are: "
+                        + Device.available_devices(),
+                        location="AcceleratorDataContainer.__init__",
+                    )
                 )
             self.host_storage = None
             self.device_storage = DeviceStorage[Self.dtype, Self.device](size)
         else:
-            raise Error("Unsupported device type: " + String(Self.device.type))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Unsupported device type: "
+                    + String(Self.device.type),
+                    location="AcceleratorDataContainer.__init__",
+                )
+            )
 
     @always_inline
     def __init__(out self):
@@ -952,7 +963,13 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             var shared = self.device_storage.unsafe_value().share()
             return AcceleratorDataContainer[Self.dtype, Self.device](shared^)
         else:
-            raise Error("Unsupported device type for sharing")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Unsupported device type for sharing",
+                    location="AcceleratorDataContainer.share",
+                )
+            )
 
     # ===----------------------------------------------------------------------===#
     # Device-Specific Access

@@ -3529,11 +3529,17 @@ struct NDArray[dtype: DType = DType.float64](
 
         else:
             raise Error(
-                "\nError in `numojo.NDArray.__bool__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to Bool."
-                "The truth value of an array with more than one element is "
-                "ambiguous. Use a.any() or a.all()."
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "\nError in `numojo.NDArray.__bool__(self)`: Only 0-D"
+                        " arrays (numojo scalar) or length-1 arrays can be"
+                        " converted to Bool.The truth value of an array with"
+                        " more than one element is ambiguous. Use a.any() or"
+                        " a.all()."
+                    ),
+                    location="NDArray.__bool__",
+                )
             )
 
     def __int__(self) raises -> Int:
@@ -3566,9 +3572,15 @@ struct NDArray[dtype: DType = DType.float64](
             return Int(self.unsafe_get(0))
         else:
             raise Error(
-                "\nError in `numojo.NDArray.__int__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to scalars."
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "\nError in `numojo.NDArray.__int__(self)`: "
+                        "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                        "can be converted to scalars."
+                    ),
+                    location="NDArray.__int__",
+                )
             )
 
     def __float__(self) raises -> Float64:
@@ -3587,9 +3599,15 @@ struct NDArray[dtype: DType = DType.float64](
             return Float64(self.unsafe_get(0))
         else:
             raise Error(
-                "\nError in `numojo.NDArray.__float__(self)`: "
-                "Only 0-D arrays (numojo scalar) or length-1 arrays "
-                "can be converted to scalars."
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "\nError in `numojo.NDArray.__float__(self)`: "
+                        "Only 0-D arrays (numojo scalar) or length-1 arrays "
+                        "can be converted to scalars."
+                    ),
+                    location="NDArray.__float__",
+                )
             )
 
     def __pos__(self) raises -> Self:
@@ -3599,7 +3617,14 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if self.dtype == DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
+                NumojoError(
+                    category="value",
+                    message=(
+                        "ndarray:NDArrray:__pos__: pos does not accept bool"
+                        " type arrays."
+                    ),
+                    location="NDArray.__pos__",
+                )
             )
         return self.copy()
 
@@ -3610,7 +3635,14 @@ struct NDArray[dtype: DType = DType.float64](
         """
         if self.dtype == DType.bool:
             raise Error(
-                "ndarray:NDArrray:__pos__: pos does not accept bool type arrays"
+                NumojoError(
+                    category="value",
+                    message=(
+                        "ndarray:NDArrray:__pos__: pos does not accept bool"
+                        " type arrays."
+                    ),
+                    location="NDArray.__neg__",
+                )
             )
         return self * Scalar[Self.dtype](-1.0)
 
@@ -3845,10 +3877,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.size != other.size:
             raise Error(
-                String(
-                    "Size mismatch in in-place operation: self has {}"
-                    " elements, other has {} elements."
-                ).format(self.size, other.size)
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "Size mismatch in in-place operation: self has {}"
+                        " elements, other has {} elements."
+                    ).format(self.size, other.size),
+                    location="NDArray._apply_inplace_binop",
+                )
             )
 
         var other_c = other.contiguous()
@@ -4019,12 +4055,16 @@ struct NDArray[dtype: DType = DType.float64](
     def __pow__(self, p: Self) raises -> Self:
         if self.size != p.size:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.__pow__(self, p)`: "
-                    "Both arrays must have same number of elements! "
-                    "Self array has {} elements. "
-                    "Other array has {} elements"
-                ).format(self.size, p.size)
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "\nError in `numojo.NDArray.__pow__(self, p)`: "
+                        "Both arrays must have same number of elements! "
+                        "Self array has {} elements. "
+                        "Other array has {} elements."
+                    ).format(self.size, p.size),
+                    location="NDArray.__pow__",
+                )
             )
 
         var src = self.contiguous()
@@ -4973,10 +5013,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if self.ndim > 2:
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.col(self, id)`: "
-                    "The number of dimension is {}. It should be 2."
-                ).format(self.ndim)
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "\nError in `numojo.NDArray.col(self, id)`: "
+                        "The number of dimension is {}. It should be 2."
+                    ).format(self.ndim),
+                    location="NDArray.col",
+                )
             )
 
         var width: Int = self.shape[1]
@@ -5570,10 +5614,14 @@ struct NDArray[dtype: DType = DType.float64](
             normalized_axis += self.ndim
         if (normalized_axis >= self.ndim) or (normalized_axis < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.iter_along_axis()`: "
-                    "Axis ({}) is not in valid range [{}, {})."
-                ).format(axis, -self.ndim, self.ndim)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `numojo.NDArray.iter_along_axis()`: "
+                        "Axis ({}) is not in valid range [{}, {})."
+                    ).format(axis, -self.ndim, self.ndim),
+                    location="NDArray.iter_along_axis",
+                )
             )
 
         return Self._NDAxisIteratorType[forward,](
@@ -5614,10 +5662,14 @@ struct NDArray[dtype: DType = DType.float64](
             normalized_dim += self.ndim
         if (normalized_dim >= self.ndim) or (normalized_dim < 0):
             raise Error(
-                String(
-                    "\nError in `numojo.NDArray.iter_over_dimension()`: "
-                    "Axis ({}) is not in valid range [{}, {})."
-                ).format(dimension, -self.ndim, self.ndim)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `numojo.NDArray.iter_over_dimension()`: "
+                        "Axis ({}) is not in valid range [{}, {})."
+                    ).format(dimension, -self.ndim, self.ndim),
+                    location="NDArray.iter_over_dimension",
+                )
             )
 
         return _NDArrayIter[origin_of(self), Self.dtype, forward](
@@ -5783,10 +5835,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         if order not in [String("C"), "F"]:
             raise Error(
-                String(
-                    "\nError in `nditer()`: Invalid order: '{}'. "
-                    "The order should be 'C' or 'F'."
-                ).format(order)
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "\nError in `nditer()`: Invalid order: '{}'. "
+                        "The order should be 'C' or 'F'."
+                    ).format(order),
+                    location="NDArray.nditer",
+                )
             )
 
         var axis: Int
@@ -6350,10 +6406,14 @@ struct _NDArrayIter[
 
         if (index >= self.length) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `NDArrayIter.ith()`: "
-                    "Index ({}) must be in the range of [0, {})"
-                ).format(index, self.length)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `NDArrayIter.ith()`: "
+                        "Index ({}) must be in the range of [0, {})"
+                    ).format(index, self.length),
+                    location="NDArrayIter.ith",
+                )
             )
 
         if self.ndim > 1:
@@ -6606,10 +6666,14 @@ struct _NDAxisIter[
 
         if (index >= self.length) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `NDAxisIter.ith()`: "
-                    "Index ({}) must be in the range of [0, {})"
-                ).format(index, self.length)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `NDAxisIter.ith()`: "
+                        "Index ({}) must be in the range of [0, {})"
+                    ).format(index, self.length),
+                    location="NDAxisIter.ith",
+                )
             )
 
         var elements: NDArray[Self.dtype] = NDArray[Self.dtype](
@@ -6690,10 +6754,14 @@ struct _NDAxisIter[
 
         if (index >= self.length) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `NDAxisIter.ith_with_offsets()`: "
-                    "Index ({}) must be in the range of [0, {})"
-                ).format(index, self.length)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `NDAxisIter.ith_with_offsets()`: "
+                        "Index ({}) must be in the range of [0, {})"
+                    ).format(index, self.length),
+                    location="NDAxisIter.ith_with_offsets",
+                )
             )
 
         var remainder: Int = index * self.size_of_item
@@ -6877,10 +6945,14 @@ struct _NDIter[
 
         if (index >= self.length) or (index < 0):
             raise Error(
-                String(
-                    "\nError in `NDIter.ith()`: "
-                    "Index ({}) must be in the range of [0, {})"
-                ).format(index, self.length)
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `NDIter.ith()`: "
+                        "Index ({}) must be in the range of [0, {})"
+                    ).format(index, self.length),
+                    location="NDIter.ith",
+                )
             )
 
         var remainder = index

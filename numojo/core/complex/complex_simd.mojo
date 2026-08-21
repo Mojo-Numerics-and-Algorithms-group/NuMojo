@@ -243,7 +243,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(self.re + Self._broadcast(other), self.im)
 
-    # FIXME: currently mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[..., length=Self.width]. So keep SIMD[..., length=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
+    # FIXME: Currently Mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[..., length=Self.width]. So keep SIMD[..., length=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
     def __add__(self, other: SIMD[..., length=Self.width]) -> Self:
         """
         Returns the sum of this ComplexSIMD instance and a SIMD vector added to the real part.

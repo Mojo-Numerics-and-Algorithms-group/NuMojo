@@ -8,7 +8,7 @@
 
 """
 Indexer Collection Element (numojo.core.traits.indexer_collection_element).
-==========================================================================
+===========================================================================
 Trait composition for indexer collection elements.
 
 Defines trait composition of `Indexer` and `CollectionElement` traits for use

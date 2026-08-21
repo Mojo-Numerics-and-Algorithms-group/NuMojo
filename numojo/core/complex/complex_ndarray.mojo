@@ -562,7 +562,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
     # ===-------------------------------------------------------------------===#
     # Indexing and slicing
     # Getter dunders and other getter methods
-    # FIXME: currently most of the getitem and setitem methods don't match exactly between NDArray and ComplexNDArray in it's implementation, docstring, argument mutability etc. Fix this.
+    # FIXME: Currently most of the getitem and setitem methods don't match exactly between NDArray and ComplexNDArray in its implementation, docstring, argument mutability etc. Fix this.
 
     # 1. Basic Indexing Operations
     # def _getitem(self, *indices: Int) -> ComplexSIMD[Self.cdtype]                         # Direct unsafe getter

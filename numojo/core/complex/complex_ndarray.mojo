@@ -678,7 +678,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             The value of the 0-D Complex array.
 
         Raises:
-            Error: If the array is not 0-d.
+            NumojoError: If the array is not 0-d.
 
         Examples:
             ```mojo
@@ -717,8 +717,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             The value at the index list.
 
         Raises:
-            Error: If the length of `index` does not match the number of dimensions.
-            Error: If any of the index elements exceeds the size of the dimension of the array.
+            NumojoError: If the length of `index` does not match the number of dimensions.
+            NumojoError: If any of the index elements exceeds the size of the dimension of the array.
 
         Examples:
 
@@ -775,8 +775,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             otherwise a 0-D ComplexNDArray scalar wrapper.
 
         Raises:
-            IndexError: If the array is 0-D.
-            IndexError: If `idx` (after normalization) is out of bounds.
+            NumojoError: If the array is 0-D.
+            NumojoError: If `idx` (after normalization) is out of bounds.
 
         Notes:
             Performance fast path: For C-contiguous arrays the slice for both
@@ -876,8 +876,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Self: A new array instance representing the sliced view of the original array.
 
         Raises:
-            IndexError: If any slice is out of bounds for its corresponding dimension.
-            ValueError: If the number of slices does not match the array's dimensions.
+            NumojoError: If any slice is out of bounds for its corresponding dimension.
+            NumojoError: If the number of slices does not match the array's dimensions.
 
         NOTES:
             - This method creates a new array; Views are not currently supported.
@@ -951,7 +951,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Self: A new array instance representing the sliced view of the original array.
 
         Raises:
-            Error: If slice_list is empty or contains invalid slices.
+            NumojoError: If slice_list is empty or contains invalid slices.
 
         NOTES:
             - This method supports advanced slicing similar to NumPy's multi-dimensional slicing.
@@ -1058,7 +1058,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             A slice of the ndarray with a smaller or equal dimension of the original one.
 
         Raises:
-            Error: If the number of slices is greater than the number of dimensions of the array.
+            NumojoError: If the number of slices is greater than the number of dimensions of the array.
 
         Examples:
 
@@ -1149,7 +1149,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ComplexNDArray with items from the array of indices.
 
         Raises:
-            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
+            NumojoError: If the elements of indices are greater than size of the corresponding dimension of the array.
         """
         # Get the shape of resulted array
         var shape = indices.shape.join(self.shape.pop(0))
@@ -1209,7 +1209,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ComplexNDArray with items from the list of indices.
 
         Raises:
-            Error: If the elements of indices are greater than size of the corresponding dimension of the array.
+            NumojoError: If the elements of indices are greater than size of the corresponding dimension of the array.
 
         """
 
@@ -1234,7 +1234,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ComplexNDArray with items from the mask.
 
         Raises:
-            Error: If the mask is not a 1-D array (Currently we only support 1-d mask array).
+            NumojoError: If the mask is not a 1-D array (Currently we only support 1-d mask array).
 
         """
         # CASE 1:
@@ -1340,7 +1340,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ComplexNDArray with items from the mask.
 
         Raises:
-            Error: If the mask is not a 1-D array (Currently we only support 1-d mask array).
+            NumojoError: If the mask is not a 1-D array (Currently we only support 1-d mask array).
         """
 
         var mask_array = NDArray[DType.bool](shape=Shape(len(mask)))
@@ -1437,8 +1437,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             A ComplexSIMD matching the dtype of the complex array.
 
         Raises:
-            Error: If the number of indices is not equal to the number of dimensions of the array.
-            Error: If the index is equal or larger than size of dimension.
+            NumojoError: If the number of indices is not equal to the number of dimensions of the array.
+            NumojoError: If the index is equal or larger than size of dimension.
 
         Examples:
 
@@ -1592,8 +1592,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             The ComplexSIMD element at the indices.
 
         Raises:
-            Error: If the length of indices does not match the number of dimensions.
-            Error: If any of the indices is out of bound.
+            NumojoError: If the length of indices does not match the number of dimensions.
+            NumojoError: If any of the indices is out of bound.
 
         Examples:
 
@@ -1772,8 +1772,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             val: ComplexNDArray slice data to assign.
 
         Raises:
-            IndexError: If array is 0-D or idx out of bounds.
-            ShapeError: If `val` shape/dim mismatch with target slice.
+            NumojoError: If array is 0-D or idx out of bounds.
+            NumojoError: If `val` shape/dim mismatch with target slice.
         """
         if self.ndim == 0:
             raise Error(
@@ -1863,8 +1863,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             val: Value to set.
 
         Raises:
-            Error: If the length of index does not match the number of dimensions.
-            Error: If any of the indices is out of bound.
+            NumojoError: If the length of index does not match the number of dimensions.
+            NumojoError: If any of the indices is out of bound.
 
         Examples:
 
@@ -2202,7 +2202,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             True if the complex number is non-zero, False otherwise.
 
         Raises:
-            Error: If the array is not 0-D or length-1.
+            NumojoError: If the array is not 0-D or length-1.
 
         Examples:
         ```mojo
@@ -2243,7 +2243,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Int representation of the real part of the array.
 
         Raises:
-            Error: If the array is not 0-D or length-1.
+            NumojoError: If the array is not 0-D or length-1.
 
         Examples:
         ```mojo
@@ -2280,7 +2280,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Float64 representation of the magnitude of the complex number.
 
         Raises:
-            Error: If the array is not 0-D or length-1.
+            NumojoError: If the array is not 0-D or length-1.
 
         Examples:
         ```mojo
@@ -2414,7 +2414,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             ComplexNDArray with each element raised to corresponding power.
 
         Raises:
-            Error: If arrays have different sizes.
+            NumojoError: If arrays have different sizes.
 
         Examples:
         ```mojo
@@ -3400,8 +3400,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             item: The complex scalar to be set.
 
         Raises:
-            Error: If the index is out of bounds.
-            Error: If the length of index does not match the number of
+            NumojoError: If the index is out of bounds.
+            NumojoError: If the length of index does not match the number of
                 dimensions.
 
         Examples:
@@ -3469,8 +3469,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             item: The complex scalar to be set.
 
         Raises:
-            Error: If the index is out of bounds.
-            Error: If the length of index does not match the number of
+            NumojoError: If the index is out of bounds.
+            NumojoError: If the length of index does not match the number of
                 dimensions.
 
         Notes:
@@ -3588,8 +3588,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             axis: The axis to squeeze. Supports negative indices.
 
         Raises:
-            IndexError: If the axis is out of range.
-            ShapeError: If the dimension at the given axis is not of size 1.
+            NumojoError: If the axis is out of range.
+            NumojoError: If the dimension at the given axis is not of size 1.
         """
         var normalized_axis: Int = axis
         if normalized_axis < 0:
@@ -4123,7 +4123,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             The ith row as a ComplexNDArray.
 
         Raises:
-            Error: If ndim is greater than 2.
+            NumojoError: If ndim is greater than 2.
 
         Examples:
         ```mojo
@@ -4157,7 +4157,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             The ith column as a ComplexNDArray.
 
         Raises:
-            Error: If ndim is greater than 2.
+            NumojoError: If ndim is greater than 2.
 
         Examples:
         ```mojo
@@ -4303,7 +4303,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             1D ComplexNDArray containing the diagonal elements.
 
         Raises:
-            Error: If array is not 2D.
+            NumojoError: If array is not 2D.
 
         Examples:
         ```mojo
@@ -4337,7 +4337,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             Complex scalar containing the trace.
 
         Raises:
-            Error: If array is not 2D.
+            NumojoError: If array is not 2D.
 
         Examples:
         ```mojo

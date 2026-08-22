@@ -339,8 +339,8 @@ def stddev[
         An array.
 
     Raises:
-        Error: If the axis is out of bounds.
-        Error: If ddof is not smaller than the size of the axis.
+        NumojoError: If the axis is out of bounds.
+        NumojoError: If ddof is not smaller than the size of the axis.
     """
 
     var normalized_axis = axis
@@ -426,8 +426,8 @@ def variance[
         An array.
 
     Raises:
-        Error: If the axis is out of bounds.
-        Error: If ddof is not smaller than the size of the axis.
+        NumojoError: If the axis is out of bounds.
+        NumojoError: If ddof is not smaller than the size of the axis.
     """
 
     var normalized_axis = axis

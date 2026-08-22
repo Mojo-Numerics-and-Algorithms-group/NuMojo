@@ -143,7 +143,7 @@ def add[
         values: A list of arrays or Scalars to be added.
 
     Raises:
-        Error: If there are no arrays in the input values.
+        NumojoError: If there are no arrays in the input values.
 
     Returns:
         The element-wise sum of `array1` and`array2`.
@@ -458,7 +458,7 @@ def mul[
         values: A list of arrays or Scalars to be added.
 
     Raises:
-        Error: If there are no arrays in the input values.
+        NumojoError: If there are no arrays in the input values.
 
     Returns:
         The element-wise product of `array1` and`array2`.

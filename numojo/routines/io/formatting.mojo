@@ -273,7 +273,7 @@ def format_floating_scientific[
         A string representation of the float in scientific notation.
 
     Raises:
-        Error: If the dtype is not a floating-point type or if precision is negative.
+        NumojoError: If the dtype is not a floating-point type or if precision is negative.
     """
 
     if precision < 0:
@@ -390,7 +390,7 @@ def format_floating_precision[
         The formatted value as a string.
 
     Raises:
-        Error: If precision is negative or if the value cannot be formatted.
+        NumojoError: If precision is negative or if the value cannot be formatted.
     """
 
     comptime if is_inttype[dtype]():
@@ -467,7 +467,7 @@ def format_floating_precision[
         The formatted value as a string.
 
     Raises:
-        Error: If the complex value cannot be formatted.
+        NumojoError: If the complex value cannot be formatted.
     """
     try:
         return (

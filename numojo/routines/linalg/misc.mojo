@@ -45,9 +45,9 @@ def diagonal[
     surviving axes keep their original relative order.
 
     Raises:
-        Error: If the array has fewer than 2 dimensions.
-        Error: If `axis1` or `axis2` is out of bounds, or `axis1 == axis2`.
-        Error: If the offset is beyond the shape of the array.
+        NumojoError: If the array has fewer than 2 dimensions.
+        NumojoError: If `axis1` or `axis2` is out of bounds, or `axis1 == axis2`.
+        NumojoError: If the offset is beyond the shape of the array.
 
     Parameters:
         dtype: Data type of the array.

@@ -203,7 +203,7 @@ struct Item(
             The value at the specified index.
 
         Raises:
-            Error: If index is out of range.
+            NumojoError: If index is out of range.
         """
         return Int(self._buf[idx])
 
@@ -229,7 +229,7 @@ struct Item(
             val: The value to set.
 
         Raises:
-            Error: If index is out of range.
+            NumojoError: If index is out of range.
         """
         self._buf[idx] = val
 
@@ -249,7 +249,7 @@ struct Item(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Item.
+            NumojoError: If the load exceeds the bounds of the Item.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -278,7 +278,7 @@ struct Item(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Item.
+            NumojoError: If the store exceeds the bounds of the Item.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(

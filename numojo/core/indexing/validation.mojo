@@ -49,7 +49,7 @@ struct Validator:
             axis: The axis index (for error reporting).
 
         Raises:
-            Error: If the index is out of bounds.
+            NumojoError: If the index is out of bounds.
         """
         if index >= dim or index < -dim:
             raise Error(
@@ -75,7 +75,7 @@ struct Validator:
             new_shape: The target shape.
 
         Raises:
-            Error: If the reshape is invalid.
+            NumojoError: If the reshape is invalid.
         """
         if current_size != new_shape.size():
             raise Error(
@@ -104,7 +104,7 @@ struct Validator:
             Normalized axes.
 
         Raises:
-            Error: If any axis is invalid or duplicated.
+            NumojoError: If any axis is invalid or duplicated.
         """
         var normalized = List[Int]()
         if len(axes) == 0:

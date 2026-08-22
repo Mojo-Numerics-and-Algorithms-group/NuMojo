@@ -246,7 +246,7 @@ struct InternalSlice(ImplicitlyCopyable):
             A list of `InternalSlice` values parallel to `slice_list`.
 
         Raises:
-            ValueError: If any slice has a step of zero.
+            NumojoError: If any slice has a step of zero.
         """
         var n_slices: Int = len(slice_list)
         var slices = List[InternalSlice](capacity=n_slices)

@@ -112,7 +112,7 @@ struct NDArrayShape(
             shape: Variable number of integers representing the shape dimensions.
 
         Raises:
-           Error: If any shape dimension is negative.
+           NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         self._buf = IndexBuffer(size=len(shape))
@@ -140,8 +140,8 @@ struct NDArrayShape(
             shape: A list of integers representing the shape dimensions.
 
         Raises:
-            Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is negative.
+            NumojoError: If the number of dimensions is not positive.
+            NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -180,8 +180,8 @@ struct NDArrayShape(
             shape: A variadic list of integers representing the shape dimensions.
 
         Raises:
-            Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is negative.
+            NumojoError: If the number of dimensions is not positive.
+            NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -247,7 +247,7 @@ struct NDArrayShape(
                 If no, the values will be uninitialized.
 
         Raises:
-           Error: If the number of dimensions is negative.
+           NumojoError: If the number of dimensions is negative.
 
         Note:
             After creating the shape with uninitialized values,
@@ -346,7 +346,7 @@ struct NDArrayShape(
           val: Value to set at the given index.
 
         Raises:
-           Error: Index out of bound.
+           NumojoError: Index out of bound.
         """
         self._buf[index] = val
 
@@ -366,7 +366,7 @@ struct NDArrayShape(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Shape.
+            NumojoError: If the load exceeds the bounds of the Shape.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -396,7 +396,7 @@ struct NDArrayShape(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Shape.
+            NumojoError: If the store exceeds the bounds of the Shape.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -500,7 +500,7 @@ struct NDArrayShape(
             A new NDArrayShape with axes permuted.
 
         Raises:
-            Error: If axes length doesn't match ndim or contains invalid/duplicate axes.
+            NumojoError: If axes length doesn't match ndim or contains invalid/duplicate axes.
         """
         if len(axes) != self.ndim:
             raise Error(
@@ -569,7 +569,7 @@ struct NDArrayShape(
             The broadcast result shape.
 
         Raises:
-            Error: If the shapes are not broadcast-compatible.
+            NumojoError: If the shapes are not broadcast-compatible.
         """
         var ndim = max(self.ndim, other.ndim)
         var result = NDArrayShape(ndim=ndim, initialized=False)

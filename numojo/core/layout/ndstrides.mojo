@@ -99,7 +99,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -127,7 +127,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -155,7 +155,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -211,7 +211,7 @@ struct NDArrayStrides(
                 Default is "C".
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self.ndim = shape.ndim
         self._buf = IndexBuffer(size=shape.ndim)
@@ -252,7 +252,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -268,7 +268,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -288,7 +288,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -312,7 +312,7 @@ struct NDArrayStrides(
                 If no, the values will be uninitialized.
 
         Raises:
-           Error: If the number of dimensions is negative.
+           NumojoError: If the number of dimensions is negative.
         """
         if ndim < 0:
             raise Error(
@@ -405,7 +405,7 @@ struct NDArrayStrides(
           val: Value to set at the given index.
 
         Raises:
-           Error: Index out of bound.
+           NumojoError: Index out of bound.
         """
         self._buf[Int(index)] = Int(val)
 
@@ -425,7 +425,7 @@ struct NDArrayStrides(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Strides.
+            NumojoError: If the load exceeds the bounds of the Strides.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -455,7 +455,7 @@ struct NDArrayStrides(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Strides.
+            NumojoError: If the store exceeds the bounds of the Strides.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -526,7 +526,7 @@ struct NDArrayStrides(
             A new NDArrayStrides with axes permuted.
 
         Raises:
-            Error: If axes length doesn't match ndim or contains invalid/duplicate axes.
+            NumojoError: If axes length doesn't match ndim or contains invalid/duplicate axes.
         """
         if len(axes) != self.ndim:
             raise Error(

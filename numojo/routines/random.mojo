@@ -143,7 +143,7 @@ def rand[
     ```
 
     Raises:
-        Error: If the dtype is not a floating-point type.
+        NumojoError: If the dtype is not a floating-point type.
 
     Parameters:
         dtype: The data type of the NDArray elements.
@@ -225,8 +225,8 @@ def randint[
     which returns integer in range low (inclusive) to high (inclusive).
 
     Raises:
-        Error: If the dtype is not a integer type.
-        Error: If high is not greater than low.
+        NumojoError: If the dtype is not a integer type.
+        NumojoError: If high is not greater than low.
 
     Parameters:
         dtype: The data type of the NDArray elements.
@@ -293,8 +293,8 @@ def randint[
     Return an array of random integers from 0 (inclusive) to high (exclusive).
 
     Raises:
-        Error: If the dtype is not a integer type.
-        Error: If high <= 0.
+        NumojoError: If the dtype is not a integer type.
+        NumojoError: If high <= 0.
 
     Parameters:
         dtype: The data type of the NDArray elements.
@@ -541,7 +541,7 @@ def randbool(
         An NDArray of dtype `bool` filled with random boolean values.
 
     Raises:
-        Error: If `p` is not in the range [0.0, 1.0].
+        NumojoError: If `p` is not in the range [0.0, 1.0].
     """
 
     if p < 0.0 or p > 1.0:

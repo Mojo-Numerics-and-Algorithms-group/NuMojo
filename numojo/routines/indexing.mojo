@@ -81,7 +81,7 @@ def `where`[
     Replaces elements in `x` with elements from `y` where `mask` is True.
 
     Raises:
-        ShapeMismatchError: If the shapes of `x` and `y` do not match.
+        NumojoError: If the shapes of `x` and `y` do not match.
 
     Parameters:
         dtype: DType.
@@ -154,7 +154,7 @@ def `where`[
         where False.
 
     Raises:
-        Error: If ``condition``, ``x``, and ``y`` are not broadcast-compatible.
+        NumojoError: If ``condition``, ``x``, and ``y`` are not broadcast-compatible.
 
     Examples:
         ```mojo
@@ -210,7 +210,7 @@ def `where`[
         New array filled from `x` where True and `y` everywhere else.
 
     Raises:
-        Error: If ``condition`` and `x` are not broadcast-compatible.
+        NumojoError: If ``condition`` and `x` are not broadcast-compatible.
 
     Examples:
         ```mojo
@@ -256,7 +256,7 @@ def `where`[
         New array filled from `x` where True and `y` everywhere else.
 
     Raises:
-        Error: If ``condition`` and `y` are not broadcast-compatible.
+        NumojoError: If ``condition`` and `y` are not broadcast-compatible.
 
     Examples:
         ```mojo
@@ -310,9 +310,9 @@ def fancy_index[
         ``a[index_arrays[0][i], index_arrays[1][i], ...]``.
 
     Raises:
-        Error: If the number of index arrays does not equal `a.ndim`.
-        Error: If the index arrays are not mutually broadcast-compatible.
-        Error: If any index value is out of bounds for its axis.
+        NumojoError: If the number of index arrays does not equal `a.ndim`.
+        NumojoError: If the index arrays are not mutually broadcast-compatible.
+        NumojoError: If any index value is out of bounds for its axis.
 
     Examples:
         ```mojo
@@ -416,9 +416,9 @@ def fancy_index[
         Array of shape ``broadcast(index_arrays)``.
 
     Raises:
-        Error: If the number of index arrays does not equal `a.ndim`.
-        Error: If the index arrays are not mutually broadcast-compatible.
-        Error: If any index value is out of bounds for its axis.
+        NumojoError: If the number of index arrays does not equal `a.ndim`.
+        NumojoError: If the index arrays are not mutually broadcast-compatible.
+        NumojoError: If any index value is out of bounds for its axis.
 
     Examples:
         ```mojo
@@ -449,9 +449,9 @@ def compress[
     If no axis is provided, the array is flattened before use.
 
     Raises:
-        Error: If the axis is out of bound for the given array.
-        Error: If the condition is not 1-D array.
-        Error: If the condition length is out of bound for the given axis.
+        NumojoError: If the axis is out of bound for the given array.
+        NumojoError: If the condition is not 1-D array.
+        NumojoError: If the condition length is out of bound for the given axis.
 
     Parameters:
         dtype: DType.
@@ -568,8 +568,8 @@ def compress[
     This is a function ***OVERLOAD***.
 
     Raises:
-        Error: If the condition is not 1-D array.
-        Error: If the condition length is out of bound for the given axis.
+        NumojoError: If the condition is not 1-D array.
+        NumojoError: If the condition length is out of bound for the given axis.
 
     Parameters:
         dtype: DType.
@@ -614,9 +614,9 @@ def take_along_axis[
     Takes values from the input array along the given axis based on indices.
 
     Raises:
-        Error: If the axis is out of bounds for the given array.
-        Error: If the ndim of arr and indices are not the same.
-        Error: If the shape of indices does not match the shape of the
+        NumojoError: If the axis is out of bounds for the given array.
+        NumojoError: If the ndim of arr and indices are not the same.
+        NumojoError: If the shape of indices does not match the shape of the
             input array except along the given axis.
 
     Parameters:
@@ -780,8 +780,8 @@ def take[
         Array of shape `a.shape[:axis] + indices.shape + a.shape[axis+1:]`.
 
     Raises:
-        Error: If `axis` is out of bounds.
-        Error: If any index is out of bounds for the given axis.
+        NumojoError: If `axis` is out of bounds.
+        NumojoError: If any index is out of bounds for the given axis.
 
     Examples:
         ```mojo
@@ -887,7 +887,7 @@ def take[
         Array with the same shape as `indices`.
 
     Raises:
-        Error: If any index is out of bounds for the flattened array.
+        NumojoError: If any index is out of bounds for the flattened array.
 
     Examples:
         ```mojo
@@ -972,8 +972,8 @@ def put[
             `indices`.
 
     Raises:
-        Error: If any index is out of bounds for the flattened array.
-        Error: If `values` is empty while `indices` is not.
+        NumojoError: If any index is out of bounds for the flattened array.
+        NumojoError: If `values` is empty while `indices` is not.
 
     Examples:
         ```mojo
@@ -1047,7 +1047,7 @@ def put[
         value: Scalar value written to every selected position.
 
     Raises:
-        Error: If any index is out of bounds for the flattened array.
+        NumojoError: If any index is out of bounds for the flattened array.
 
     Examples:
         ```mojo
@@ -1104,8 +1104,8 @@ def unravel_index(
         A list of coordinates, one per dimension.
 
     Raises:
-        Error: If `index` is out of bounds for the flattened array.
-        Error: If `order` is not `"C"` or `"F"`.
+        NumojoError: If `index` is out of bounds for the flattened array.
+        NumojoError: If `order` is not `"C"` or `"F"`.
     """
     var size = shape.size()
     if order != "C" and order != "F":
@@ -1164,8 +1164,8 @@ def unravel_index(
         A list of coordinate arrays, one per dimension.
 
     Raises:
-        Error: If any index is out of bounds for the flattened array.
-        Error: If `order` is not `"C"` or `"F"`.
+        NumojoError: If any index is out of bounds for the flattened array.
+        NumojoError: If `order` is not `"C"` or `"F"`.
 
     Notes:
         Each output coordinate array has the same shape as `indices`.
@@ -1250,10 +1250,10 @@ def ravel_multi_index(
         Integer array of flat linear indices.
 
     Raises:
-        Error: If the number of coordinate arrays does not equal `shape.ndim`.
-        Error: If coordinate arrays are not broadcast-compatible.
-        Error: If any coordinate is out of bounds for its dimension.
-        Error: If `order` is not `"C"` or `"F"`.
+        NumojoError: If the number of coordinate arrays does not equal `shape.ndim`.
+        NumojoError: If coordinate arrays are not broadcast-compatible.
+        NumojoError: If any coordinate is out of bounds for its dimension.
+        NumojoError: If `order` is not `"C"` or `"F"`.
     """
     var n_idx = len(multi_index)
     if n_idx != shape.ndim:
@@ -1484,8 +1484,8 @@ def searchsorted[
         Array of insertion indices, same shape as `v`.
 
     Raises:
-        Error: If `a` is not 1-D.
-        Error: If `side` is not `"left"` or `"right"`.
+        NumojoError: If `a` is not 1-D.
+        NumojoError: If `side` is not `"left"` or `"right"`.
 
     Examples:
         ```mojo
@@ -1571,8 +1571,8 @@ def searchsorted[
         Insertion index.
 
     Raises:
-        Error: If `a` is not 1-D.
-        Error: If `side` is not `"left"` or `"right"`.
+        NumojoError: If `a` is not 1-D.
+        NumojoError: If `side` is not `"left"` or `"right"`.
 
     Examples:
         ```mojo

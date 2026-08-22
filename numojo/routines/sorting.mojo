@@ -204,7 +204,7 @@ def argsort[
     When no axis is given, the array is flattened before sorting.
 
     Raises:
-        Error: If the axis is out of bound.
+        NumojoError: If the axis is out of bound.
 
     Parameters:
         dtype: The input element type.
@@ -609,7 +609,7 @@ def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     The data buffer must be contiguous.
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
@@ -647,7 +647,7 @@ def _quick_sort_inplace[
     The data buffer must be contiguous.
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
@@ -686,7 +686,7 @@ def _quick_sort_stable_inplace[
     The sorting is stable
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.

@@ -179,7 +179,7 @@ def reshape[
     Returns an array of the same data with a new shape.
 
     Raises:
-        Error: If the number of elements do not match.
+        NumojoError: If the number of elements do not match.
 
     Args:
         A: A NDArray.
@@ -424,7 +424,7 @@ def broadcast_to[
         A broadcast view of `a` with shape `shape`.
 
     Raises:
-        Error: If `a.shape` cannot be broadcast to `shape`.
+        NumojoError: If `a.shape` cannot be broadcast to `shape`.
 
     Notes:
         The returned array shares the underlying buffer with `a` (refcounted,
@@ -711,9 +711,9 @@ def concatenate[
         The concatenated array.
 
     Raises:
-        Error: If the list of arrays is empty.
-        Error: If the arrays do not have the same number of dimensions.
-        Error: If the array shapes are incompatible along non-concatenation axes.
+        NumojoError: If the list of arrays is empty.
+        NumojoError: If the arrays do not have the same number of dimensions.
+        NumojoError: If the array shapes are incompatible along non-concatenation axes.
 
     Examples:
         ```mojo
@@ -750,7 +750,7 @@ def column_stack[
         The 2-D (or higher) array formed by stacking the inputs as columns.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -801,7 +801,7 @@ def row_stack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs vertically.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -853,7 +853,7 @@ def hstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs horizontally.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -900,7 +900,7 @@ def vstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs vertically.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo

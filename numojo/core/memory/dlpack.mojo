@@ -219,9 +219,9 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
             Corresponding Mojo DType.
 
         Raises:
-            Error: If the type code is not supported.
-            Error: If the bit width is not supported for the given type code.
-            Error: If vector types (lanes > 1) are encountered (not yet
+            NumojoError: If the type code is not supported.
+            NumojoError: If the bit width is not supported for the given type code.
+            NumojoError: If vector types (lanes > 1) are encountered (not yet
                 supported).
         """
         if self.lanes != 1:
@@ -497,7 +497,7 @@ def to_dlpack[
         Pointer to a DLManagedTensor that can be consumed by other libraries.
 
     Raises:
-        Error: If enabling views on the data container fails.
+        NumojoError: If enabling views on the data container fails.
 
     Notes:
         - The consumer is responsible for calling the deleter when done.
@@ -568,7 +568,7 @@ def _extract_dlpack_pointer(
         Pointer to the DLManagedTensor inside the capsule.
 
     Raises:
-        Error: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
+        NumojoError: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
         already consumed).
     """
     var ctypes = Python.import_module("ctypes")
@@ -636,10 +636,10 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
         A new NuMojo NDArray that shares memory with the input tensor.
 
     Raises:
-        Error: If the received DLManagedTensor pointer is null.
-        Error: If the tensor is not on CPU (only CPU tensors are currently
+        NumojoError: If the received DLManagedTensor pointer is null.
+        NumojoError: If the tensor is not on CPU (only CPU tensors are currently
             supported).
-        Error: If the data type does not match the expected dtype parameter.
+        NumojoError: If the data type does not match the expected dtype parameter.
 
     Notes:
         - The returned NDArray shares memory with the source tensor. Changes to
@@ -742,7 +742,7 @@ def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
         A new NDArray that shares memory with the input array.
 
     Raises:
-        Error: If the array is not on CPU (only CPU tensors are supported).
+        NumojoError: If the array is not on CPU (only CPU tensors are supported).
 
     Notes:
         - The imported array shares memory with the source. Modifications to

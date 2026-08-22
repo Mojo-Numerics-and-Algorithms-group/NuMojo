@@ -448,7 +448,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
             A new DataContainer sharing the same data buffer, with refcount incremented if applicable.
 
         Raises:
-            Error: If the container is externally managed.
+            NumojoError: If the container is externally managed.
         """
         if self.ownership == Ownership.External or not self.is_refcounted():
             raise Error(

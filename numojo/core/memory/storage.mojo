@@ -427,7 +427,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
             A new `HostStorage` pointing to the same buffer.
 
         Raises:
-            Error: If the container is externally managed (no refcount).
+            NumojoError: If the container is externally managed (no refcount).
         """
         if self.ownership == Ownership.External or not self.is_refcounted():
             raise Error(
@@ -488,7 +488,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             size: Number of elements to allocate.
 
         Raises:
-            Error: If no GPU accelerator is available.
+            NumojoError: If no GPU accelerator is available.
         """
         comptime assert is_accelerator_available[
             Self.device
@@ -666,7 +666,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             size: Number of elements to allocate (must be non-negative).
 
         Raises:
-            Error: If the requested GPU backend is unavailable, or the
+            NumojoError: If the requested GPU backend is unavailable, or the
                    device type is unrecognised.
         """
         if size < 0:
@@ -963,7 +963,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             A new `AcceleratorDataContainer` backed by the same allocation.
 
         Raises:
-            Error: If the active storage is missing or cannot be shared.
+            NumojoError: If the active storage is missing or cannot be shared.
         """
         comptime if Self.device.type == "cpu":
             var shared = self.host_storage.unsafe_value().share()

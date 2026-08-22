@@ -754,7 +754,7 @@ struct AcceleratorNDArray[
             op_name: Human-readable operator name, used in error messages.
 
         Raises:
-            Error: If shapes differ, or either operand is not contiguous.
+            NumojoError: If shapes differ, or either operand is not contiguous.
         """
         if self.shape != other.shape:
             raise Error(
@@ -840,7 +840,7 @@ struct AcceleratorNDArray[
         array (no broadcasting or strided views yet).
 
         Raises:
-            Error: If the array is not contiguous.
+            NumojoError: If the array is not contiguous.
         """
         if not self.flags.C_CONTIGUOUS:
             raise Error(
@@ -873,7 +873,7 @@ struct AcceleratorNDArray[
         broadcasting or strided views yet).
 
         Raises:
-            Error: If the array is not contiguous.
+            NumojoError: If the array is not contiguous.
         """
         if not self.flags.C_CONTIGUOUS:
             raise Error(

@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 Error Handling (numojo.core.error).
-==================================
+===================================
 Unified error system for NuMojo operations.
 
 Provides a simple, categorized error type for all NuMojo operations with

@@ -5,7 +5,6 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-
 """
 Buffered Trait (numojo.core.traits.buffered).
 =============================================

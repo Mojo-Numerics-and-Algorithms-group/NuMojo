@@ -94,5 +94,3 @@ def any(array: NDArray[DType.bool]) raises -> Scalar[DType.bool]:
 
     vectorize[opt_nelts](array.size, closure)
     return result
-
-

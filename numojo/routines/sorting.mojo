@@ -37,6 +37,7 @@ from std.algorithm import vectorize
 from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
+from numojo.routines.creation import arange
 from numojo.routines.functional import (
     apply_along_axis_preserve,
     apply_along_axis_inplace,

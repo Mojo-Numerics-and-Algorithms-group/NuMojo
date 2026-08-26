@@ -4,22 +4,37 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Hyperbolic routines for NuMojo (numojo.routines.math.hyper)
---------------------------------------------------------------
-Implements hyperbolic and inverse hyperbolic functions for NDArrays.
+# ===----------------------------------------------------------------------=== #
+"""
+Hyperbolic (numojo.routines.math.hyper).
+========================================
+Hyperbolic and inverse hyperbolic trigonometric functions.
+
+Element-wise hyperbolic functions (sinh, cosh, tanh) and their inverses
+(asinh, acosh, atanh) for NDArrays.
+
+Exports
+-------
+- `sinh`, `cosh`, `tanh`: Hyperbolic functions.
+- `asinh`, `acosh`, `atanh`: Inverse hyperbolic functions.
 """
 
+# TODO: Add dtype support in backends for better type handling.
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as math
 
-from numojo.routines import HostExecutor
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
-# TODO: add dtype in backends and pass it here.
-
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Inverse Hyperbolic Trig (NDArray)
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -112,6 +127,11 @@ def arctanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return atanh(array)
 
 
+# ===----------------------------------------------------------------------=== #
+# Hyperbolic Trig (NDArray)
+# ===----------------------------------------------------------------------=== #
+
+
 def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     """
     Apply hyperbolic cosine.
@@ -185,8 +205,3 @@ def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         return math.tanh(simd)
 
     return HostExecutor.apply_unary[dtype, _kernel](array)
-
-
-# ===------------------------------------------------------------------------===#
-# Hyperbolic Trig (NDArray)
-# ===------------------------------------------------------------------------===#

@@ -1,31 +1,39 @@
 # ===----------------------------------------------------------------------=== #
-# NuMojo: Creation routines
+# NuMojo: Array creation routines
 # Distributed under the Apache 2.0 License with LLVM Exceptions.
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Creation routines (numojo.routines.creation)
------------------------------------------------
-# TODO (In order of priority)
-1) Implement axis argument for the NDArray creation functions
-2) Separate `array(object)` and `NDArray.__init__(shape)`.
-3) Use `Shapelike` trait to replace `NDArrayShape`, `List`, `VariadicList` and reduce the number of function reloads.
-4) Simplify complex overloads into sum of real methods.
+# ===----------------------------------------------------------------------=== #
+"""
+Creation routines (numojo.routines.creation).
+==============================================
+Functions for creating and initializing NDArray and ComplexNDArray objects.
 
----
+This module provides convenient factory functions for creating arrays with various
+initialization strategies (zeros, ones, empty, full, linspace, etc.) and helper
+functions for array generation from Python objects and mathematical sequences.
 
-Use more uniformed way of calling functions, i.e., using one specific
-overload for each function. This makes maintenance easier. Example:
-
-- `NDArray.__init__` takes in `ShapeLike` and initialize an `NDArray` container.
-- `full` calls `NDArray.__init__`.
-- `zeros`, `ones` calls `full`.
-- Other functions calls `zeros`, `ones`, `full`.
-
-If overloads are needed, it is better to call the default signature in other overloads. Example: `zeros(shape: NDArrayShape)`. All other overloads call this function. So it is easy for modification.
+Exports
+-------
+- `arange`: Evenly spaced values in interval.
+- `linspace`: Values spaced linearly in interval.
+- `logspace`: Values spaced logarithmically in interval.
+- `zeros`: Array filled with zeros.
+- `ones`: Array filled with ones.
+- `full`: Array filled with constant value.
+- `empty`: Uninitialized array.
+- `array`: Create from Python object or scalar.
 """
 
+# TODO: Implement axis argument for creation functions.
+# TODO: Separate `array(object)` and `NDArray.__init__(shape)`.
+# TODO: Use `ShapeLike` trait to reduce function overloads.
+# TODO: Simplify complex number overloads into real method composition.
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
 from max.algorithm import parallelize
 from std.math import pow
@@ -40,23 +48,23 @@ from std.memory import (
 from std.python import PythonObject, Python
 from std.sys import simd_width_of
 
-
-from numojo.core.layout import Flags
-from numojo.core.layout import Flags
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex.complex_ndarray import ComplexNDArray
-from numojo.core.dtype.complex_dtype import ComplexDType
-from numojo.core.type_aliases import ComplexScalar
-from numojo.core.layout import NDArrayShape
-from numojo.core.memory import DataContainer
 from numojo.core.complex.complex_simd import ComplexSIMD
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.error import NumojoError
+from numojo.core.layout import Flags, NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
-from numojo.core.type_aliases import Shape
+from numojo.core.memory import DataContainer
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import ComplexScalar, Shape
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Numerical ranges
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def arange[
     dtype: DType = DType.float64
 ](
@@ -168,9 +176,13 @@ def arange[
     var num_im: Int = ((stop.im - start.im) / step.im).__int__()
     if num_re != num_im:
         raise Error(
-            String(
-                "Number of real and imaginary parts are not equal {} != {}"
-            ).format(num_re, num_im)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Number of real and imaginary parts are not equal {} != {}"
+                ).format(num_re, num_im),
+                location="arange",
+            )
         )
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(num_re))
     for idx in range(num_re):
@@ -206,9 +218,13 @@ def arange[
     var size_im = Int(stop.im)
     if size_re != size_im:
         raise Error(
-            String(
-                "Number of real and imaginary parts are not equal {} != {}"
-            ).format(size_re, size_im)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Number of real and imaginary parts are not equal {} != {}"
+                ).format(size_re, size_im),
+                location="arange",
+            )
         )
 
     var result: ComplexNDArray[cdtype] = ComplexNDArray[cdtype](Shape(size_re))
@@ -221,9 +237,9 @@ def arange[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Linear Spacing NDArray Generation
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def linspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
@@ -526,9 +542,9 @@ def _linspace_parallel[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Logarithmic Spacing NDArray Generation
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def logspace[
     dtype: DType = DType.float64,
     parallel: Bool = False,
@@ -972,9 +988,9 @@ def geomspace[
         return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Commonly used NDArray Generation routines
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def empty[
     dtype: DType = DType.float64
 ](shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -1756,9 +1772,9 @@ def full_like[
     return full[cdtype](shape=array.shape, fill_value=fill_value, order=order)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Building matrices
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 def diag[
     dtype: DType = DType.float64
 ](v: NDArray[dtype], k: Int = 0) raises -> NDArray[dtype]:
@@ -1826,7 +1842,13 @@ def diag[
                 )
         return result^
     else:
-        raise Error("Arrays bigger than 2D are not supported")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Arrays bigger than 2D are not supported.",
+                location="diag",
+            )
+        )
 
 
 def diag[
@@ -2026,7 +2048,14 @@ def tril[
                     )
     else:
         raise Error(
-            "Arrays smaller than 2D are not supported for this operation."
+            NumojoError(
+                category="shape",
+                message=(
+                    "Arrays smaller than 2D are not supported for this"
+                    " operation."
+                ),
+                location="triu",
+            )
         )
     return result^
 
@@ -2090,7 +2119,14 @@ def triu[
                     )
     else:
         raise Error(
-            "Arrays smaller than 2D are not supported for this operation."
+            NumojoError(
+                category="shape",
+                message=(
+                    "Arrays smaller than 2D are not supported for this"
+                    " operation."
+                ),
+                location="tril",
+            )
         )
     return result^
 
@@ -2137,7 +2173,13 @@ def vander[
         A Vandermonde matrix.
     """
     if x.ndim != 1:
-        raise Error("x must be a 1-D array")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="x must be a 1-D array.",
+                location="vander",
+            )
+        )
 
     var n_rows = x.size
     var n_cols = N.value() if N else n_rows
@@ -2180,9 +2222,9 @@ def vander[
     )
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Construct array by changing the data type
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 # TODO: Check whether inplace cast is needed.
@@ -2271,9 +2313,9 @@ def astype[
     )
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Construct array from other objects
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def fromstring[
@@ -2427,14 +2469,14 @@ def fromstring[
 #     return a
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Overloads of `array` function
 # Construct array from various objects.
 # - String
 # - List of Scalars
 # - Numpy array
 # - Tensor
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def array[
@@ -2517,7 +2559,14 @@ def array[
         size = size * shape[i]
     if len(data) != size:
         raise Error(
-            "Error in array: Real and imaginary data must have the same length!"
+            NumojoError(
+                category="shape",
+                message=(
+                    "Error in array: Real and imaginary data must have the same"
+                    " length!"
+                ),
+                location="array",
+            )
         )
     var A = ComplexNDArray[cdtype](shape=shape, order=order)
     for i in range(A.size):
@@ -2634,7 +2683,14 @@ def array[
     var shape: List[Int] = List[Int]()
     if real.shape != imag.shape:
         raise Error(
-            "Error in array: Real and imaginary data must have the same shape!"
+            NumojoError(
+                category="shape",
+                message=(
+                    "Error in array: Real and imaginary data must have the same"
+                    " shape!"
+                ),
+                location="array",
+            )
         )
     for i in range(len):
         if Int(py=real.shape[i]) == 1:
@@ -2723,10 +2779,22 @@ def meshgrid[
     """
     var n: Int = len(arrays)
     if n < 2:
-        raise Error("meshgrid requires at least two input arrays.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="meshgrid requires at least two input arrays.",
+                location="meshgrid",
+            )
+        )
     for i in range(len(arrays)):
         if arrays[i].ndim != 1:
-            raise Error("meshgrid only supports 1-D input arrays.")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="meshgrid only supports 1-D input arrays.",
+                    location="meshgrid",
+                )
+            )
 
     var grids: List[NDArray[dtype]] = List[NDArray[dtype]](capacity=n)
     var final_shape: List[Int] = List[Int](capacity=n)

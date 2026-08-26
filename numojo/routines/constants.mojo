@@ -5,10 +5,19 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Constants (numojo.routines.constants)
--------------------------------------
-This module defines physical and mathematical constants for use in numerical computations.
-The constants are defined as class attributes of the `Constants` class, which is designed to be immutable and efficient for compile-time evaluation.
+"""
+Constants (numojo.routines.constants).
+======================================
+Mathematical and physical constants.
+
+Physical and mathematical constants (pi, e, c) defined for compile-time
+evaluation with indefinite precision.
+
+Exports
+-------
+- `pi`: Mathematical constant π.
+- `e`: Euler's number.
+- `c`: Speed of light.
 """
 
 

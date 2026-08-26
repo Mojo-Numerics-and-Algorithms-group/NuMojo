@@ -5,20 +5,31 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""IndexBuffer (numojo.core.indexing.index_buffer)
------------------------------------------------
+"""
+IndexBuffer (numojo.core.indexing.index_buffer).
+=================================================
 Shared integer buffer backend for shape/strides/item.
 
-This type owns a contiguous heap buffer of Ints and provides
-small helpers for pointer access and SIMD load/store.
+Owns a contiguous heap buffer of Ints and provides small helpers for pointer
+access and SIMD load/store.
+
+Exports
+-------
+- `IndexBuffer`: Index storage.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.memory import UnsafePointer, unsafe_memcpy, unsafe_memset_zero
 from std.memory.alloc import unsafe_alloc
 from std.sys import simd_width_of
 from std.algorithm.functional import vectorize
 from std.os import abort
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.slicing import InternalSlice
 

@@ -5,21 +5,32 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayShape (numojo.core.layout.ndshape)
---------------------------------------------
-Implements NDArrayShape type representing the shape of an NDArray.
-The shape is stored as a contiguous buffer of integers, with the number of dimensions (ndim) tracked separately.
-The NDArrayShape provides methods for element access, shape transformations (e.g., permute, reverse),
-and properties like size and rank.
 """
-# ===----------------------------------------------------------------------===#
+NDArrayShape (numojo.core.layout.ndshape).
+==========================================
+Array shape representation and operations.
+
+Represents array dimensions with efficient storage, shape transformations
+(permute, reverse), and dimension access.
+
+Exports
+-------
+- `NDArrayShape`: Shape container for N-dimensional arrays.
+
+Notes:
+    - The number of elements in the shape must be positive.
+    - All elements of the shape must be non-negative.
+    - Dimension values are validated upon creation.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.memory import unsafe_memcpy
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndstrides import NDArrayStrides
@@ -34,22 +45,23 @@ struct NDArrayShape(
     Writable,
 ):
     """
-    Presents the shape of `NDArray` type.
+    Represents the shape (dimensions) of an NDArray.
 
-    The data buffer of the NDArrayShape is a series of `Int` on memory.
-    The number of elements in the shape must be positive.
-    The elements of the shape must be non-negative.
-    The number of dimension and values of elements are checked upon
-    creation of the shape.
+    The data buffer is a series of `Int` values in memory. Dimensions and values are validated
+    upon creation to ensure they are non-negative.
 
-    Example:
-    ```mojo
-    import numojo as nm
-    var shape1 = nm.Shape(2, 3, 4)
-    print(shape1)  # Shape: (2, 3, 4)
-    var shape2 = nm.Shape([5, 6, 7])
-    print(shape2)  # Shape: (5, 6, 7)
-    ```
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        # Create shape with variadic arguments
+        var shape1 = nm.Shape(2, 3, 4)
+        print(shape1)  # Shape: (2, 3, 4)
+
+        # Create shape from list
+        var shape2 = nm.Shape([5, 6, 7])
+        print(shape2)  # Shape: (5, 6, 7)
+        ```
     """
 
     # ===----------------------------------------------------------------------=== #
@@ -100,7 +112,7 @@ struct NDArrayShape(
             shape: Variable number of integers representing the shape dimensions.
 
         Raises:
-           Error: If any shape dimension is negative.
+           NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         self._buf = IndexBuffer(size=len(shape))
@@ -128,8 +140,8 @@ struct NDArrayShape(
             shape: A list of integers representing the shape dimensions.
 
         Raises:
-            Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is negative.
+            NumojoError: If the number of dimensions is not positive.
+            NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -168,8 +180,8 @@ struct NDArrayShape(
             shape: A variadic list of integers representing the shape dimensions.
 
         Raises:
-            Error: If the number of dimensions is not positive.
-            Error: If any shape dimension is negative.
+            NumojoError: If the number of dimensions is not positive.
+            NumojoError: If any shape dimension is negative.
         """
         self.ndim = len(shape)
         if self.ndim <= 0:
@@ -235,7 +247,7 @@ struct NDArrayShape(
                 If no, the values will be uninitialized.
 
         Raises:
-           Error: If the number of dimensions is negative.
+           NumojoError: If the number of dimensions is negative.
 
         Note:
             After creating the shape with uninitialized values,
@@ -334,7 +346,7 @@ struct NDArrayShape(
           val: Value to set at the given index.
 
         Raises:
-           Error: Index out of bound.
+           NumojoError: Index out of bound.
         """
         self._buf[index] = val
 
@@ -354,7 +366,7 @@ struct NDArrayShape(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Shape.
+            NumojoError: If the load exceeds the bounds of the Shape.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -384,7 +396,7 @@ struct NDArrayShape(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Shape.
+            NumojoError: If the store exceeds the bounds of the Shape.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -488,7 +500,7 @@ struct NDArrayShape(
             A new NDArrayShape with axes permuted.
 
         Raises:
-            Error: If axes length doesn't match ndim or contains invalid/duplicate axes.
+            NumojoError: If axes length doesn't match ndim or contains invalid/duplicate axes.
         """
         if len(axes) != self.ndim:
             raise Error(
@@ -557,7 +569,7 @@ struct NDArrayShape(
             The broadcast result shape.
 
         Raises:
-            Error: If the shapes are not broadcast-compatible.
+            NumojoError: If the shapes are not broadcast-compatible.
         """
         var ndim = max(self.ndim, other.ndim)
         var result = NDArrayShape(ndim=ndim, initialized=False)

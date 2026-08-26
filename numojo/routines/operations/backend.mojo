@@ -5,13 +5,21 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Math operations backend (numojo.routines.operations.backend).
-----------------------------------------------------------------
-Defines vectorized backend structures and reusable SIMD math primitives consumed by the math submodules.
 """
-# ===----------------------------------------------------------------------===#
+Operations Backend (numojo.routines.operations.backend).
+=======================================================
+Vectorized backend for math operations.
+
+Defines backend structures and SIMD primitives for math operations.
+
+Exports
+-------
+- `HostExecutor`: CPU backend executor.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.sys import simd_width_of
 from std.sys.info import num_performance_cores
 
@@ -23,6 +31,7 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------===#
 # numojo
 # ===----------------------------------------------------------------------===#
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import _0darray
 from numojo.routines.manipulation import broadcast_to
@@ -1021,7 +1030,14 @@ struct HostExecutor:
 
         if array1.shape != array2.shape and array1.shape != array3.shape:
             raise Error(
-                "Shape Mismatch error shapes must match for this function"
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape Mismatch error shapes must match for this"
+                        " function"
+                    ),
+                    location="HostExecutor.apply_ternary",
+                )
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
@@ -1092,7 +1108,14 @@ struct HostExecutor:
 
         if array1.shape != array2.shape:
             raise Error(
-                "Shape Mismatch error shapes must match for this function"
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "Shape Mismatch error shapes must match for this"
+                        " function"
+                    ),
+                    location="HostExecutor.apply_ternary",
+                )
             )
 
         var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)

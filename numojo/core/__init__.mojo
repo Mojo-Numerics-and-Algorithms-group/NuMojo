@@ -5,16 +5,27 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Core (numojo.core)
----------------------
-This sub module provides the core types and utilities for NuMojo, including fundamental data structures
-like `NDArray`, dtype aliases, memory layout definitions, error handling utilities, and complex number support.
-It serves as the foundational layer upon which higher-level routines and algorithms are built.
-Fundamental types and utilities for NuMojo: arrays, matrices, memory layouts, data types, and error handling.
 """
-# ===----------------------------------------------------------------------===#
-# Local
-# ===----------------------------------------------------------------------===#
+Core (numojo.core).
+===================
+Foundational data structures and utilities for NuMojo: arrays, memory
+layouts, dtype aliases, error handling, and complex number support.
+
+Exports
+-------
+- `NDArray`, `AcceleratorNDArray`: Core array containers.
+- `ComplexNDArray`, `ComplexSIMD`: Complex number support.
+- `NDArrayShape`, `NDArrayStrides`, `Flags`, `newaxis`: Layout metadata.
+- `IndexMethods`, `Item`, `TraverseMethods`, `Validator`: Indexing helpers.
+- `DataContainer`, `HostStorage`, `DeviceStorage`, `AcceleratorDataContainer`:
+  Memory storage types.
+- `NumojoError`, `terminate`: Error handling.
+- Dtype aliases (`i8`, `f32`, `boolean`, ...) and complex counterparts.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from . import (
     accelerator,
     complex,

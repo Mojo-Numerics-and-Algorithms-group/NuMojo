@@ -8,13 +8,25 @@
 # Copyright (c) 2025, Modular Inc. All rights reserved.
 # Original source: https://github.com/modularml/mojo
 # ===----------------------------------------------------------------------=== #
-"""ComplexDType (numojo.core.dtype.complex_dtype)
-----------------------------------------------
-ComplexDType and related utilities for working with complex data types in NuMojo.
 """
-# ===----------------------------------------------------------------------===#
+Complex Datatype (numojo.core.dtype.complex_dtype).
+===================================================
+Complex number type definitions and utilities.
+
+Type aliases and utilities for working with complex data types in NuMojo,
+including Rust-like and NumPy-like aliases.
+
+Exports
+-------
+- Complex integer types: `ci8`, `ci16`, `ci32`, `ci64`, `ci128`, `ci256`
+- Complex unsigned types: `cu8`, `cu16`, `cu32`, `cu64`, `cu128`
+- Complex float types: `cf32`, `cf64`
+- `ComplexDType`: Complex dtype enumeration.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.hashlib.hasher import Hasher
 from std.os import abort
 from std.sys.info import size_of
@@ -91,9 +103,9 @@ struct ComplexDType(
     declare data types for complex SIMD vectors, tensors, and other data structures.
     """
 
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
     # Aliases
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
     # Refer to DType documentation for details on each data type.
     comptime _mlir_type = __mlir_type.`!kgen.dtype`
     comptime invalid = ComplexDType(
@@ -188,9 +200,9 @@ struct ComplexDType(
     var dtype: DType
     """The underlying storage for the ComplexDType value."""
 
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
     # Life cycle methods
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
 
     @always_inline("builtin")
     def __init__(out self, *, mlir_value: Self._mlir_type):
@@ -613,9 +625,9 @@ struct ComplexDType(
         """
         return self.bitwidth() // 2
 
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
     # __mlir_type
-    # ===-------------------------------------------------------------------===#
+    # ===-----------------------------------------------------------------===#
     @always_inline("nodebug")
     def __mlir_type(self) -> __mlir_type.`!kgen.deferred`:
         """Returns the MLIR type of the current DType as an MLIR type.

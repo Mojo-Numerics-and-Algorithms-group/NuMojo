@@ -5,23 +5,31 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Binary op GPU kernels (numojo.core.accelerator.kernels.binary_ops)
------------------------------------------------------------------
-GPU kernel functions and launch helpers for elementwise binary operations
-on contiguous `AcceleratorNDArray` buffers.
 """
-# ===----------------------------------------------------------------------===#
+Binary Ops Kernels (numojo.core.accelerator.kernels.binary_ops).
+================================================================
+GPU kernels for binary operations.
+
+GPU kernel functions and launch helpers for element-wise binary operations
+on contiguous AcceleratorNDArray buffers.
+
+Exports
+-------
+- Binary operation kernel functions for GPU acceleration.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.gpu import (
     block_dim,
     block_idx,
     thread_idx,
 )
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # External
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
 

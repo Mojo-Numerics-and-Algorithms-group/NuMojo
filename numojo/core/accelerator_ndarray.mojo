@@ -5,18 +5,27 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""AcceleratorNDArray (numojo.core.accelerator_ndarray)
---------------------------------------------------------
-Device-aware NDArray that stores data in `AcceleratorDataContainer`.
 """
-# ===----------------------------------------------------------------------===#
+AcceleratorNDArray (numojo.core.accelerator_ndarray).
+=====================================================
+Device-aware NDArray with accelerator support.
+
+Device-aware NDArray that stores data in AcceleratorDataContainer with
+GPU acceleration support.
+
+Exports
+-------
+- `AcceleratorNDArray`: Device-aware N-dimensional array type.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # External
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator.device import Device
 import numojo.core.accelerator.kernels as kernels
 from numojo.core.dtype.default_dtype import _concise_dtype_str
@@ -745,7 +754,7 @@ struct AcceleratorNDArray[
             op_name: Human-readable operator name, used in error messages.
 
         Raises:
-            Error: If shapes differ, or either operand is not contiguous.
+            NumojoError: If shapes differ, or either operand is not contiguous.
         """
         if self.shape != other.shape:
             raise Error(
@@ -831,7 +840,7 @@ struct AcceleratorNDArray[
         array (no broadcasting or strided views yet).
 
         Raises:
-            Error: If the array is not contiguous.
+            NumojoError: If the array is not contiguous.
         """
         if not self.flags.C_CONTIGUOUS:
             raise Error(
@@ -864,7 +873,7 @@ struct AcceleratorNDArray[
         broadcasting or strided views yet).
 
         Raises:
-            Error: If the array is not contiguous.
+            NumojoError: If the array is not contiguous.
         """
         if not self.flags.C_CONTIGUOUS:
             raise Error(

@@ -5,26 +5,41 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Manipulation routines (numojo.routines.manipulation)
-----------------------------------------------------
-This module implements routines that manipulate the shape and layout of arrays, such as reshaping, transposing, broadcasting, and flipping.
+"""
+Manipulation routines (numojo.routines.manipulation).
+======================================================
+Array shape and layout manipulation operations.
+
+Routines for reshaping, transposing, broadcasting, flipping, concatenating,
+and other shape-changing operations on arrays.
+
+Exports
+-------
+- `reshape`, `ravel`: Shape changes.
+- `transpose`, `flip`: Layout changes.
+- `broadcast_to`: Broadcasting.
+- `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
+- `ndim`, `shape`, `size`: Array properties.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.algorithm import vectorize
 from std.memory import UnsafePointer, unsafe_memcpy
 from std.sys import simd_width_of
-from std.algorithm import vectorize
 
-from numojo.core.ndarray import NDArray
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.complex import ComplexNDArray
-from numojo.core.layout import NDArrayShape
-from numojo.core.layout import NDArrayStrides
-from numojo.core.type_aliases import Shape
-from numojo.core.indexing import TraverseMethods
-from numojo.core.indexing.utility import (
-    _list_of_flipped_range,
-)
 from numojo.core.dtype.complex_dtype import ComplexDType
 from numojo.core.error import NumojoError
+from numojo.core.indexing import TraverseMethods
+from numojo.core.indexing.utility import _list_of_flipped_range
+from numojo.core.layout import NDArrayShape, NDArrayStrides
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
 
 # ===----------------------------------------------------------------------=== #
 # Basic operations
@@ -164,7 +179,7 @@ def reshape[
     Returns an array of the same data with a new shape.
 
     Raises:
-        Error: If the number of elements do not match.
+        NumojoError: If the number of elements do not match.
 
     Args:
         A: A NDArray.
@@ -176,7 +191,13 @@ def reshape[
         Array of the same data with a new shape.
     """
     if A.size != shape.size():
-        raise Error("Cannot reshape: Number of elements do not match.")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Cannot reshape: Number of elements do not match.",
+                location="reshape",
+            )
+        )
 
     # View safety guard: ensure input is C-contiguous before memcpy.
     if not A.is_c_contiguous():
@@ -224,7 +245,13 @@ def ravel[
         axis = 0
     else:
         raise Error(
-            String("\nError in `ravel()`: Invalid order: {}").format(order)
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `ravel()`: Invalid order: {}"
+                ).format(order),
+                location="ravel",
+            )
         )
     var iterator = a.iter_along_axis(axis=axis, order=order)
     var res: NDArray[dtype] = NDArray[dtype](Shape(a.size))
@@ -305,18 +332,26 @@ def transpose[
     """
     if len(axes) != A.ndim:
         raise Error(
-            String(
-                "Length of `axes` ({}) does not match `ndim` of array ({})"
-            ).format(len(axes), A.ndim)
+            NumojoError(
+                category="value",
+                message=String(
+                    "Length of `axes` ({}) does not match `ndim` of array ({})"
+                ).format(len(axes), A.ndim),
+                location="transpose",
+            )
         )
 
     for i in range(A.ndim):
         if i not in axes:
             raise Error(
-                String(
-                    "`axes` is not a valid permutation of axes of the array. "
-                    "It does not contain index {}"
-                ).format(i)
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "`axes` is not a valid permutation of axes of the"
+                        " array. It does not contain index {}"
+                    ).format(i),
+                    location="transpose",
+                )
             )
 
     # View safety guard: ensure input is C-contiguous.
@@ -389,7 +424,7 @@ def broadcast_to[
         A broadcast view of `a` with shape `shape`.
 
     Raises:
-        Error: If `a.shape` cannot be broadcast to `shape`.
+        NumojoError: If `a.shape` cannot be broadcast to `shape`.
 
     Notes:
         The returned array shares the underlying buffer with `a` (refcounted,
@@ -400,8 +435,12 @@ def broadcast_to[
     """
     if a.shape.ndim > shape.ndim:
         raise Error(
-            String("Cannot broadcast shape {} to shape {}!").format(
-                a.shape, shape
+            NumojoError(
+                category="broadcast",
+                message=String("Cannot broadcast shape {} to shape {}!").format(
+                    a.shape, shape
+                ),
+                location="broadcast_to",
             )
         )
 
@@ -418,8 +457,12 @@ def broadcast_to[
             b_strides[shape.ndim - 1 - i] = 0
         else:
             raise Error(
-                String("Cannot broadcast shape {} to shape {}!").format(
-                    a.shape, shape
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "Cannot broadcast shape {} to shape {}!"
+                    ).format(a.shape, shape),
+                    location="broadcast_to",
                 )
             )
     for i in range(shape.ndim - a.shape.ndim):
@@ -504,7 +547,13 @@ def flip[
         axis += A.ndim
     if (axis < 0) or (axis >= A.ndim):
         raise Error(
-            String("Invalid index: index out of bound [0, {}).").format(A.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "Invalid index: index out of bound [0, {})."
+                ).format(A.ndim),
+                location="flip",
+            )
         )
 
     var I = NDArray[DType.int](Shape(A.size))
@@ -662,9 +711,9 @@ def concatenate[
         The concatenated array.
 
     Raises:
-        Error: If the list of arrays is empty.
-        Error: If the arrays do not have the same number of dimensions.
-        Error: If the array shapes are incompatible along non-concatenation axes.
+        NumojoError: If the list of arrays is empty.
+        NumojoError: If the arrays do not have the same number of dimensions.
+        NumojoError: If the array shapes are incompatible along non-concatenation axes.
 
     Examples:
         ```mojo
@@ -701,7 +750,7 @@ def column_stack[
         The 2-D (or higher) array formed by stacking the inputs as columns.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -752,7 +801,7 @@ def row_stack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs vertically.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -804,7 +853,7 @@ def hstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs horizontally.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo
@@ -851,7 +900,7 @@ def vstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
         The array formed by stacking the inputs vertically.
 
     Raises:
-        Error: If the list of arrays is empty.
+        NumojoError: If the list of arrays is empty.
 
     Examples:
         ```mojo

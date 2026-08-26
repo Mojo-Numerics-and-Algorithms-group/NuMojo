@@ -5,14 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""DataContainer (numojo.core.memory.data_container)
------------------------------------
-A reference-counted container for contiguous data buffers, used by array containers.
-DataContainer manages memory ownership and reference counting for shared or external data.
 """
-# ===----------------------------------------------------------------------===#
+Data Container (numojo.core.memory.data_container).
+===================================================
+Reference-counted memory container for array data.
+
+Manages memory ownership and reference counting for contiguous data buffers
+used by NDArray types.
+
+Exports
+-------
+- `DataContainer`: Reference-counted container for array data.
+- `Ownership`: Enum for managed vs external data ownership.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.atomic import (
     Atomic,
     fence,
@@ -22,9 +31,9 @@ from std.memory import unsafe_memcpy
 from std.memory.alloc import unsafe_alloc
 from std.os import abort
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 
 
@@ -439,7 +448,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
             A new DataContainer sharing the same data buffer, with refcount incremented if applicable.
 
         Raises:
-            Error: If the container is externally managed.
+            NumojoError: If the container is externally managed.
         """
         if self.ownership == Ownership.External or not self.is_refcounted():
             raise Error(

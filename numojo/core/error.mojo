@@ -6,26 +6,29 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-Error handling for Numojo library operations.
+Error Handling (numojo.core.error).
+===================================
+Unified error system for NuMojo operations.
 
-This module provides a simple, unified error system for the Numojo library.
-All errors use a single NumojoError type with different categories for
-better organization while keeping the implementation simple. This provides a better user experience by
-providing clear error message and suggestions for fixing the error.
+Provides a simple, categorized error type for all NuMojo operations with
+clear, actionable error messages.
 
-Currently we have a few common error categories like
-- IndexError
-- ShapeError
-- BroadcastError
-- MemoryError
-- ValueError
-- ArithmeticError
+Exports
+-------
+- `NumojoError`: Unified error type with categories.
 
-We can expand this list in the future as needed.
+Categories:
+    - index: Indexing errors
+    - shape: Shape mismatch errors
+    - broadcast: Broadcasting errors
+    - memory: Memory allocation errors
+    - value: Value errors
+    - arithmetic: Arithmetic operation errors
 """
-# ===----------------------------------------------------------------------===#
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.format.tstring import TString
 from std.os import abort
 
@@ -34,17 +37,18 @@ comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
 
 
-# TODO: remove suggestion field and remove it from existing instances.
 struct NumojoError(Writable):
     """
     Unified error type for all Numojo operations.
 
-    Parameters:
-
     Args:
         category: Type of error (e.g., "ShapeError", "IndexError").
-        message: Main error description and suggestion.
+        message: Main error description.
         location: Optional context about where error occurred.
+
+    Notes:
+        All NumojoErrors use a single unified type with different categories for better organization.
+        Error messages follow the format: "Category: Specific problem. Expected X but got Y."
     """
 
     comptime ErrorDict: Dict[String, String] = {
@@ -102,6 +106,7 @@ struct NumojoError(Writable):
         self.location = location
 
     def __str__(self) -> String:
+        """Return string representation of the error with formatting."""
         var result = (
             RED_COLOR + String(self.category) + String(": ") + self.message
         )
@@ -120,7 +125,15 @@ struct NumojoError(Writable):
         writer.write(END_COLOR)
 
 
-# Use this for fatal errors that should abort the program.
 def terminate(message: String):
-    """Abort the program with the given error message."""
+    """
+    Abort the program with the given error message.
+
+    Args:
+        message: The error message to display before aborting.
+
+    Notes:
+        This function is used for fatal, unrecoverable errors that require immediate termination.
+        The message will be displayed in red color before the program exits.
+    """
     abort(RED_COLOR + message + END_COLOR)

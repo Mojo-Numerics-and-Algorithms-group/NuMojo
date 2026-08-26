@@ -4,18 +4,34 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Trigonometric routines for NuMojo (numojo.routines.math.trig).
+# ===----------------------------------------------------------------------=== #
+"""
+Trigonometric routines (numojo.routines.math.trig).
+===================================================
+Trigonometric and inverse trigonometric functions for arrays.
 
-Implements trigonometric and inverse trigonometric functions for NDArrays.
+Element-wise trigonometric functions (sin, cos, tan) and their inverse/hyperbolic
+variants (arcsin, arccos, arctan, atan2, sinh, cosh, tanh, etc.) for NDArrays.
+
+Exports
+-------
+- Circular: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`.
+- Hyperbolic: `sinh`, `cosh`, `tanh`, `arcsinh`, `arccosh`, `arctanh`.
+- Utilities: `hypot`, `hypot_fma`.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math as math
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
-from numojo.routines.math.misc import sqrt
 from numojo.routines.math.arithmetic import fma
+from numojo.routines.math.misc import sqrt
 
 # ===------------------------------------------------------------------------===#
 # Inverse Trig (NDArray)

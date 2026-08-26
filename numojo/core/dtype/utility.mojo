@@ -5,9 +5,19 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Data type utility functions (numojo.core.dtype.utility)
--------------------------------------------------------
-This module provides utility functions for checking properties of data types (DType) at both compile time and run time.
+"""
+Datatype Utilities (numojo.core.dtype.utility).
+===============================================
+Type checking utilities for DType inspection.
+
+Functions for checking properties of data types (DType) at both compile time
+and runtime.
+
+Exports
+-------
+- `is_inttype`: Check if DType is integer.
+- `is_floattype`: Check if DType is floating-point.
+- `is_complextype`: Check if DType is complex.
 """
 
 

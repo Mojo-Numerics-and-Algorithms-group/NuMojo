@@ -6,7 +6,7 @@
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
 """
-NuMojo Top-Level Package (`numojo`)
+NuMojo Top-Level Package (`numojo`).
 ===================================
 Central public surface for NuMojo that exposes the primary containers, dtype helpers, common errors,
 and a curated set of NumPy-inspired routines.
@@ -130,7 +130,7 @@ comptime e = Constants.e
 comptime c = Constants.c
 
 # Functions
-# TODO Make explicit imports of each individual function in future
+# TODO: Make explicit imports of each individual function in future
 # to avoid polluting the root namespace.
 from numojo.routines import io
 from numojo.routines.io import (

@@ -4,14 +4,22 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Norms and other numbers (numojo.routines.linalg.norms)
-------------------------------------------------------
-This module provides functions for computing quantities related to linear algebra, such as determinants and traces.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Norms (numojo.routines.linalg.norms).
+=====================================
+Determinant and trace computation for 2-D arrays.
+
+Exports
+-------
+- `det`: Determinant via LUP decomposition.
+- `trace`: Sum of the diagonal elements.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.linalg.decompositions import (
@@ -26,9 +34,21 @@ def det[dtype: DType](A: NDArray[dtype]) raises -> Scalar[dtype]:
     """
 
     if A.ndim != 2:
-        raise Error(String("Array must be 2d."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array must be 2d."),
+                location="det",
+            )
+        )
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Array is not square."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array is not square."),
+                location="det",
+            )
+        )
 
     var det_L: Scalar[dtype] = 1
     var det_U: Scalar[dtype] = 1
@@ -82,9 +102,21 @@ def trace[
         return trace(array.contiguous(), offset, axis1, axis2)
 
     if array.ndim != 2:
-        raise Error("Trace is currently only supported for 2D arrays")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Trace is currently only supported for 2D arrays",
+                location="trace",
+            )
+        )
     if axis1 > array.ndim - 1 or axis2 > array.ndim - 1:
-        raise Error("axis cannot be greater than the rank of the array")
+        raise Error(
+            NumojoError(
+                category="index",
+                message="axis cannot be greater than the rank of the array",
+                location="trace",
+            )
+        )
     var result: NDArray[dtype] = NDArray[dtype](Shape(1))
     var rows = array.shape[0]
     var cols = array.shape[1]

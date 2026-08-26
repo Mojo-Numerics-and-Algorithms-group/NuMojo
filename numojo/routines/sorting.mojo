@@ -5,35 +5,45 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Sorting routines (numojo.routines.sorting)
-------------------------------------------
-This module implements sorting routines for NDArrays and Matrices, including `sort` and `argsort` functions.
-
-SECTIONS OF THIS FILE:
-1. `sort` and `argsort` functions exposed to users.
-2. Backend multiple sorting methods that can be used in `sort`.
-    - Binary sort.
-    - Bubble sort.
-    - Quick sort (instable).
 """
-# ===----------------------------------------------------------------------=== #
-# TODO: Add more sorting algorithms.
-# ===----------------------------------------------------------------------=== #
+Sorting routines (numojo.routines.sorting).
+===========================================
+Array sorting and indexing operations.
 
+Sorting routines for NDArrays including sort and argsort functions
+using multiple backend algorithms (binary sort, bubble sort, quick sort).
 
+Exports
+-------
+- `sort`: Sort array elements in-place.
+- `argsort`: Return indices that would sort array.
+
+Notes:
+    - Multiple sorting methods available: binary sort, bubble sort, quick sort.
+    - Quick sort is unstable but efficient.
+"""
+
+# TODO: Add more sorting algorithms (merge sort, heap sort).
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math
 from std.algorithm import vectorize
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
+from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
-from numojo.core.layout import NDArrayShape
-from numojo.core.layout import NDArrayShape
-from numojo.routines.manipulation import ravel, transpose
+from numojo.routines.creation import arange
 from numojo.routines.functional import (
     apply_along_axis_preserve,
     apply_along_axis_inplace,
     apply_along_axis_indices,
 )
-from numojo.routines.creation import arange
+from numojo.routines.manipulation import ravel, transpose
 
 
 # ===----------------------------------------------------------------------=== #
@@ -85,8 +95,12 @@ def sort[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="sort",
             )
         )
 
@@ -127,8 +141,12 @@ def sort_inplace[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="sort_inplace",
             )
         )
 
@@ -187,7 +205,7 @@ def argsort[
     When no axis is given, the array is flattened before sorting.
 
     Raises:
-        Error: If the axis is out of bound.
+        NumojoError: If the axis is out of bound.
 
     Parameters:
         dtype: The input element type.
@@ -206,8 +224,12 @@ def argsort[
         normalized_axis += a.ndim
     if (normalized_axis >= a.ndim) or (normalized_axis < 0):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="argsort",
             )
         )
 
@@ -386,8 +408,14 @@ def quick_sort_inplace_1d[dtype: DType](mut a: NDArray[dtype]) capturing raises:
     """
     if a.ndim != 1:
         raise Error(
-            "Error in `quick_sort_inplace_1d`: "
-            "The input array must be 1-d array."
+            NumojoError(
+                category="shape",
+                message=(
+                    "Error in `quick_sort_inplace_1d`: "
+                    "The input array must be 1-d array."
+                ),
+                location="quick_sort_inplace_1d",
+            )
         )
     _quick_sort_inplace(a)
     return
@@ -409,9 +437,13 @@ def quick_sort_stable_inplace_1d[
     """
     if a.ndim != 1:
         raise Error(
-            String(
-                "Error in `quick_sort_inplace_1d`: "
-                "The input array must be 1-d array."
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Error in `quick_sort_inplace_1d`: "
+                    "The input array must be 1-d array."
+                ),
+                location="quick_sort_stable_inplace_1d",
             )
         )
     _quick_sort_stable_inplace(a, a.size)
@@ -578,7 +610,7 @@ def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
     The data buffer must be contiguous.
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
@@ -589,9 +621,13 @@ def _quick_sort_inplace[dtype: DType](mut A: NDArray[dtype]) raises:
 
     if not A.flags.FORC:
         raise Error(
-            String(
-                "\nError in `_quick_sort_inplace`:"
-                "The array must be contiguous to perform in-place sorting."
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `_quick_sort_inplace`:"
+                    "The array must be contiguous to perform in-place sorting."
+                ),
+                location="_quick_sort_inplace",
             )
         )
 
@@ -612,7 +648,7 @@ def _quick_sort_inplace[
     The data buffer must be contiguous.
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
@@ -624,9 +660,13 @@ def _quick_sort_inplace[
 
     if not A.flags.FORC:
         raise Error(
-            String(
-                "\nError in `_quick_sort_inplace`:"
-                "The array must be contiguous to perform in-place sorting."
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `_quick_sort_inplace`:"
+                    "The array must be contiguous to perform in-place sorting."
+                ),
+                location="_quick_sort_inplace",
             )
         )
 
@@ -647,7 +687,7 @@ def _quick_sort_stable_inplace[
     The sorting is stable
 
     Raises:
-        Error: If the array is not contiguous.
+        NumojoError: If the array is not contiguous.
 
     Parameters:
         dtype: The input element type.
@@ -662,9 +702,13 @@ def _quick_sort_stable_inplace[
 
     if not a.flags.FORC:
         raise Error(
-            String(
-                "\nError in `_quick_sort_stable_inplace`:"
-                "The array must be contiguous to perform in-place sorting."
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `_quick_sort_stable_inplace`:"
+                    "The array must be contiguous to perform in-place sorting."
+                ),
+                location="_quick_sort_stable_inplace",
             )
         )
 

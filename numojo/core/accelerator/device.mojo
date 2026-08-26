@@ -4,29 +4,38 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Device (numojo.core.accelerator.device)
----------------------------------------
-This module defines the `Device` struct, which represents an execution device for array and matrix operations.
-It supports CPU and GPU devices, with GPU backends for NVIDIA CUDA, AMD ROCm, and Apple Metal.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
+Device (numojo.core.accelerator.device).
+========================================
+Execution device for array and matrix operations.
+
+Defines the `Device` struct, which represents an execution device for array
+and matrix operations. Supports CPU and GPU devices, with GPU backends for
+NVIDIA CUDA, AMD ROCm, and Apple Metal.
+
+Exports
+-------
+- `Device`: Execution device.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.sys.info import (
     has_amd_gpu_accelerator,
     has_apple_gpu_accelerator,
     has_nvidia_gpu_accelerator,
 )
 
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # External
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 
 
@@ -426,7 +435,7 @@ struct Device(
         Returns:
             Same as `__str__`.
         """
-        # TODO: repr is deprecated in favor of write_repr_to
+        # TODO: `repr` is deprecated in favor of `write_repr_to`.
         return self.__str__()
 
     def write_repr_to[W: Writer](self, mut writer: W):

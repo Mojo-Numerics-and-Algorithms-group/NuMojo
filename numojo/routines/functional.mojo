@@ -4,30 +4,44 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Functional programming (numojo.routines.functional)
----------------------------------------------------
-This module implements functional programming utilities for NDArray operations, such as `apply_along_axis`.
+# ===----------------------------------------------------------------------=== #
+
+"""
+Functional (numojo.routines.functional).
+========================================
+Functional programming utilities for array operations.
+
+Implements functional utilities for NDArray operations such as `apply_along_axis`,
+allowing application of functions along array axes.
+
+Exports
+-------
+- `apply_along_axis_reduce`: Apply a reducing function along an axis.
+- `apply_along_axis_reduce_with_dtype`: Apply a reducing function with explicit return dtype.
+- `apply_along_axis_reduce_to_int`: Apply a reducing function returning integers.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.algorithm.functional import vectorize
-from max.algorithm import parallelize
 from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
 
-from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
-from numojo.routines.creation import arange
-from numojo.core.ndarray import NDArray
-from numojo.routines.creation import _0darray
+# ===----------------------------------------------------------------------=== #
+# External
+# ===----------------------------------------------------------------------=== #
+from max.algorithm import parallelize
 
 # ===----------------------------------------------------------------------=== #
-# `apply_along_axis`
-#
-# This section are OVERLOADS for the function `apply_along_axis` that
-# applies a function to 1-d arrays along given axis
-# It execute `func1d(a: NDArray, *args, **kwargs)` where
-# `func1d` operates on 1-D arrays and
-# `a` is a 1-d array slice of the original array along given axis.
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.layout import Flags, NDArrayShape, NDArrayStrides
+from numojo.core.ndarray import NDArray
+from numojo.routines.creation import _0darray, arange
+
+# ===----------------------------------------------------------------------=== #
+# Apply Along Axis
 # ===----------------------------------------------------------------------=== #
 
 # The following overloads of `apply_along_axis` are for the case when the

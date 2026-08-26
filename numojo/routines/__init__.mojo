@@ -4,26 +4,30 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Routines module (numojo.routines)
----------------------------------
-This modules groups NumPy-like functionality by topic (math, linalg, statistics,
-creation, manipulation, etc.).
+# ===----------------------------------------------------------------------=== #
+"""
+Routines (numojo.routines).
+===========================
+NumPy-like functionality grouped by topic (math, linalg, statistics, creation,
+manipulation, etc.).
 
-What this `__init__` exports:
-- Topic namespaces (e.g. `numojo.routines.math`, `numojo.routines.linalg`, ...)
+Exports
+-------
+- Topic namespaces (e.g. `numojo.routines.math`, `numojo.routines.linalg`, ...).
 - A curated set of convenience functions at `numojo.routines.*` for ergonomic
   internal use and power users.
 
-Notes / conventions:
+Notes
+-----
 - Public user-facing imports should generally come from the top-level `numojo`
   module (or `numojo.prelude`) rather than importing deeply from this package.
 - Keep this initializer predictable: add new re-exports only when they are
   stable and widely used.
 """
-# ===----------------------------------------------------------------------===#
-# Local
-# ===----------------------------------------------------------------------===#
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from . import (
     bitwise,
     creation,

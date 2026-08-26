@@ -4,30 +4,40 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Averages and dispersion routines for NuMojo (numojo.routines.statistics.averages).
+# ===----------------------------------------------------------------------=== #
+"""
+Averages (numojo.routines.statistics.averages).
+===============================================
+Statistical averages and dispersion measures for arrays.
 
-Implements mean, median, mode, variance, and standard deviation helpers for NDArrays and Matrices.
+Implements mean, median, mode, variance, and standard deviation for NDArrays.
+
+Exports
+-------
+- `mean`: Arithmetic mean.
+- `median`: Median value.
+- `mode`: Most frequent value.
+- `var`: Variance.
+- `std`: Standard deviation.
 """
 
-from std.collections.optional import Optional
-import std.math as mt
-
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
-from numojo.routines.logic.comparison import greater, less
-from numojo.routines.manipulation import broadcast_to, _broadcast_back_to
-from numojo.routines.math.arithmetic import add
-from numojo.routines.math.sums import sum, cumsum
-import numojo.routines.math.misc as misc
-from numojo.routines.sorting import binary_sort, sort
 from numojo.routines.functional import (
-    apply_along_axis_reduce_with_dtype,
     apply_along_axis_reduce,
+    apply_along_axis_reduce_with_dtype,
 )
-from numojo.routines.manipulation import ravel
+from numojo.routines.manipulation import (
+    _broadcast_back_to,
+    ravel,
+)
+from numojo.routines.math.sums import sum
+from numojo.routines.sorting import sort
 
 
-# not sure what's the side effect of using a returned dtype and casting to it. There could be some precision loss?
 def mean_1d[
     dtype: DType, //, returned_dtype: DType = DType.float64
 ](a: NDArray[dtype]) capturing raises -> Scalar[returned_dtype]:
@@ -92,8 +102,12 @@ def mean[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="mean",
             )
         )
 
@@ -172,8 +186,12 @@ def median[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="median",
             )
         )
     return apply_along_axis_reduce_with_dtype[
@@ -252,8 +270,12 @@ def mode[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `mean`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `mean`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="mode",
             )
         )
 
@@ -279,8 +301,12 @@ def stddev[
 
     if ddof >= A.size:
         raise Error(
-            String("ddof {} should be smaller than size {}").format(
-                ddof, A.size
+            NumojoError(
+                category="value",
+                message=String("ddof {} should be smaller than size {}").format(
+                    ddof, A.size
+                ),
+                location="stddev",
             )
         )
 
@@ -308,22 +334,33 @@ def stddev[
         An array.
 
     Raises:
-        Error: If the axis is out of bounds.
-        Error: If ddof is not smaller than the size of the axis.
+        NumojoError: If the axis is out of bounds.
+        NumojoError: If ddof is not smaller than the size of the axis.
     """
 
     var normalized_axis = axis
     if normalized_axis < 0:
         normalized_axis += A.ndim
     if (normalized_axis >= A.ndim) or (normalized_axis < 0):
-        raise Error(String("Axis {} out of bounds!").format(axis))
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String("Axis {} out of bounds!").format(axis),
+                location="stddev",
+            )
+        )
 
     for i in range(A.ndim):
         if ddof >= A.shape[i]:
             raise Error(
-                String(
-                    "ddof ({}) should be smaller than size ({}) of axis ({})"
-                ).format(ddof, A.shape[i], i)
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "ddof ({}) should be smaller than size ({}) of axis"
+                        " ({})"
+                    ).format(ddof, A.shape[i], i),
+                    location="stddev",
+                )
             )
 
     return variance[returned_dtype](
@@ -348,8 +385,12 @@ def variance[
 
     if ddof >= A.size:
         raise Error(
-            String("ddof {} should be smaller than size {}").format(
-                ddof, A.size
+            NumojoError(
+                category="value",
+                message=String("ddof {} should be smaller than size {}").format(
+                    ddof, A.size
+                ),
+                location="variance",
             )
         )
 
@@ -380,22 +421,33 @@ def variance[
         An array.
 
     Raises:
-        Error: If the axis is out of bounds.
-        Error: If ddof is not smaller than the size of the axis.
+        NumojoError: If the axis is out of bounds.
+        NumojoError: If ddof is not smaller than the size of the axis.
     """
 
     var normalized_axis = axis
     if normalized_axis < 0:
         normalized_axis += A.ndim
     if (normalized_axis >= A.ndim) or (normalized_axis < 0):
-        raise Error(String("Axis {} out of bounds!").format(axis))
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String("Axis {} out of bounds!").format(axis),
+                location="variance",
+            )
+        )
 
     for i in range(A.ndim):
         if ddof >= A.shape[i]:
             raise Error(
-                String(
-                    "ddof ({}) should be smaller than size ({}) of axis ({})"
-                ).format(ddof, A.shape[i], i)
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "ddof ({}) should be smaller than size ({}) of axis"
+                        " ({})"
+                    ).format(ddof, A.shape[i], i),
+                    location="variance",
+                )
             )
 
     return sum(

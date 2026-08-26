@@ -4,22 +4,41 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Miscellaneous math routines for NuMojo (numojo.routines.math.misc)
----------------------------------------------------------------------
-Implements miscellaneous math helpers on NDArrays, including cube root, clipping, reciprocal square root, square root, and scalb.
+# ===----------------------------------------------------------------------=== #
+"""
+Miscellaneous (numojo.routines.math.misc).
+==========================================
+Miscellaneous mathematical operations for NDArrays.
+
+Element-wise mathematical operations including cube root, clipping, reciprocal
+square root, square root, and scaling functions.
+
+Exports
+-------
+- `cbrt`: Cube root.
+- `clip`: Clip values to range.
+- `rsqrt`: Reciprocal square root.
+- `sqrt`: Square root.
+- `scalb`: Scaling by exponent.
 """
 
-# ===----------------------------------------------------------------------===#
+# TODO: Implement same routines for Matrix.
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 import std.math.math as stdlib_math
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
+
+
+# ===----------------------------------------------------------------------=== #
+# Cube Root
+# ===----------------------------------------------------------------------=== #
 
 
 def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -47,9 +66,9 @@ def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Clipping
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def clip[
@@ -84,9 +103,9 @@ def clip[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Reciprocal Square Root
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def _mt_rsqrt[
@@ -154,9 +173,9 @@ def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     return HostExecutor.apply_unary[dtype, _kernel](array)
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Scaling
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def scalb[

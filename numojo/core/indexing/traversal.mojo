@@ -5,15 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Traversal (numojo.core.indexing.traversal)
-------------------------------------------
-Functions to traverse a multi-dimensional array.
-This module provides both recursive and iterative traversal methods,
-which can be used for various indexing and slicing operations in NuMojo.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Traversal (numojo.core.indexing.traversal).
+============================================
+Functions to traverse a multi-dimensional array.
+
+Provides both recursive and iterative traversal methods, used for various
+indexing and slicing operations in NuMojo.
+
+Exports
+-------
+- `TraverseMethods`: Traversal utilities.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.layout import (
     NDArrayShape,
     NDArrayStrides,
@@ -105,7 +113,13 @@ struct TraverseMethods:
                 narr_idx += index[i] * strides[i]
 
             if narr_idx - narr.offset >= total_elements:
-                raise Error("Invalid index: index out of bound")
+                raise Error(
+                    NumojoError(
+                        category="index",
+                        message="Invalid index: index out of bound",
+                        location="TraverseMethods.traverse_iterative",
+                    )
+                )
 
             narr.unsafe_store[width=1](
                 narr_idx - narr.offset,

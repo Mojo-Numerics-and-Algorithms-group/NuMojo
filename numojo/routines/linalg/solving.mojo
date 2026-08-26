@@ -30,7 +30,6 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
-from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (

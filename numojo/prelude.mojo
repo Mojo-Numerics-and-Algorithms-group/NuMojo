@@ -25,63 +25,63 @@ from numojo.prelude import *
 For more functions (math, linalg, statistics), import from `numojo.routines.*`.
 """
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 import numojo as nm
-
-from numojo.core.indexing.item import Item
-from numojo.core.ndarray import NDArray
 from numojo.core.accelerator_ndarray import AcceleratorNDArray
-from numojo.core.layout import NDArrayShape
-from numojo.core.complex.complex_simd import (
-    ComplexSIMD,
-)
-from numojo.core.type_aliases import (
-    Shape,
-    Strides,
-    ComplexScalar,
-    CScalar,
-    `1j`,
-)
 from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.complex.complex_simd import ComplexSIMD
 from numojo.core.dtype.complex_dtype import (
-    ci8,
-    ci16,
-    ci32,
-    ci64,
-    ci128,
-    ci256,
-    cint,
-    cu8,
-    cu16,
-    cu32,
-    cu64,
-    cu128,
-    cu256,
-    cuint,
     cbf16,
+    cboolean,
     cf16,
     cf32,
     cf64,
-    cboolean,
+    ci128,
+    ci16,
+    ci256,
+    ci32,
+    ci64,
+    ci8,
+    cint,
     cinvalid,
+    cu128,
+    cu16,
+    cu256,
+    cu32,
+    cu64,
+    cu8,
+    cuint,
 )
 from numojo.core.dtype.default_dtype import (
-    i8,
-    i16,
-    i32,
-    i64,
-    i128,
-    i256,
-    int,
-    u8,
-    u16,
-    u32,
-    u64,
-    u128,
-    u256,
-    uint,
     bf16,
+    boolean,
     f16,
     f32,
     f64,
-    boolean,
+    i128,
+    i16,
+    i256,
+    i32,
+    i64,
+    i8,
+    int,
+    u128,
+    u16,
+    u256,
+    u32,
+    u64,
+    u8,
+    uint,
+)
+from numojo.core.indexing.item import Item
+from numojo.core.layout import NDArrayShape
+from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import (
+    `1j`,
+    ComplexScalar,
+    CScalar,
+    Shape,
+    Strides,
 )

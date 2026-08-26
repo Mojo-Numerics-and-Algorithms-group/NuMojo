@@ -24,8 +24,8 @@ Exports
 # ===----------------------------------------------------------------------=== #
 from std.atomic import (
     Atomic,
-    Ordering,
     fence,
+    Ordering,
 )
 from std.memory import unsafe_memcpy
 from std.memory.alloc import unsafe_alloc

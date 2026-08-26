@@ -22,12 +22,6 @@ Exports
 """
 
 # ===----------------------------------------------------------------------=== #
-# Stdlib
-# ===----------------------------------------------------------------------=== #
-from std.collections.optional import Optional
-import std.math as mt
-
-# ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
@@ -36,11 +30,12 @@ from numojo.routines.functional import (
     apply_along_axis_reduce,
     apply_along_axis_reduce_with_dtype,
 )
-from numojo.routines.logic.comparison import greater, less
-from numojo.routines.manipulation import _broadcast_back_to, broadcast_to, ravel
-from numojo.routines.math.arithmetic import add
-from numojo.routines.math.sums import cumsum, sum
-from numojo.routines.sorting import binary_sort, sort
+from numojo.routines.manipulation import (
+    _broadcast_back_to,
+    ravel,
+)
+from numojo.routines.math.sums import sum
+from numojo.routines.sorting import sort
 
 
 def mean_1d[

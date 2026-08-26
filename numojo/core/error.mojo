@@ -32,6 +32,7 @@ Categories:
 from std.format.tstring import TString
 from std.os import abort
 
+
 comptime RED_COLOR: String = "\033[31m"
 comptime END_COLOR: String = "\033[0m"
 

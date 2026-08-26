@@ -38,7 +38,9 @@ from std.memory import (
 # ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
-from numojo.core.traits.indexer_collection_element import IndexerCollectionElement
+from numojo.core.traits.indexer_collection_element import (
+    IndexerCollectionElement,
+)
 
 
 struct Item(

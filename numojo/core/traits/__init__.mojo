@@ -1,8 +1,25 @@
-"""Traits (numojo.core.traits)
-------------------------------
-Trait/protocol abstractions used across NuMojo core containers and internals.
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Traits and protocol abstractions
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# Local
-# ===----------------------------------------------------------------------===#
+Traits (numojo.core.traits).
+===========================
+Trait and protocol abstractions used across NuMojo core containers and internals.
+
+Exports
+-------
+- `Backend`: Protocol for backend implementations.
+- `Buffered`: Protocol for buffered data containers.
+- `IndexerCollectionElement`: Trait composition of `Indexer` and `Copyable`.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from .backend import Backend
+from .buffered import Buffered
+from .indexer_collection_element import IndexerCollectionElement

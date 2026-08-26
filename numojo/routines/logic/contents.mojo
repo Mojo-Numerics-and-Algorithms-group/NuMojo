@@ -4,44 +4,43 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Contents routines (numojo.routines.logic.contents)
------------------------------------------------------
-Implements Checking routines: currently not SIMD due to bool bit packing issue.
+# ===----------------------------------------------------------------------=== #
+"""
+Contents (numojo.routines.logic.contents).
+==========================================
+Element properties and content checking for arrays.
+
+Functions for checking element properties (NaN, infinite, finite) and array
+contents (not SIMD due to bool bit packing issue).
+
+Exports
+-------
+- `isinf`: Check for infinite elements.
+- `isfinite`: Check for finite elements.
+- `isnan`: Check for NaN elements.
+- `isneginf`: Check for negative infinity.
+- `isposinf`: Check for positive infinity.
 """
 
-import std.math as math
-from std.utils.numerics import neg_inf, inf
-
-from numojo.routines import HostExecutor
-from numojo.core.ndarray import NDArray
-
 # TODO: Add scalar overloads of these functions.
-# TODO: Remove matrix operations in future.
-# TODO: Implement the commented out functions now that mojo supports these functions in SIMD.
-# FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
+# TODO: Implement commented functions now that Mojo supports them in SIMD.
+# FIXME: Make all SIMD vectorized once bool bit-packing issue is resolved.
 
-# def is_power_of_2[
-#     dtype: DType
-# ](array: NDArray[dtype]) -> NDArray[DType.bool]:
-#     return backend().math_func_is[dtype, math.is_power_of_2](array)
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+import std.math as math
+from std.utils.numerics import inf, neg_inf
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
-# def is_even[
-#     dtype: DType
-# ](array: NDArray[dtype]) -> NDArray[DType.bool]:
-#     return backend().math_func_is[dtype, math.is_even](array)
-
-
-# def is_odd[
-#     dtype: DType
-# ](array: NDArray[dtype]) -> NDArray[DType.bool]:
-#     return backend().math_func_is[dtype, math.is_odd](array)
-
-
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Check operations
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:

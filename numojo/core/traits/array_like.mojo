@@ -1,3 +1,29 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Array-like trait
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+
+"""
+Array-like (numojo.core.traits.array_like).
+===========================================
+Trait definitions for array-like behaviors.
+
+Defines traits for array-like operations including loading/storing SIMD elements
+and backend calculations (currently blocked by lack of trait parameterization).
+
+Exports
+-------
+- Trait definitions for array-like types.
+"""
+
+# TODO: Implement once Mojo supports trait parameterization.
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 
 # Blocked by lack of trait paramaterization

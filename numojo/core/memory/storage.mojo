@@ -5,30 +5,42 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Storage (numojo.core.memory.storage)
----------------------------------------
+"""
+Storage (numojo.core.memory.storage).
+=====================================
 Backend storage containers for accelerator-aware data management.
 
-This module provides three storage structs:
+Provides reference-counted and device-aware memory storage with unified
+container selection based on device type at compile time.
 
+Exports
+-------
 - `HostStorage`: Reference-counted host (CPU) memory container.
-- `DeviceStorage`: Device (GPU) memory container wrapping a `DeviceBuffer`.
-- `AcceleratorDataContainer`: Unified container that selects between
-  `HostStorage` and `DeviceStorage` at compile time based on a `Device` parameter.
+- `DeviceStorage`: Device (GPU) memory container.
+- `AcceleratorDataContainer`: Unified container selecting storage by device.
 """
-from std.memory import UnsafePointer
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.atomic import Atomic, Ordering, fence
-from std.os import abort
 from std.collections.optional import Optional
-from std.sys.info import has_accelerator
-from std.memory import unsafe_memcpy
+from std.memory import UnsafePointer, unsafe_memcpy
 from std.memory.alloc import unsafe_alloc
+from std.os import abort
+from std.sys.info import has_accelerator
+
+# ===----------------------------------------------------------------------=== #
+# External
+# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceBuffer, DeviceContext
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator import Device, DeviceHandle
 from numojo.core.accelerator.device import is_accelerator_available
-from numojo.core.memory.data_container import Ownership
 from numojo.core.error import NumojoError
+from numojo.core.memory.data_container import Ownership
 
 
 # ===----------------------------------------------------------------------=== #
@@ -415,7 +427,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
             A new `HostStorage` pointing to the same buffer.
 
         Raises:
-            Error: If the container is externally managed (no refcount).
+            NumojoError: If the container is externally managed (no refcount).
         """
         if self.ownership == Ownership.External or not self.is_refcounted():
             raise Error(
@@ -476,7 +488,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
             size: Number of elements to allocate.
 
         Raises:
-            Error: If no GPU accelerator is available.
+            NumojoError: If no GPU accelerator is available.
         """
         comptime assert is_accelerator_available[
             Self.device
@@ -654,7 +666,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             size: Number of elements to allocate (must be non-negative).
 
         Raises:
-            Error: If the requested GPU backend is unavailable, or the
+            NumojoError: If the requested GPU backend is unavailable, or the
                    device type is unrecognised.
         """
         if size < 0:
@@ -670,15 +682,26 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
         elif Self.device.type == "gpu":
             if not is_accelerator_available[Self.device]():
                 raise Error(
-                    "\n Requested GPU device: "
-                    + String(Self.device)
-                    + " is not available. The available devices are: "
-                    + Device.available_devices()
+                    NumojoError(
+                        category="memory",
+                        message="\n Requested GPU device: "
+                        + String(Self.device)
+                        + " is not available. The available devices are: "
+                        + Device.available_devices(),
+                        location="AcceleratorDataContainer.__init__",
+                    )
                 )
             self.host_storage = None
             self.device_storage = DeviceStorage[Self.dtype, Self.device](size)
         else:
-            raise Error("Unsupported device type: " + String(Self.device.type))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Unsupported device type: "
+                    + String(Self.device.type),
+                    location="AcceleratorDataContainer.__init__",
+                )
+            )
 
     @always_inline
     def __init__(out self):
@@ -940,7 +963,7 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             A new `AcceleratorDataContainer` backed by the same allocation.
 
         Raises:
-            Error: If the active storage is missing or cannot be shared.
+            NumojoError: If the active storage is missing or cannot be shared.
         """
         comptime if Self.device.type == "cpu":
             var shared = self.host_storage.unsafe_value().share()
@@ -949,7 +972,13 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
             var shared = self.device_storage.unsafe_value().share()
             return AcceleratorDataContainer[Self.dtype, Self.device](shared^)
         else:
-            raise Error("Unsupported device type for sharing")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Unsupported device type for sharing",
+                    location="AcceleratorDataContainer.share",
+                )
+            )
 
     # ===----------------------------------------------------------------------===#
     # Device-Specific Access

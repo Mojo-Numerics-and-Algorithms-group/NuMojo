@@ -5,13 +5,19 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Flags (numojo.core.layout.flags)
------------------------------------
-Implements Flags type to represent the memory layout information of NuMojo arrays.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Flags (numojo.core.layout.flags).
+=================================
+Memory layout information for NuMojo arrays.
+
+Exports
+-------
+- `Flags`: Layout flags.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
@@ -44,9 +50,9 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
     var FORC: Bool
     """F_CONTIGUOUS or C_CONTIGUOUS."""
 
-    # === ---------------------------------------------------------------- === #
-    # Life cycle dunder methods
-    # === ---------------------------------------------------------------- === #
+    # ===----------------------------------------------------------------------=== #
+    # Lifecycle Methods
+    # ===----------------------------------------------------------------------=== #
 
     def __init__(
         out self,
@@ -172,9 +178,9 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
         self.WRITEABLE = copy.WRITEABLE
         self.FORC = copy.FORC
 
-    # === ---------------------------------------------------------------- === #
-    # Get and set dunder methods
-    # === ---------------------------------------------------------------- === #
+    # ===----------------------------------------------------------------------=== #
+    # Get and Set Dunder Methods
+    # ===----------------------------------------------------------------------=== #
 
     def __getitem__(self, key: String) raises -> Bool:
         """

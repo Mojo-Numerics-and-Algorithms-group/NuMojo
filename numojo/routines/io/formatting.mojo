@@ -5,13 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Formatting (numojo.routines.io.formatting)
-------------------------------------------
-This module provides functions for formatting arrays and values for printing, including options for precision, scientific notation, and complex number formatting.
 """
-# ===----------------------------------------------------------------------===#
+Formatting (numojo.routines.io.formatting).
+===========================================
+Array and value formatting utilities.
+
+Functions for formatting arrays and values for printing with options for
+precision, scientific notation, and complex number formatting.
+
+Exports
+-------
+- `format_array`: Format array for display.
+- `format_value`: Format scalar value.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.math import pow
 import std.math as mt
 from std.utils.numerics import (
@@ -28,6 +38,7 @@ from numojo.core.dtype.utility import (
     is_floattype,
     is_inttype,
 )
+from numojo.core.error import NumojoError
 
 
 comptime DEFAULT_PRECISION = 4
@@ -262,11 +273,17 @@ def format_floating_scientific[
         A string representation of the float in scientific notation.
 
     Raises:
-        Error: If the dtype is not a floating-point type or if precision is negative.
+        NumojoError: If the dtype is not a floating-point type or if precision is negative.
     """
 
     if precision < 0:
-        raise Error("Precision must be a non-negative integer.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Precision must be a non-negative integer.",
+                location="format_floating_scientific",
+            )
+        )
 
     # FIXME: `constrained[dtype.is_floating_point(),...]` does not work here.
     # This is because the underlying `where dtype.is_floating_point()` in log10
@@ -334,9 +351,21 @@ def format_floating_scientific[
                 .ascii_rjust(formatted_width)
             )
         except:
-            raise Error("Failed to format float in scientific notation.")
+            raise Error(
+                NumojoError(
+                    category="arithmetic",
+                    message="Failed to format float in scientific notation.",
+                    location="format_floating_scientific",
+                )
+            )
     else:
-        raise Error("dtype must be a floating-point type.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="dtype must be a floating-point type.",
+                location="format_floating_scientific",
+            )
+        )
 
 
 def format_floating_precision[
@@ -361,16 +390,29 @@ def format_floating_precision[
         The formatted value as a string.
 
     Raises:
-        Error: If precision is negative or if the value cannot be formatted.
+        NumojoError: If precision is negative or if the value cannot be formatted.
     """
 
     comptime if is_inttype[dtype]():
         raise Error(
-            "Invalid type provided. dtype must be a floating-point type."
+            NumojoError(
+                category="value",
+                message=(
+                    "Invalid type provided. dtype must be a floating-point"
+                    " type."
+                ),
+                location="format_floating_precision",
+            )
         )
 
     if precision < 0:
-        raise Error("Precision must be a non-negative integer.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Precision must be a non-negative integer.",
+                location="format_floating_precision",
+            )
+        )
 
     if suppress_small and abs(value) < 1e-10:
         var result: String = String("0.")
@@ -425,7 +467,7 @@ def format_floating_precision[
         The formatted value as a string.
 
     Raises:
-        Error: If the complex value cannot be formatted.
+        NumojoError: If the complex value cannot be formatted.
     """
     try:
         return (
@@ -436,7 +478,13 @@ def format_floating_precision[
             + " j)"
         )
     except:
-        raise Error("Failed to format complex floating-point value.")
+        raise Error(
+            NumojoError(
+                category="arithmetic",
+                message="Failed to format complex floating-point value.",
+                location="format_floating_precision",
+            )
+        )
 
 
 def format_value[

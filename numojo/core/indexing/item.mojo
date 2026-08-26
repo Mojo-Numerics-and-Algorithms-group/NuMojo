@@ -5,25 +5,37 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Item (numojo.core.indexing.item)
------------------------------------
-Implements Item type.
-
-`Item` is a series of `Int` on the heap used to index into N-dimensional arrays.
-It is used for multi-dimensional indexing, such as `arr[Item(1, 2, 3)]` to access `arr[1, 2, 3]`.
 """
-# ===----------------------------------------------------------------------===#
+Item (numojo.core.indexing.item).
+=================================
+Multi-dimensional index representation for N-dimensional array access.
+
+The `Item` struct holds a sequence of integer indices (one per dimension) used to specify
+coordinates within an N-dimensional array. For example, `arr[Item(1, 2, 3)]` accesses
+element at position (1, 2, 3) in a 3D array.
+
+Notes:
+    - Each Item instance is backed by a heap-allocated IndexBuffer.
+    - Indices are stored as a series of Int values.
+    - Item can be used for arbitrary-dimensional array indexing.
+
+Exports
+-------
+- `Item`: Array item indexing.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.builtin.int import index as convert_to_int
 from std.memory import (
     unsafe_memcpy,
     unsafe_memset_zero,
 )
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.traits.indexer_collection_element import (
@@ -191,7 +203,7 @@ struct Item(
             The value at the specified index.
 
         Raises:
-            Error: If index is out of range.
+            NumojoError: If index is out of range.
         """
         return Int(self._buf[idx])
 
@@ -217,7 +229,7 @@ struct Item(
             val: The value to set.
 
         Raises:
-            Error: If index is out of range.
+            NumojoError: If index is out of range.
         """
         self._buf[idx] = val
 
@@ -237,7 +249,7 @@ struct Item(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Item.
+            NumojoError: If the load exceeds the bounds of the Item.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -266,7 +278,7 @@ struct Item(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Item.
+            NumojoError: If the store exceeds the bounds of the Item.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(

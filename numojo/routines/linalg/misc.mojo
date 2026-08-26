@@ -5,13 +5,24 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Miscellaneous Linear Algebra Routines (numojo.routines.linalg.misc)
--------------------------------------------------------------------
-This module provides miscellaneous linear algebra routines, such as extracting diagonals and checking for symmetry.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Miscellaneous (numojo.routines.linalg.misc).
+============================================
+Miscellaneous linear algebra operations.
+
+Additional linear algebra utilities (diagonals, symmetry checks).
+
+Exports
+-------
+- `det`: Determinant.
+- `inv`: Matrix inverse.
+- `trace`: Matrix trace.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
@@ -34,9 +45,9 @@ def diagonal[
     surviving axes keep their original relative order.
 
     Raises:
-        Error: If the array has fewer than 2 dimensions.
-        Error: If `axis1` or `axis2` is out of bounds, or `axis1 == axis2`.
-        Error: If the offset is beyond the shape of the array.
+        NumojoError: If the array has fewer than 2 dimensions.
+        NumojoError: If `axis1` or `axis2` is out of bounds, or `axis1 == axis2`.
+        NumojoError: If the offset is beyond the shape of the array.
 
     Parameters:
         dtype: Data type of the array.
@@ -64,8 +75,15 @@ def diagonal[
     """
     if a.ndim < 2:
         raise Error(
-            "\nError in `diagonal`: Array must have at least 2 dimensions, got "
-            + String(a.ndim)
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `diagonal`: Array must have at least 2"
+                    " dimensions, got "
+                )
+                + String(a.ndim),
+                location="diagonal",
+            )
         )
 
     var norm_axis1 = axis1
@@ -82,13 +100,25 @@ def diagonal[
         or norm_axis2 >= a.ndim
     ):
         raise Error(
-            String(
-                "\nError in `diagonal`: axis1 {} and axis2 {} must be valid"
-                " axes for an array with {} dimensions."
-            ).format(axis1, axis2, a.ndim)
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `diagonal`: axis1 {} and axis2 {} must be valid"
+                    " axes for an array with {} dimensions."
+                ).format(axis1, axis2, a.ndim),
+                location="diagonal",
+            )
         )
     if norm_axis1 == norm_axis2:
-        raise Error("\nError in `diagonal`: axis1 and axis2 must be different.")
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "\nError in `diagonal`: axis1 and axis2 must be different."
+                ),
+                location="diagonal",
+            )
+        )
 
     if not a.is_c_contiguous():
         return diagonal(a.contiguous(), offset, axis1, axis2)
@@ -98,13 +128,17 @@ def diagonal[
 
     if offset > n - 1 or offset < -(m - 1):
         raise Error(
-            "\nError in `diagonal`: Offset "
-            + String(offset)
-            + " is outside the valid range for axes with shape ("
-            + String(m)
-            + ", "
-            + String(n)
-            + ")"
+            NumojoError(
+                category="value",
+                message="\nError in `diagonal`: Offset "
+                + String(offset)
+                + " is outside the valid range for axes with shape ("
+                + String(m)
+                + ", "
+                + String(n)
+                + ")",
+                location="diagonal",
+            )
         )
 
     var diag_len: Int

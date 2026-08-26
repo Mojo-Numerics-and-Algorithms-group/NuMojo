@@ -4,27 +4,41 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Difference routines for NuMojo (numojo.routines.math.differences).
+# ===----------------------------------------------------------------------=== #
 
-Implements gradient and trapezoidal integration helpers for numerical differentiation and integration tasks.
+"""
+Differences (numojo.routines.math.differences).
+===============================================
+Numerical differentiation and integration helpers.
+
+Implements gradient computation and finite differences for numerical differentiation
+and integration tasks.
+
+Exports
+-------
+- `gradient`: Compute gradients using the trapezoidal rule.
+- `diff`: Compute n-th order finite differences.
 """
 
+# TODO: Add Variant[NDArray, Scalar, ...] to include all possibilities
+# TODO: Add edge_order parameter support
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 import std.math
 from max.algorithm import parallelize
 
-from numojo.routines.creation import arange
-from numojo.core.ndarray import NDArray
-from numojo.core.dtype.utility import is_inttype, is_floattype
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.layout.ndshape import NDArrayShape
+from numojo.core.ndarray import NDArray
+from numojo.routines.creation import arange
 
-# TODO:
-# 1) add a Variant[NDArray, Scalar, ...] to include all possibilities
-# 2) add edge_order
-
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Gradient computation using the trapezoidal rule.
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def gradient[
@@ -83,9 +97,9 @@ def gradient[
     return result^
 
 
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Differences
-# ===------------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def diff[

@@ -4,21 +4,35 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Logical Operations Module (numojo.routines.logic.logical_ops)
-----------------------------------------------------------------
-This module implements element-wise logical operations for NDArray and ComplexNDArray types in the NuMojo library.
+# ===----------------------------------------------------------------------=== #
+"""
+Logical Operations (numojo.routines.logic.logical_ops).
+=======================================================
+Element-wise logical operations for arrays.
+
+Implements logical AND, OR, XOR, and NOT operations for NDArray and
+ComplexNDArray types.
+
+Exports
+-------
+- `logical_and`: Logical AND operation.
+- `logical_or`: Logical OR operation.
+- `logical_xor`: Logical XOR operation.
+- `logical_not`: Logical NOT operation.
 """
 
-from numojo.routines import HostExecutor
-from numojo.core.error import NumojoError
-from numojo.core.dtype.complex_dtype import ComplexDType
-from numojo.core.ndarray import NDArray
-from numojo.core.complex.complex_ndarray import ComplexNDArray
-
-# TODO: add `where` argument support to logical operations
-# FIXME: Make all SIMD vectorized operations once bool bit-packing issue is resolved.
+# TODO: Add `where` argument support to logical operations.
 # TODO: Create backend for these operations.
+# FIXME: Make all SIMD vectorized once bool bit-packing issue is resolved.
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.complex.complex_ndarray import ComplexNDArray
+from numojo.core.dtype.complex_dtype import ComplexDType
+from numojo.core.error import NumojoError
+from numojo.core.ndarray import NDArray
+from numojo.routines import HostExecutor
 
 
 # ===----------------------------------------------------------------------=== #

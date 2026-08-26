@@ -5,21 +5,38 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""ComplexSIMD (numojo.core.complex.complex_simd)
-----------------------------------------------
-Implement the ComplexSIMD type and its operations.
+"""
+ComplexSIMD (numojo.core.complex.complex_simd).
+===============================================
+SIMD-optimized complex number representation and operations.
 
-This module provides a ComplexSIMD type that represents complex numbers using SIMD
-operations for efficient computation. It supports basic arithmetic operations
-like addition, subtraction, multiplication, and division, as well as other
-complex number operations like conjugation and absolute value.
+This module provides the ComplexSIMD type for representing complex numbers
+using SIMD operations for efficient vectorized computation. Supports arithmetic
+operations (addition, subtraction, multiplication, division), conjugation,
+absolute value, and other complex number functions.
+
+Exports
+-------
+- `ComplexSIMD`: SIMD-based complex number type.
+
+Notes:
+    - ComplexSIMD uses SoA (Struct of Arrays) layout for SIMD efficiency.
+    - Parameter `cdtype` determines component precision (e.g., cf32, cf64).
+    - Parameter `width` is SIMD lane count; width=1 acts as scalar complex.
 """
 
-from std.math import sqrt, sin, cos
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.math import cos, sin, sqrt
 
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.dtype import ComplexDType
-from numojo.core.type_aliases import ComplexScalar
 from numojo.core.dtype.complex_dtype import cf64
+from numojo.core.error import NumojoError
+from numojo.core.type_aliases import ComplexScalar
 
 
 # TODO: add overloads for arithmetic functions to accept Scalar[dtype].
@@ -226,7 +243,7 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         """
         return Self(self.re + Self._broadcast(other), self.im)
 
-    # FIXME: currently mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[..., length=Self.width]. So keep SIMD[..., length=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
+    # FIXME: Currently Mojo doesn't allow overloading with both SIMD[Self.dtype, Self.width] and SIMD[..., length=Self.width]. So keep SIMD[..., length=Self.width] only for now. We need this method to create complex numbers with syntax like (1 + 2 * `1j`).
     def __add__(self, other: SIMD[..., length=Self.width]) -> Self:
         """
         Returns the sum of this ComplexSIMD instance and a SIMD vector added to the real part.
@@ -863,7 +880,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
         var d = self.norm()
         if d == 0:
             raise Error(
-                "Cannot compute reciprocal of zero norm complex number."
+                NumojoError(
+                    category="arithmetic",
+                    message=(
+                        "Cannot compute reciprocal of zero norm complex number."
+                    ),
+                    location="ComplexSIMD.reciprocal",
+                )
             )
         return Self(self.re / d, -self.im / d)
 
@@ -1158,7 +1181,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.__getitem__",
+                )
+            )
         return ComplexScalar[Self.cdtype](self.re[idx], self.im[idx])
 
     def __setitem__(
@@ -1183,7 +1212,13 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.__setitem__",
+                )
+            )
         self.re[idx] = value.re
         self.im[idx] = value.im
 
@@ -1213,14 +1248,26 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.item",
+                )
+            )
 
         comptime if name == "re":
             return self.re[idx]
         elif name == "im":
             return self.im[idx]
         else:
-            raise Error("Invalid component name: {}".format(name))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid component name: {}.".format(name),
+                    location="ComplexSIMD.item",
+                )
+            )
 
     def itemset[
         name: String
@@ -1248,14 +1295,26 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ```
         """
         if idx < 0 or idx >= Self.width:
-            raise Error("Lane index out of range for SIMD width")
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message="Lane index out of range for SIMD width.",
+                    location="ComplexSIMD.itemset",
+                )
+            )
 
         comptime if name == "re":
             self.re[idx] = val
         elif name == "im":
             self.im[idx] = val
         else:
-            raise Error("Invalid component name: {}".format(name))
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="Invalid component name: {}.".format(name),
+                    location="ComplexSIMD.itemset",
+                )
+            )
 
     def real(self) -> SIMD[Self.dtype, Self.width]:
         """

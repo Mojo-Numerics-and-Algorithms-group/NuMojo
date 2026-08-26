@@ -5,13 +5,23 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-""""Searching routines (numojo.routines.searching)
-----------------------------------------------
-This module implements searching routines for finding indices of extrema (argmax and argmin) in NDArrays and Matrices.
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Searching routines (numojo.routines.searching).
+===============================================
+Search operations for finding array extrema indices.
+
+Functions for finding indices of maximum and minimum values in arrays.
+
+Exports
+-------
+- `argmax`: Index of maximum value.
+- `argmin`: Index of minimum value.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.routines.functional import apply_along_axis_reduce_to_int
 from numojo.routines.manipulation import ravel
@@ -160,8 +170,12 @@ def argmax[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `argmax`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `argmax`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="argmax",
             )
         )
 
@@ -222,8 +236,12 @@ def argmin[
         normalized_axis += a.ndim
     if (normalized_axis < 0) or (normalized_axis >= a.ndim):
         raise Error(
-            String("Error in `argmin`: Axis {} not in bound [-{}, {})").format(
-                axis, a.ndim, a.ndim
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `argmin`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="argmin",
             )
         )
 

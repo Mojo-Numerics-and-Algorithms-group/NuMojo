@@ -5,18 +5,25 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""DLPack (numojo.core.memory.dlpack)
-----------------------------------
-This module implements the DLPack protocol for zero-copy tensor exchange
-between NuMojo and other array libraries (NumPy, PyTorch, JAX, etc.).
+"""
+DLPack Interoperability (numojo.core.memory.dlpack).
+====================================================
+Zero-copy tensor exchange via DLPack protocol.
 
-DLPack is an open standard for in-memory tensor structures that enables
-zero-copy data sharing between different frameworks.
+Implements the DLPack protocol for zero-copy data exchange between NuMojo
+and other array libraries (NumPy, PyTorch, JAX, etc.).
 
-References:
-    - DLPack Specification: https://dmlc.github.io/dlpack/latest/
+Exports
+-------
+- `from_dlpack`: Create NDArray from DLPack tensor.
+- `to_dlpack`: Export NDArray as DLPack tensor.
 
-Example:
+References
+----------
+- DLPack Specification: https://dmlc.github.io/dlpack/latest/
+
+Examples
+--------
     ```mojo
     from numojo.prelude import *
     from numojo.core.memory.dlpack import from_dlpack
@@ -40,23 +47,29 @@ Example:
     ```
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
 from std.memory import UnsafePointer
 from std.memory.alloc import unsafe_alloc
+from std.python import Python, PythonObject
 from std.sys.info import size_of
-from std.python import PythonObject, Python
 
-from numojo.core.ndarray import NDArray
-from numojo.core.memory.data_container import DataContainer
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.memory.data_container import DataContainer
+from numojo.core.ndarray import NDArray
 
-
-# ===-------------------------------------------------------------------===#
+# TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0.
+# ===----------------------------------------------------------------------=== #
 # DLPack Core Structures
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
-# TODO: Some of these correspond to older DLPack versions. Need to upgrade this to v1.0
 struct DLPackVersion(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
     """Represents a DLPack version structure for compatibility checking.
 
@@ -107,7 +120,7 @@ struct DLDevice(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
         ROCM: ROCm device type code (10).
     """
 
-    # TODO: verify all the values apart from cpu, cuda.
+    # TODO: Verify all the values apart from cpu, cuda.
     comptime CPU = 1
     comptime CUDA = 2
     comptime OPENCL = 4
@@ -206,13 +219,19 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
             Corresponding Mojo DType.
 
         Raises:
-            Error: If the type code is not supported.
-            Error: If the bit width is not supported for the given type code.
-            Error: If vector types (lanes > 1) are encountered (not yet
+            NumojoError: If the type code is not supported.
+            NumojoError: If the bit width is not supported for the given type code.
+            NumojoError: If vector types (lanes > 1) are encountered (not yet
                 supported).
         """
         if self.lanes != 1:
-            raise Error("DLDataType: vector types not supported")
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="DLDataType: vector types not supported",
+                    location="DLDataType.to_dtype",
+                )
+            )
 
         # TODO: Implement other Mojo datatypes if possible.
         if self.code == Self.FLOAT:
@@ -224,8 +243,12 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.float16
             else:
                 raise Error(
-                    "DLDataType: unsupported float bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported float bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         elif self.code == Self.INT:
             if self.bits == 8:
@@ -238,8 +261,12 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.int64
             else:
                 raise Error(
-                    "DLDataType: unsupported int bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported int bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         elif self.code == Self.UINT:
             if self.bits == 8:
@@ -252,12 +279,21 @@ struct DLDataType(ImplicitlyCopyable, Movable, TrivialRegisterPassable):
                 return DType.uint64
             else:
                 raise Error(
-                    "DLDataType: unsupported uint bit width: "
-                    + String(self.bits)
+                    NumojoError(
+                        category="value",
+                        message="DLDataType: unsupported uint bit width: "
+                        + String(self.bits),
+                        location="DLDataType.to_dtype",
+                    )
                 )
         else:
             raise Error(
-                "DLDataType: unsupported type code: " + String(self.code)
+                NumojoError(
+                    category="value",
+                    message="DLDataType: unsupported type code: "
+                    + String(self.code),
+                    location="DLDataType.to_dtype",
+                )
             )
 
 
@@ -357,9 +393,9 @@ struct DLManagedTensor(ImplicitlyCopyable, Movable):
         self.deleter = deleter
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Metadata Management
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
@@ -408,13 +444,13 @@ struct DLPackMetadata[dtype: DType](ImplicitlyCopyable, Movable):
             self.shape.unsafe_free()
         if Int(self.strides) != 0:
             self.strides.unsafe_free()
-        # TODO: note sure if we should free it explicitly, gotta check this with tests.
+        # TODO: Not sure if we should free it explicitly, gotta check this with tests.
         _ = self.data_container^
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Deleter Callbacks
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def _dlpack_deleter_impl[
@@ -435,9 +471,9 @@ def _dlpack_deleter_impl[
     managed_tensor_ptr.unsafe_free()
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Export Functions
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def to_dlpack[
@@ -461,7 +497,7 @@ def to_dlpack[
         Pointer to a DLManagedTensor that can be consumed by other libraries.
 
     Raises:
-        Error: If enabling views on the data container fails.
+        NumojoError: If enabling views on the data container fails.
 
     Notes:
         - The consumer is responsible for calling the deleter when done.
@@ -532,7 +568,7 @@ def _extract_dlpack_pointer(
         Pointer to the DLManagedTensor inside the capsule.
 
     Raises:
-        Error: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
+        NumojoError: If PyCapsule_GetPointer returns NULL (capsule may be invalid or
         already consumed).
     """
     var ctypes = Python.import_module("ctypes")
@@ -550,8 +586,14 @@ def _extract_dlpack_pointer(
 
     if Int(p) == 0:
         raise Error(
-            "_extract_dlpack_pointer: PyCapsule_GetPointer returned NULL"
-            " - capsule may be invalid or already consumed"
+            NumojoError(
+                category="memory",
+                message=(
+                    "_extract_dlpack_pointer: PyCapsule_GetPointer returned"
+                    " NULL - capsule may be invalid or already consumed"
+                ),
+                location="_extract_dlpack_pointer",
+            )
         )
 
     return p.unsafe_bitcast[DLManagedTensor]().unsafe_origin_cast[
@@ -568,9 +610,9 @@ def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
     )
 
 
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 # Import Functions
-# ===-------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 
 
 def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
@@ -594,10 +636,10 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
         A new NuMojo NDArray that shares memory with the input tensor.
 
     Raises:
-        Error: If the received DLManagedTensor pointer is null.
-        Error: If the tensor is not on CPU (only CPU tensors are currently
+        NumojoError: If the received DLManagedTensor pointer is null.
+        NumojoError: If the tensor is not on CPU (only CPU tensors are currently
             supported).
-        Error: If the data type does not match the expected dtype parameter.
+        NumojoError: If the data type does not match the expected dtype parameter.
 
     Notes:
         - The returned NDArray shares memory with the source tensor. Changes to
@@ -613,24 +655,40 @@ def from_dlpack[dtype: DType](capsule: PythonObject) raises -> NDArray[dtype]:
     var managed_tensor_ptr = _extract_dlpack_pointer(actual_capsule)
 
     if Int(managed_tensor_ptr) == 0:
-        raise Error("from_dlpack: received null DLManagedTensor pointer")
+        raise Error(
+            NumojoError(
+                category="memory",
+                message="from_dlpack: received null DLManagedTensor pointer",
+                location="from_dlpack",
+            )
+        )
 
     var dl_tensor = managed_tensor_ptr[].dl_tensor
 
     if dl_tensor.device.device_type != DLDevice.CPU:
         raise Error(
-            "from_dlpack: only CPU tensors are currently supported, got"
-            " device type "
-            + String(Int(dl_tensor.device.device_type))
+            NumojoError(
+                category="memory",
+                message=(
+                    "from_dlpack: only CPU tensors are currently supported, got"
+                    " device type "
+                )
+                + String(Int(dl_tensor.device.device_type)),
+                location="from_dlpack",
+            )
         )
 
     var received_dtype = dl_tensor.dtype.to_dtype()
     if received_dtype != dtype:
         raise Error(
-            "from_dlpack: dtype mismatch - expected "
-            + String(dtype)
-            + " but got "
-            + String(received_dtype)
+            NumojoError(
+                category="value",
+                message="from_dlpack: dtype mismatch - expected "
+                + String(dtype)
+                + " but got "
+                + String(received_dtype),
+                location="from_dlpack",
+            )
         )
 
     var ndim = Int(dl_tensor.ndim)
@@ -684,7 +742,7 @@ def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
         A new NDArray that shares memory with the input array.
 
     Raises:
-        Error: If the array is not on CPU (only CPU tensors are supported).
+        NumojoError: If the array is not on CPU (only CPU tensors are supported).
 
     Notes:
         - The imported array shares memory with the source. Modifications to
@@ -696,8 +754,15 @@ def from_numpy[dtype: DType](array: PythonObject) raises -> NDArray[dtype]:
     var device_type = Int(py=device_info[0])
     if device_type != DLDevice.CPU:
         raise Error(
-            "from_numpy: only CPU tensors are supported, got device type "
-            + String(device_type)
+            NumojoError(
+                category="memory",
+                message=(
+                    "from_numpy: only CPU tensors are supported, got device"
+                    " type "
+                )
+                + String(device_type),
+                location="from_numpy",
+            )
         )
 
     var data_ptr = array.__array_interface__[PythonObject("data")][

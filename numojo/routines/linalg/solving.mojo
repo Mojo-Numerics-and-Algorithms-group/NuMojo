@@ -5,24 +5,31 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 #  ===----------------------------------------------------------------------=== #
-"""Linear Algebra Solver (numojo.routines.linalg.solving)
-------------------------------------------------------
-Provides:
-    - Solver of `Ax = y` using LU decomposition algorithm.
-    - Inverse of an invertible matrix.
-
-# TODO:
-    - Partial pivot.
-    - Determinant.
 """
-# ===----------------------------------------------------------------------===#
+Solving (numojo.routines.linalg.solving).
+=========================================
+Linear equation solvers.
+
+Solver for `Ax = y` systems using LU decomposition algorithm, and matrix
+inverse computation.
+
+Exports
+-------
+- `solve`: Solve linear system.
+- `inv`: Matrix inverse.
+"""
+
+# TODO: Add partial pivot support.
+# TODO: Add determinant computation.
+
+# ===----------------------------------------------------------------------=== #
 # External
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from max.algorithm import parallelize
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (

@@ -4,14 +4,24 @@
 # See LICENSE and the LLVM License for more information.
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
-#  ===----------------------------------------------------------------------=== #
-"""Decompositions (numojo.routines.linalg.decompositions)
----------------------------------------------------------
-This module provides functions for matrix decompositions, including LU decomposition, QR decomposition, and eigenvalue decomposition for symmetric matrices.
+# ===----------------------------------------------------------------------=== #
 """
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+Decompositions (numojo.routines.linalg.decompositions).
+=======================================================
+Matrix decomposition operations.
+
+Functions for decomposing NDArrays representing 2-D matrices (LU
+decomposition with partial pivoting).
+
+Exports
+-------
+- `lu_decomposition`: LU factorization.
+"""
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
+from numojo.core.error import NumojoError
 from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray
@@ -74,12 +84,24 @@ def lu_decomposition[
 
     # Check whether the dimension is 2
     if A.ndim != 2:
-        raise ("The array is not 2-dimensional!")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="lu_decomposition",
+            )
+        )
 
     # Check whether the matrix is square
     var shape_of_array: NDArrayShape = A.shape
     if shape_of_array[0] != shape_of_array[1]:
-        raise ("The matrix is not square!")
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The matrix is not square!",
+                location="lu_decomposition",
+            )
+        )
     var n: Int = shape_of_array[0]
 
     # Check whether the matrix is singular
@@ -145,9 +167,21 @@ def partial_pivoting[
     """
 
     if A.ndim != 2:
-        raise Error(String("Array must be 2d."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array must be 2d."),
+                location="partial_pivoting",
+            )
+        )
     if A.shape[0] != A.shape[1]:
-        raise Error(String("Array is not square."))
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String("Array is not square."),
+                location="partial_pivoting",
+            )
+        )
 
     var n = A.shape[0]
     var P = identity[dtype](n)

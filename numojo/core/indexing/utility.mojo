@@ -5,71 +5,31 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""Utility functions (numojo.core.indexing.utility).
-
-Implements N-DIMENSIONAL ARRAY UTILITY FUNCTIONS
-
-SECTIONS OF THE FILE:
-1. NDArray dtype conversions.
-2. Numojo.NDArray to other collections.
-3. Miscellaneous utility functions.
 """
-# ===----------------------------------------------------------------------===#
+Utility functions (numojo.core.indexing.utility).
+==================================================
+N-dimensional array utility functions: dtype conversions, conversion to other
+collections, and miscellaneous indexing helpers.
+
+Exports
+-------
+- `bool_to_numeric`: Convert a boolean NDArray to a numeric NDArray.
+- `to_numpy`: Convert an NDArray to a NumPy array.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.memory import unsafe_memcpy
 from std.python import (
     Python,
     PythonObject,
 )
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
-
-
-comptime newaxis: NewAxis = NewAxis()
-
-
-# TODO: add an initializer with int field to specify number of new axes to add!
-struct NewAxis(Writable):
-    def __init__(out self):
-        """
-        Initializes a NewAxis instance.
-        """
-        pass
-
-    def __repr__(self) -> String:
-        """
-        Returns a string representation of the NewAxis instance.
-
-        Returns:
-            Str: The string "NewAxis()".
-        """
-        return "numojo.newaxis()"
-
-    def __str__(self) -> String:
-        """
-        Returns a string representation of the NewAxis instance.
-
-        Returns:
-            Str: The string "NewAxis()".
-        """
-        return "numojo.newaxis()"
-
-    def __eq__(self, other: Self) -> Bool:
-        """
-        Checks equality between two NewAxis instances.
-        """
-        return True
-
-    def __ne__(self, other: Self) -> Bool:
-        """
-        Checks inequality between two NewAxis instances.
-        """
-        return False
-
 
 # ===----------------------------------------------------------------------=== #
 # NDArray dtype conversions

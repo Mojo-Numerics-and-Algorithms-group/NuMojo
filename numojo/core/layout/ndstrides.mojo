@@ -5,19 +5,32 @@
 # https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
 # https://llvm.org/LICENSE.txt
 # ===----------------------------------------------------------------------=== #
-"""NDArrayStrides (numojo.core.layout.ndstrides)
-------------------------------------------------
-Implements NDArrayStrides type. NDArrayStrides represents the strides of an NDArray,
-which is used to calculate the memory offset for each dimension when indexing into the array.
 """
-# ===----------------------------------------------------------------------===#
+NDArrayStrides (numojo.core.layout.ndstrides).
+===============================================
+Memory layout and indexing strides.
+
+Represents memory strides for calculating offsets when indexing into arrays.
+For example, strides [12, 4] mean each element in dimension 1 is 12 bytes apart,
+and each element in dimension 2 is 4 bytes apart.
+
+Exports
+-------
+- `NDArrayStrides`: Stride container for memory layout.
+
+Notes:
+    - The number of elements in the strides must match the number of dimensions.
+    - Strides are validated upon creation to ensure correctness.
+"""
+
+# ===----------------------------------------------------------------------=== #
 # Stdlib
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
 from std.memory import unsafe_memcpy
 
-# ===----------------------------------------------------------------------===#
-# numojo
-# ===----------------------------------------------------------------------===#
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.indexing.index_buffer import IndexBuffer
 from numojo.core.layout.ndshape import NDArrayShape
@@ -32,11 +45,10 @@ struct NDArrayStrides(
     Writable,
 ):
     """
-    Presents the strides of `NDArray` type.
+    Represents the strides (memory layout) of an NDArray.
 
-    The data buffer of the NDArrayStrides is a series of `Int` on memory.
-    The number of elements in the strides must be positive.
-    The number of dimension is checked upon creation of the strides.
+    Strides are stored as a series of `Int` values in memory and define how to traverse
+    array elements in memory for efficient indexing and iteration.
     """
 
     # ===----------------------------------------------------------------------=== #
@@ -87,7 +99,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -115,7 +127,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -143,7 +155,7 @@ struct NDArrayStrides(
             strides: Strides of the array.
 
         Raises:
-           Error: If the number of dimensions is not positive.
+           NumojoError: If the number of dimensions is not positive.
         """
         self.ndim = len(strides)
         if self.ndim <= 0:
@@ -199,7 +211,7 @@ struct NDArrayStrides(
                 Default is "C".
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self.ndim = shape.ndim
         self._buf = IndexBuffer(size=shape.ndim)
@@ -240,7 +252,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -256,7 +268,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -276,7 +288,7 @@ struct NDArrayStrides(
                 (row-major "C" or column-major "F").
 
         Raises:
-            ValueError: If the order argument is not `C` or `F`.
+            NumojoError: If the order argument is not `C` or `F`.
         """
         self = Self(shape=NDArrayShape(shape), order=order)
 
@@ -300,7 +312,7 @@ struct NDArrayStrides(
                 If no, the values will be uninitialized.
 
         Raises:
-           Error: If the number of dimensions is negative.
+           NumojoError: If the number of dimensions is negative.
         """
         if ndim < 0:
             raise Error(
@@ -393,7 +405,7 @@ struct NDArrayStrides(
           val: Value to set at the given index.
 
         Raises:
-           Error: Index out of bound.
+           NumojoError: Index out of bound.
         """
         self._buf[Int(index)] = Int(val)
 
@@ -413,7 +425,7 @@ struct NDArrayStrides(
             A SIMD vector containing the loaded values.
 
         Raises:
-            Error: If the load exceeds the bounds of the Strides.
+            NumojoError: If the load exceeds the bounds of the Strides.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -443,7 +455,7 @@ struct NDArrayStrides(
             value: The SIMD vector to store.
 
         Raises:
-            Error: If the store exceeds the bounds of the Strides.
+            NumojoError: If the store exceeds the bounds of the Strides.
         """
         if idx < 0 or idx + width > self.ndim:
             raise Error(
@@ -514,7 +526,7 @@ struct NDArrayStrides(
             A new NDArrayStrides with axes permuted.
 
         Raises:
-            Error: If axes length doesn't match ndim or contains invalid/duplicate axes.
+            NumojoError: If axes length doesn't match ndim or contains invalid/duplicate axes.
         """
         if len(axes) != self.ndim:
             raise Error(

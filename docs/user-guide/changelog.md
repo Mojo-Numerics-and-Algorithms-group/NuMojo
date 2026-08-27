@@ -2,6 +2,32 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## 20260827 (v0.10.0)
+
+### ⭐️ New in v0.10.0
+
+- Added `AcceleratorNDArray` building blocks and basic arithmetic ops, plus a GPU `sum` kernel, moving NuMojo towards device-agnostic arrays. [PR #359] [PR #369] [PR #372] - Note that this is an experimental struct aimed at building a device agnostic array, this
+- Added broadcasting for `NDArray`. [PR #366]
+- Added fancy indexing and a `where` function, plus `flat nonzero` and `unravel_index`. [PR #374] [PR #376]
+- Added `take`, `nonzero`, `put`, N-D `diagonal`, `searchsorted`, `ravel_multi_index`, `randbool`, and `column_stack`/`concatenate`/`hstack`/`vstack`/`row_stack`. [PR #364] [PR #365] [PR #373] [PR #377] [PR #361] [PR #352]
+- Extended boolean mask indexing to k-D masks, and added a scalar `__setitem__` overload. [PR #360] [PR #355]
+- Added CPU parallelism (chunked `parallelize()`) to `HostExecutor` elementwise backend ops. [PR #367]
+
+### 🦋 Changed in v0.10.0
+
+- **Removed the `Matrix` type.** All matrix-only routines (`qr`, `eig`, `lstsq`, standalone matrix `transpose`) were removed; the equivalent `NDArray`-based routines (`matmul`, `inv`, `solve`, `lu_decomposition`, `det`, `trace`, `sort`/`argsort`/`sum` with `axis`) remain. Update any code that imported `numojo.Matrix` to use `NDArray` instead. [PR #381]
+- Updated the codebase to Mojo v1.0.0 (from v1.0.0b1/b2), including a memory model refactor and switching `ComplexNDArray` off the `modular` package. [PR #349] [PR #358] [PR #370] [PR #378]
+- Unified and improved `NDArray` getter/setter methods, including a single `__getitem__` slice overload path. [PR #350] [PR #353] [PR #362]
+- Standardized headers, module docstrings, and error handling (`NumojoError`) across the codebase. [PR #383]
+- Split accelerator tests out of `pixi run test` (now under `pixi run test_all`) to avoid requiring the Metal compiler locally. [PR #371]
+
+### 🛠️ Fixed in v0.10.0
+
+- Fixed unsafe pointer access across `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`. [PR #379] [PR #380]
+- Fixed an incorrect broadcast load in the 2D `matmul` kernel. [PR #382]
+- Fixed offset calculation in `NDArray` traversal, and layout-unsafe boolean-mask getter/setter paths. [PR #354] [PR #368]
+- Fixed `nonzero`/`compress` and allowed zero-length `NDArrayShape` dimensions. [PR #375]
+
 ## 20260401 (v0.9.0)
 
 ### ⭐️ New in v0.9.0

@@ -169,18 +169,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = "26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -190,8 +194,8 @@ pixi install
 ```
 
 **Branch Selection:**
-- **`main` branch**: Provides stable release. Currently supports NuMojo v0.8.0, compatible with Mojo 25.6.0. For earlier NuMojo versions, use Method 2.
-- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently mojo nightly 26.2.0.dev2026022717). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
+- **`main` branch**: Provides stable release. Currently supports NuMojo v0.9.0, compatible with Mojo 26.2. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently NuMojo v0.10.0, requiring Mojo >=1.0.0, <1.1.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 

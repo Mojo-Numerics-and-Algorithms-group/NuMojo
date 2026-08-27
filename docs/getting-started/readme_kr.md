@@ -169,18 +169,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = "26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -190,8 +194,8 @@ pixi install
 ```
 
 **브랜치 선택:**
-- **`main` 브랜치**: 안정적인 릴리스를 제공합니다. 현재 NuMojo v0.8.0을 지원하며 Mojo 25.6.0과 호환됩니다. 이전 버전의 NuMojo가 필요하다면 방법 2를 사용하세요.
-- **`pre-x.y` 브랜치**: 최신 Mojo 버전(현재 mojo nightly 26.2.0.dev2026022717)을 지원하는 활발한 개발 브랜치입니다. 이 브랜치는 자주 업데이트되며 기능과 문법에 호환성을 깨는 변경사항이 있을 수 있습니다.
+- **`main` 브랜치**: 안정적인 릴리스를 제공합니다. 현재 NuMojo v0.9.0을 지원하며 Mojo 26.2와 호환됩니다. 이전 버전의 NuMojo가 필요하다면 방법 2를 사용하세요.
+- **`pre-x.y` 브랜치**: 최신 Mojo 버전을 지원하는 활발한 개발 브랜치입니다(현재 NuMojo v0.10.0, Mojo >=1.0.0, <1.1.0 필요). 이 브랜치는 자주 업데이트되며 기능과 문법에 호환성을 깨는 변경사항이 있을 수 있습니다.
 
 패키지는 Pixi 환경에 자동으로 반영되며, VSCode LSP가 지능형 코드 힌트를 제공합니다.
 

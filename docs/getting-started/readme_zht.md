@@ -177,18 +177,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = "26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -200,8 +204,8 @@ pixi install
 
 **分支選擇：**
 
-- **`main` 分支**：提供穩定版本，目前支援 NuMojo v0.8.0，相容於 Mojo 25.6.0。若需使用更早期的 NuMojo 版本，請改用方法二。
-- **`pre-x.y` 分支**：積極開發中的分支，支援最新的 Mojo 版本（目前為 mojo nightly 26.2.0.dev2026022717）。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
+- **`main` 分支**：提供穩定版本，目前支援 NuMojo v0.9.0，相容於 Mojo 26.2。若需使用更早期的 NuMojo 版本，請改用方法二。
+- **`pre-x.y` 分支**：積極開發中的分支，支援最新的 Mojo 版本（目前為 NuMojo v0.10.0，需要 Mojo >=1.0.0, <1.1.0）。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
 
 安裝完成後，該套件會自動出現在你的 Pixi 環境中，VSCode LSP 也會提供智能程式碼提示。
 

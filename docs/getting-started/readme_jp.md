@@ -169,18 +169,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = "26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -190,8 +194,8 @@ pixi install
 ```
 
 **ブランチの選択：**
-- **`main`ブランチ**：安定版を提供します。現在、Mojo 25.6.0に対応するNuMojo v0.8.0をサポートしています。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
-- **`pre-x.y`ブランチ**：最新のMojoバージョン（現在はmojo nightly 26.2.0.dev2026022717）をサポートする開発中のブランチです。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
+- **`main`ブランチ**：安定版を提供します。現在、Mojo 26.2に対応するNuMojo v0.9.0をサポートしています。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
+- **`pre-x.y`ブランチ**：最新のMojoバージョンをサポートする開発中のブランチです（現在はNuMojo v0.10.0、Mojo >=1.0.0, <1.1.0 が必要）。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
 
 パッケージはPixi環境内で自動的に利用可能になり、VSCode LSPがインテリジェントなコードヒントを提供します。
 

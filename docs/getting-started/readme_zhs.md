@@ -10,10 +10,13 @@
   <h1 align="center" style="font-size: 3em; color: white; font-family: 'Avenir'; text-shadow: 1px 1px orange;">NuMojo</h1>
 
   <p align="center">
-    NuMojo 是为 Mojo 🔥 设计的多维数组运算库，类似 Python 中的 NumPy, SciPy。
+    NuMojo 是为 Mojo 🔥 设计的数值计算库，类似 Python 中的 NumPy。
+    <br />
+    <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
+    <a href="https://www.modular.com/mojo"><img src="https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg" alt="Mojo"></a>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>阅读文档» </strong></a> &nbsp; &nbsp; 
+        <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>查看示例» </strong></a> &nbsp; &nbsp;
         <a href="../user-guide/changelog.md"><strong>更新日志» </strong></a> &nbsp; &nbsp;
         <a href="https://discord.gg/NcnSH5n26F" ><strong>加入 Discord 讨论频道» </strong></a>
     </div>
@@ -26,19 +29,32 @@
   </p>
 </div>
 
+**目录**
+
+1. [关于本项目](#关于本项目)
+2. [为什么选择 NuMojo](#为什么选择-numojo)
+3. [功能与目标](#功能与目标)
+4. [使用方法](#使用方法)
+5. [安装方法](#安装方法)
+6. [贡献](#贡献)
+7. [警告](#警告)
+8. [许可证](#许可证)
+9. [致谢](#致谢)
+10. [贡献者](#贡献者)
+
 ## 关于本项目
 
-NuMojo，旨在为 Mojo 语言生态系统提供数值计算和多维数组运算功能，类似于 NumPy、SciPy 和 Scikit 等数学库在 Python 语言生态系统中所扮演的角色。
-
-***NuMojo 是什么***
+NuMojo 致力于涵盖 NumPy 中丰富的数值计算能力。
 
 我们致力于充分发挥 Mojo 的潜力，包括向量化、并行化和 GPU 加速。目前，NuMojo 已经为大部分（乃至全部）Mojo 标准库中的数学函数扩展了对数组输入的支持。
 
 我们希望 NuMojo 能够成为其他需要高速数值运算的 Mojo 第三方库的基础构建模块，同时不必附带机器学习反向传播系统所带来的额外负担。
 
-***NuMojo 不是什么***
+## 为什么选择 NuMojo
 
-NuMojo 不是一个机器学习库，它永远不会在核心库中包含反向传播功能。
+- **原生 Mojo 实现。** NuMojo 的 `NDArray` 是原生的、基于 SIMD 实现的 Mojo 类型，而不是对 NumPy 或 MAX 张量类型的封装，因此可以直接编译进你的程序，不存在 Python 互操作的额外开销。
+- **贴近 NumPy 的 API。** 切片、广播、用于矩阵乘法的 `@` 运算符，以及函数命名，都在合理范围内与 NumPy 保持一致，让你的既有经验可以直接沿用。
+- **发挥 Mojo 的优势。** 各类例程中都充分运用了向量化与并行计算；随着 Mojo 自身设备支持的不断成熟，GPU 及其他加速器支持（`AcceleratorNDArray`）也将逐步到来。
 
 ## 功能与目标
 
@@ -47,7 +63,7 @@ NuMojo 不是一个机器学习库，它永远不会在核心库中包含反向�
 核心数据类型：
 
 - 原生 N 维数组（`numojo.NDArray`）。
-- 原生 N 维复数数组（`numojo.ComplexNDArray`）。
+- 原生 N 维复数数组（`numojo.ComplexNDArray`）
 - 原生固定维度数组（待 Mojo 支持 trait 参数化后实现）。
 
 例程与对象：
@@ -68,8 +84,6 @@ NuMojo 不是一个机器学习库，它永远不会在核心库中包含反向�
 - 等等……
 
 完整的函数与对象列表请参阅[此文档](../user-guide/features.md)。项目的实时路线图维护在 [docs/user-guide/roadmap.md](../user-guide/roadmap.md) 中。
-
-有关本项目详细的路线图，请参阅 [docs/user-guide/roadmap.md](../user-guide/roadmap.md) 文件。
 
 ## 使用方法
 
@@ -200,8 +214,8 @@ pixi install
 ```
 
 **分支选择：**
-- **`main` 分支**：提供稳定版本。目前支持 NuMojo v0.9.0，兼容 Mojo 26.2。如需使用更早期的 NuMojo 版本，请使用方法二。
-- **`pre-x.y` 分支**：活跃开发分支，支持最新的 Mojo 版本（当前为 NuMojo v0.10.0，需要 Mojo >=1.0.0, <1.1.0）。请注意，该分支更新频繁，功能和语法可能发生破坏性变更。
+- **`main` 分支**：提供最新的稳定版本。目前为 NuMojo v0.10.0，兼容 Mojo >=1.0.0, <1.1.0。如需使用更早期的 NuMojo 版本，请使用方法二。
+- **`pre-x.y` 分支**：面向下一个版本的活跃开发分支。请注意，该分支更新频繁，功能和语法可能发生破坏性变更。
 
 该软件包会自动出现在你的 Pixi 环境中，VSCode LSP 也会提供智能代码提示。
 
@@ -216,7 +230,7 @@ pixi install
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.9.0"
+numojo = "=0.10.0"
 ```
 
 然后运行：
@@ -276,7 +290,18 @@ pixi install
 
 ## 贡献
 
-我们**非常欢迎**任何形式的贡献。请参阅 [CONTRIBUTING.md](../../CONTRIBUTING.md) 了解贡献指南（代码风格、测试、文档、发布节奏）。
+我们**非常欢迎**任何形式的贡献。NuMojo 尚处于早期阶段，有大量可以参与的方向：实现例程、编写测试、完善文档，或者仅仅是报告你遇到的问题。
+
+贡献者快速上手：
+
+```bash
+git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+cd NuMojo
+pixi install
+pixi run final   # 格式化 + 测试
+```
+
+完整的贡献指南（代码风格、目录结构、PR 流程）请参阅 [docs/developer-guide/contributing.md](../developer-guide/contributing.md)，文档字符串与格式规范请参阅 [docs/developer-guide/style-guide.md](../developer-guide/style-guide.md)，提交 PR 前需要执行的检查请参阅 [docs/developer-guide/pre-pr-checks.md](../developer-guide/pre-pr-checks.md)。
 
 ## 警告
 

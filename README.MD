@@ -2,37 +2,43 @@
 
 ![logo](./assets/numojo_logo_360x360.png)
 
-NuMojo is a library for numerical computing in Mojo 🔥 similar to NumPy, SciPy in Python.
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Mojo](https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg)](https://www.modular.com/mojo)
 
-**[Read the Docs»](https://numojo.readthedocs.io)**  |  **[Explore the examples»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
+NuMojo is a library for numerical computing in Mojo 🔥, similar to NumPy in Python.
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_jp.md)**    |
-**[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_kr.md)**
+**[Explore the examples»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[Changelog»](docs/user-guide/changelog.md)**  |  **[Check out our Discord»](https://discord.gg/NcnSH5n26F)**
+
+**[中文·简»](docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](docs/getting-started/readme_zht.md)**  |  **[日本語»](docs/getting-started/readme_jp.md)**  |  **[한국어»](docs/getting-started/readme_kr.md)**
 
 **Table of Contents**
 
-1. [About The Project](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#about-the-project)
-2. [Goals](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#goals)
-3. [Usage](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#usage)
-4. [How to install](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#how-to-install)
-5. [Contributing](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#contributing)
-6. [Warnings](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#warnings)
-7. [License](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#license)
-8. [Acknowledgements](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#acknowledgments)
-9. [Contributors](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#Contributors)
+1. [About the project](#about-the-project)
+2. [Why NuMojo](#why-numojo)
+3. [Features and goals](#features-and-goals)
+4. [Usage](#usage)
+5. [Installation](#installation)
+6. [Contributing](#contributing)
+7. [Warnings](#warnings)
+8. [License](#license)
+9. [Acknowledgements](#acknowledgements)
+10. [Contributors](#contributors)
 
 ## About the project
 
-NuMojo aims to encompass the extensive numerics capabilities found in Python packages such as NumPy, SciPy, and Scikit-learn.
-***What NuMojo is***
+NuMojo aims to encompass the extensive numerics capabilities found in NumPy.
+
+**What NuMojo is**
 
 We seek to harness the full potential of Mojo, including vectorization, parallelization, and GPU acceleration. Currently, NuMojo extends most (if not all) standard library math functions to support array inputs.
 
-Our vision for NuMojo is to serve as an essential building block for other Mojo packages needing fast math operations, without the additional weight of a machine learning back-propagation system.
+Our vision for NuMojo is to serve as a familiar and essential building block for other Mojo libraries needing fast math operations, without the additional weight of a machine learning back-propagation system.
 
-***What NuMojo is not***
+## Why NuMojo
 
-NuMojo is not a machine learning library and will never include back-propagation as part of the base library.
+- **Native to Mojo.** NuMojo's `NDArray` is a Mojo-native SIMD-backed type, not a binding around NumPy or MAX's tensor types, so it compiles into your program with no Python interop overhead.
+- **NumPy-familiar API.** Slicing, broadcasting, `@` for matrix multiplication, and function names mirror NumPy where it makes sense, so existing intuition carries over.
+- **Built for Mojo's strengths.** Vectorization and parallelism are used throughout the routines, with GPU and other accelerator support (`AcceleratorNDArray`) landing as Mojo's own device support matures.
 
 ## Features and goals
 
@@ -62,8 +68,6 @@ Routines and objects:
 - etc...
 
 Please find all the available functions and objects [here](docs/user-guide/features.md). A living roadmap is maintained in [docs/user-guide/roadmap.md](docs/user-guide/roadmap.md).
-
-For a detailed roadmap, please refer to the [docs/user-guide/roadmap.md](docs/user-guide/roadmap.md) file.
 
 ## Usage
 
@@ -148,7 +152,7 @@ def main() raises:
 
 NuMojo offers several installation methods to suit different development needs. Choose the method that best fits your workflow:
 
-### Method 1: Git Installation with pixi-build-mojo  (Recommended)
+### Method 1: Git Installation with pixi-build-mojo (Recommended)
 
 Install NuMojo directly from the GitHub repository to access both stable releases and cutting-edge features. This method is perfect for developers who want the latest functionality or need to work with the most recent stable version.
 
@@ -194,8 +198,8 @@ pixi install
 ```
 
 **Branch Selection:**
-- **`main` branch**: Provides stable release. Currently supports NuMojo v0.9.0, compatible with Mojo 26.2. For earlier NuMojo versions, use Method 2.
-- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently NuMojo v0.10.0, requiring Mojo >=1.0.0, <1.1.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
+- **`main` branch**: Provides the latest stable release. Currently NuMojo v0.10.0, compatible with Mojo >=1.0.0, <1.1.0. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch for the next release. Note that this branch receives frequent updates and may have breaking changes in features and syntax.
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 
@@ -270,7 +274,18 @@ After setup, VSCode will provide intelligent code completion and hints for NuMoj
 
 ## Contributing
 
-Any contributions you make are **greatly appreciated**. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines (coding style, testing, documentation, release cadence).
+Any contributions you make are **greatly appreciated**. NuMojo is early-stage and there's a lot of room to help: implementing routines, writing tests, improving docs, or just filing issues for things that feel off.
+
+Quick start for contributors:
+
+```bash
+git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+cd NuMojo
+pixi install
+pixi run final   # format + test
+```
+
+See [docs/developer-guide/contributing.md](docs/developer-guide/contributing.md) for full guidelines (coding style, directory structure, PR process), [docs/developer-guide/style-guide.md](docs/developer-guide/style-guide.md) for docstring/formatting conventions, and [docs/developer-guide/pre-pr-checks.md](docs/developer-guide/pre-pr-checks.md) for what to run before opening a PR.
 
 ## Warnings
 
@@ -278,7 +293,7 @@ This library is still early and may introduce breaking changes between minor ver
 
 ## License
 
-Distributed under the Apache 2.0 License with LLVM Exceptions. See [LICENSE](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE) and the LLVM [License](https://llvm.org/LICENSE.txt) for more information.
+Distributed under the Apache 2.0 License with LLVM Exceptions. See [LICENSE](LICENSE) and the LLVM [License](https://llvm.org/LICENSE.txt) for more information.
 
 This project includes code from [Mojo Standard Library](https://github.com/modularml/mojo), licensed under the Apache License v2.0 with LLVM Exceptions (see the LLVM [License](https://llvm.org/LICENSE.txt)). MAX and Mojo usage and distribution are licensed under the [MAX & Mojo Community License](https://www.modular.com/legal/max-mojo-license).
 

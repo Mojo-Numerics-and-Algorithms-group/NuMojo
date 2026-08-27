@@ -1019,7 +1019,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             nshape,
         )
         var narr = ComplexNDArray[Self.cdtype](
-            offset=noffset, shape=nshape, strides=nstrides
+            offset=0, shape=nshape, strides=nstrides
         )
         # TODO: combine the two traverses into one.
         var index_re: List[Int] = List[Int](length=ndims, fill=0)

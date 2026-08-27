@@ -16,7 +16,7 @@ NuMojo is currently in its early development stages. At this point, our focus is
 ### N-dimensional Arrays
 
 ✅ **Completed:**
-- Basic `NDArray`, `ComplexNDArray`, and `Matrix` types with comprehensive arithmetic operations
+- Basic `NDArray` and `ComplexNDArray` types with comprehensive arithmetic operations
 - Full indexing and slicing support including negative indices
 - Broadcasting support for operations between arrays and scalars
 - Memory-efficient operations with contiguous and strided array support
@@ -53,9 +53,9 @@ We are currently working on implementing basic numeric functions into NuMojo. Th
 - **Products/Sums:** Element-wise and axis-based operations
 
 **Linear Algebra:**
-- **Matrix Operations:** `matmul` (`@` operator), `inv`, `transpose`
-- **Decompositions:** `lu_decomposition`, `qr`, `eig` (eigenvalues)
-- **Solving:** `solve`, `lstsq` (least squares)
+- **Matrix Operations:** `matmul` (`@` operator), `inv`
+- **Decompositions:** `lu_decomposition`
+- **Solving:** `solve`
 - **Norms:** `det` (determinant), `trace`
 
 **Logic Functions:**

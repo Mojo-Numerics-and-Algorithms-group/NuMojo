@@ -41,7 +41,6 @@ Our primary objective is to develop a fast, comprehensive numerics library in Mo
 Core data types:
 
 - Native n-dimensional array (`numojo.NDArray`).
-- Native 2-dimensional array, i.e., matrix (`numojo.Matrix`).
 - Native n-dimensional complex array (`numojo.ComplexNDArray`)
 - Native fixed-dimension array (to be implemented when trait parameterization is available).
 
@@ -100,57 +99,17 @@ def main() raises:
     # Get scalar from array
     var A_item = A[Item(291, 141)] # Item() is used to define coordinates of an ndarray in numojo. 
     var A_item_2 = A.item(291, 141)
-```
-
-An example of matrix (`Matrix` type) goes as follows.
-
-```mojo
-from numojo import Matrix
-from numojo.prelude import *
-
-
-def main() raises:
-    # Generate two 1000x1000 matrices with random float64 values
-    var A = Matrix.rand(shape=(1000, 1000))
-    var B = Matrix.rand(shape=(1000, 1000))
-
-    # Generate 1000x1 matrix (column vector) with random float64 values
-    var C = Matrix.rand(shape=(1000, 1))
-
-    # Generate a 4x3 matrix from string representation
-    var F = Matrix.fromstring[i8](
-        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
-    )
-
-    # Matrix slicing
-    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
-    var B_slice = B[255, 103:241:2]
-
-    # Get scalar from matrix
-    var A_item = A[291, 141]
-
-    # Flip the column vector
-    print(C[::-1, :])
 
     # Sort and argsort along axis
     print(nm.sort(A, axis=1))
     print(nm.argsort(A, axis=0))
 
-    # Sum the matrix
-    print(nm.sum(B))
-    print(nm.sum(B, axis=1))
+    # Sum along axis
+    print(nm.sum(A))
+    print(nm.sum(A, axis=1))
 
-    # Matrix multiplication
-    print(A @ B)
-
-    # Matrix inversion
-    print(A.inv())
-
-    # Solve linear algebra
+    # Solve a linear system
     print(nm.solve(A, B))
-
-    # Least square
-    print(nm.lstsq(A, C))
 ```
 
 An example of `ComplexNDArray` is as follows:
@@ -210,18 +169,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-modular = "0.26.2.*"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 
 [package.build-dependencies]
-modular = "0.26.2.*"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-modular = "0.26.2.*"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-modular = "26.2.*"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -231,8 +194,8 @@ pixi install
 ```
 
 **Branch Selection:**
-- **`main` branch**: Provides stable release. Currently supports NuMojo v0.8.0, compatible with Mojo 25.6.0. For earlier NuMojo versions, use Method 2.
-- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently mojo nightly 26.2.0.dev2026022717). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
+- **`main` branch**: Provides stable release. Currently supports NuMojo v0.9.0, compatible with Mojo 26.2. For earlier NuMojo versions, use Method 2.
+- **`pre-x.y` branches**: Active development branch supporting the latest Mojo version (currently NuMojo v0.10.0, requiring Mojo >=1.0.0, <1.1.0). Note that this branch receives frequent updates and may have breaking changes in features and syntax.
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 
@@ -247,7 +210,7 @@ Add the following to your `pixi.toml` file:
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.9.0"
+numojo = "=0.10.0"
 ```
 
 Then run:
@@ -259,6 +222,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | --------------------- |
+| v0.10.0        | ==1.0.0               |
 | v0.9.0         | ==26.2                |
 | v0.8.0         | ==25.7                |
 | v0.7.0         | ==25.3                |

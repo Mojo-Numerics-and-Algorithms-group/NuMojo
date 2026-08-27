@@ -4,7 +4,7 @@
 
 NuMojo는 Python의 NumPy, SciPy와 유사한 Mojo 🔥 수치 계산 라이브러리입니다.
 
-**[문서 살펴보기»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[변경 로그»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discord 참여하기»](https://discord.gg/NcnSH5n26F)**
+**[문서 보기»](https://numojo.readthedocs.io)**  |  **[예제 살펴보기»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[변경 로그»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discord 참여하기»](https://discord.gg/NcnSH5n26F)**
 
 **[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[日本語»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_jp.md)** | **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)**
 
@@ -26,7 +26,7 @@ NuMojo는 NumPy, SciPy, Scikit-learn과 같은 Python 패키지에서 볼 수 �
 
 ***NuMojo란 무엇인가***
 
-우리는 벡터화, 병렬화, GPU 가속(사용 가능할 때)을 포함하여 Mojo의 모든 잠재력을 활용하고자 합니다. 현재 NuMojo는 표준 라이브러리 수학 함수의 (거의) 모든 기능을 배열 입력을 지원하도록 확장했습니다.
+우리는 벡터화, 병렬화, GPU 가속을 포함하여 Mojo의 모든 잠재력을 활용하고자 합니다. 현재 NuMojo는 표준 라이브러리 수학 함수의 (거의) 모든 기능을 배열 입력을 지원하도록 확장했습니다.
 
 NuMojo의 비전은 기계 학습 역전파 시스템의 추가적인 부담 없이 빠른 수학 연산이 필요한 다른 Mojo 패키지들의 필수적인 구성 요소로 역할하는 것입니다.
 
@@ -40,8 +40,7 @@ NuMojo는 기계 학습 라이브러리가 아니며 기본 라이브러리의 �
 
 핵심 데이터 타입:
 
-- 네이티브 n차원 배열 (`numojo.NDArray`)
-- 네이티브 2차원 배열, 즉 행렬 (`numojo.Matrix`)
+- 네이티브 n차원 배열 (`numojo.NDArray`).
 - 네이티브 n차원 복소수 배열 (`numojo.ComplexNDArray`)
 - 네이티브 고정 차원 배열 (트레이트 매개변수화가 가능해지면 구현 예정)
 
@@ -68,6 +67,8 @@ NuMojo는 기계 학습 라이브러리가 아니며 기본 라이브러리의 �
 
 ## 사용법
 
+`examples/` 디렉터리(예: `examples/quickstart.mojo`)에서 바로 실행 가능한 예제를 확인할 수 있습니다.
+
 n차원 배열(`NDArray` 타입)의 예시는 다음과 같습니다.
 
 ```mojo
@@ -77,7 +78,7 @@ from numojo.prelude import *
 
 def main() raises:
     # 랜덤한 float64 값으로 두 개의 1000x1000 행렬 생성
-    var A = nm.random.randn(Shape(1000, 1000))
+    var A = nm.random.randn(Shape(1000, 1000)) # Shape은 numojo에서 형태(shape)와 관련된 모든 연산에 사용됩니다. 
     var B = nm.random.randn(Shape(1000, 1000))
 
     # 문자열 표현으로부터 3x2 행렬 생성
@@ -96,59 +97,19 @@ def main() raises:
     var A_slice = A[1:3, 4:19]
 
     # 배열에서 스칼라 가져오기
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)] # Item()은 numojo에서 ndarray의 좌표를 정의하는 데 사용됩니다. 
     var A_item_2 = A.item(291, 141)
-```
-
-행렬(`Matrix` 타입)의 예시는 다음과 같습니다.
-
-```mojo
-from numojo import Matrix
-from numojo.prelude import *
-
-
-def main() raises:
-    # 랜덤한 float64 값으로 두 개의 1000x1000 행렬 생성
-    var A = Matrix.rand(shape=(1000, 1000))
-    var B = Matrix.rand(shape=(1000, 1000))
-
-    # 랜덤한 float64 값으로 1000x1 행렬(열 벡터) 생성
-    var C = Matrix.rand(shape=(1000, 1))
-
-    # 문자열 표현으로부터 4x3 행렬 생성
-    var F = Matrix.fromstring[i8](
-        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
-    )
-
-    # 행렬 슬라이싱
-    var A_slice = A[1:3, 4:19]
-    var B_slice = B[255, 103:241:2]
-
-    # 행렬에서 스칼라 가져오기
-    var A_item = A[291, 141]
-
-    # 열 벡터 뒤집기
-    print(C[::-1, :])
 
     # 축을 따른 정렬과 argsort
     print(nm.sort(A, axis=1))
     print(nm.argsort(A, axis=0))
 
-    # 행렬 합계
-    print(nm.sum(B))
-    print(nm.sum(B, axis=1))
+    # 축을 따른 합계
+    print(nm.sum(A))
+    print(nm.sum(A, axis=1))
 
-    # 행렬 곱셈
-    print(A @ B)
-
-    # 행렬 역행렬
-    print(A.inv())
-
-    # 선형 대수 풀이
+    # 선형 시스템 풀이
     print(nm.solve(A, B))
-
-    # 최소 제곱법
-    print(nm.lstsq(A, C))
 ```
 
 `ComplexNDArray`의 예시는 다음과 같습니다:
@@ -160,10 +121,13 @@ from numojo.prelude import *
 
 def main() raises:
     # 복소수 스칼라 5 + 5j 생성
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    # cf32는 numojo에서 복소수 타입을 식별하는 데 사용되는 f32(DType.float32)의 복소수 버전입니다.
+    var complexscalar = CScalar[cf32](5) # ComplexSIMD[cf32](5, 5)와 동일합니다
+    # 5 + 5*`1j`처럼 간단하게 정의할 수도 있습니다!
+  
     # 복소수 배열 생성
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)로 채움
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)로 채움
 
     # 배열 출력
     print(A)
@@ -175,60 +139,134 @@ def main() raises:
     var C = A * B
 
     # 배열에서 스칼라 가져오기
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # 배열의 요소 설정
     A[item(291, 141)] = complexscalar
 ```
 
 ## 설치 방법
 
-NuMojo 패키지를 설치하고 사용하는 세 가지 방법이 있습니다.
+NuMojo는 다양한 개발 요구에 맞춰 여러 가지 설치 방법을 제공합니다. 자신의 작업 방식에 가장 적합한 방법을 선택하세요.
 
-### `pixi.toml`에 `numojo` 추가
+### 방법 1: pixi-build-mojo를 이용한 Git 설치 (권장)
 
-`pixi.toml` 파일의 의존성 섹션에 패키지 `numojo`를 추가할 수 있습니다 (재현성을 위해 정확한 버전으로 고정).
+GitHub 저장소에서 직접 NuMojo를 설치하여 안정적인 릴리스와 최신 기능을 모두 사용할 수 있습니다. 이 방법은 최신 기능을 원하거나 가장 최근의 안정 버전으로 작업해야 하는 개발자에게 적합합니다.
+
+기존 `pixi.toml`에 다음 내용을 추가하세요.
 
 ```toml
+[workspace]
+preview = ["pixi-build"]
+
+[package]
+name = "your_project_name"
+version = "0.1.0"
+
+[package.build]
+backend = {name = "pixi-build-mojo", version = "0.*"}
+
+[package.build.config.pkg]
+name = "your_package_name"
+
+[package.host-dependencies]
+mojo = "==1.0.0"
+max-core = "==26.5.0"
+
+[package.build-dependencies]
+mojo = "==1.0.0"
+max-core = "==26.5.0"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
+[package.run-dependencies]
+mojo = "==1.0.0"
+max-core = "==26.5.0"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
 [dependencies]
-numojo = "=0.7.0"
+mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
-그런 다음 `pixi install`을 실행하여 패키지를 설치합니다.
+그런 다음 다음을 실행합니다.
+```bash
+pixi install
+```
 
-다음 표는 `numojo` 버전과 필요한 해당 `mojo` 버전을 보여줍니다.
+**브랜치 선택:**
+- **`main` 브랜치**: 안정적인 릴리스를 제공합니다. 현재 NuMojo v0.9.0을 지원하며 Mojo 26.2와 호환됩니다. 이전 버전의 NuMojo가 필요하다면 방법 2를 사용하세요.
+- **`pre-x.y` 브랜치**: 최신 Mojo 버전을 지원하는 활발한 개발 브랜치입니다(현재 NuMojo v0.10.0, Mojo >=1.0.0, <1.1.0 필요). 이 브랜치는 자주 업데이트되며 기능과 문법에 호환성을 깨는 변경사항이 있을 수 있습니다.
 
-| `numojo` | `mojo` |
-| -------- | ------ |
-| v0.7.0   | ==25.3 |
-| v0.6.1   | ==25.2 |
-| v0.6.0   | ==25.2 |
+패키지는 Pixi 환경에 자동으로 반영되며, VSCode LSP가 지능형 코드 힌트를 제공합니다.
 
-### 패키지 빌드
+### 방법 2: Pixi(prefix.dev)를 통한 안정 릴리스 설치
 
-이 방법은 다른 프로젝트에 복사할 수 있는 독립형 패키지 파일 `numojo.mojopkg`를 빌드합니다 (오프라인 또는 밀폐된 빌드에 유용하며 최신 NuMojo 브랜치를 사용하는 데 편리합니다).
+대부분의 사용자에게는 안정적인 호환성과 재현성을 보장하는 Pixi를 통한 안정 릴리스 설치를 권장합니다.
+
+`pixi.toml` 파일에 다음 내용을 추가하세요.
+
+```toml
+[workspace]
+channels = ["https://repo.prefix.dev/modular-community"]
+
+[dependencies]
+numojo = "=0.9.0"
+```
+
+그런 다음 다음을 실행합니다.
+```bash
+pixi install
+```
+
+**버전 호환성:**
+
+| NuMojo 버전 | 필요한 Mojo 버전 |
+| ----------- | ----------------- |
+| v0.10.0     | ==1.0.0            |
+| v0.9.0      | ==26.2             |
+| v0.8.0      | ==25.7             |
+| v0.7.0      | ==25.3             |
+| v0.6.1      | ==25.2             |
+| v0.6.0      | ==25.2             |
+
+### 방법 3: 독립형 패키지 빌드
+
+이 방법은 여러 프로젝트에서 사용할 수 있는 이식 가능한 `numojo.mojopkg` 파일을 생성합니다. 오프라인 개발이나 밀폐된(hermetic) 빌드에 적합합니다.
 
 1. 저장소를 클론합니다.
-2. `pixi run package`를 사용하여 패키지를 빌드합니다.
-3. `numojo.mojopkg`를 코드가 포함된 디렉터리로 이동합니다 (또는 부모 디렉터리를 포함 경로에 추가합니다).
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   cd NuMojo
+   ```
 
-### 컴파일러와 LSP에 NuMojo 경로 포함
+2. 패키지를 빌드합니다.
+   ```bash
+   pixi run package
+   ```
 
-이 방법은 패키지 파일을 빌드할 필요가 없습니다. 컴파일할 때 NuMojo 소스 경로를 직접 포함합니다:
+3. `numojo.mojopkg`를 프로젝트 디렉터리로 복사하거나, 그 상위 디렉터리를 include 경로에 추가합니다.
 
-```console
-mojo run -I "../NuMojo" example.mojo
-```
+### 방법 4: 소스 코드 직접 통합
 
-이는 코드를 테스트할 때 NuMojo 소스 파일을 편집할 수 있어 더 유연합니다.
+개발 중 NuMojo 소스 코드를 직접 수정할 수 있는 최대한의 유연성을 원한다면 다음과 같이 진행하세요.
 
-VSCode의 Mojo LSP가 가져온 `numojo` 패키지를 해결할 수 있도록 하려면:
+1. 원하는 위치에 저장소를 클론합니다.
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   ```
 
-1. VSCode의 설정 페이지로 이동합니다.
-2. `Mojo › Lsp: Include Dirs`로 이동합니다.
-3. `add item`을 클릭하고 Numojo 저장소가 위치한 경로를 작성합니다. 예: `/Users/Name/Programs/NuMojo`
-4. Mojo LSP 서버를 재시작합니다.
+2. 코드를 컴파일할 때 NuMojo 소스 경로를 포함합니다.
+   ```bash
+   mojo run -I "/path/to/NuMojo" your_program.mojo
+   ```
 
-이제 VSCode가 Numojo 패키지의 함수 힌트를 표시할 수 있습니다!
+3. **VSCode LSP 설정** (코드 힌트와 자동 완성을 위해):
+   - VSCode 환경설정을 엽니다
+   - `Mojo › Lsp: Include Dirs`로 이동합니다
+   - `Add Item`을 클릭하고 NuMojo 디렉터리의 전체 경로를 입력합니다 (예: `/Users/YourName/Projects/NuMojo`)
+   - Mojo LSP 서버를 재시작합니다
+
+설정을 마치면 VSCode가 NuMojo 함수에 대한 지능형 코드 완성과 힌트를 제공합니다!
 
 ## 기여하기
 

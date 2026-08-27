@@ -16,7 +16,6 @@ NuMojo is organized around three core areas:
 Defines the fundamental types and utilities used throughout the library, including:
 
 - `NDArray` and related memory/layout helpers
-- `Matrix` and matrix-specific helpers
 - shape utilities and dtype plumbing
 
 This layer is responsible for storage, indexing, and basic array semantics.

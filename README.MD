@@ -41,7 +41,6 @@ Our primary objective is to develop a fast, comprehensive numerics library in Mo
 Core data types:
 
 - Native n-dimensional array (`numojo.NDArray`).
-- Native 2-dimensional array, i.e., matrix (`numojo.Matrix`).
 - Native n-dimensional complex array (`numojo.ComplexNDArray`)
 - Native fixed-dimension array (to be implemented when trait parameterization is available).
 
@@ -100,57 +99,17 @@ def main() raises:
     # Get scalar from array
     var A_item = A[Item(291, 141)] # Item() is used to define coordinates of an ndarray in numojo. 
     var A_item_2 = A.item(291, 141)
-```
-
-An example of matrix (`Matrix` type) goes as follows.
-
-```mojo
-from numojo import Matrix
-from numojo.prelude import *
-
-
-def main() raises:
-    # Generate two 1000x1000 matrices with random float64 values
-    var A = Matrix.rand(shape=(1000, 1000))
-    var B = Matrix.rand(shape=(1000, 1000))
-
-    # Generate 1000x1 matrix (column vector) with random float64 values
-    var C = Matrix.rand(shape=(1000, 1))
-
-    # Generate a 4x3 matrix from string representation
-    var F = Matrix.fromstring[i8](
-        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
-    )
-
-    # Matrix slicing
-    var A_slice = A[1:3, 4:19] # returns a copy, for getting a view use `A.get(Slice(1,3), Slice(4, 19))
-    var B_slice = B[255, 103:241:2]
-
-    # Get scalar from matrix
-    var A_item = A[291, 141]
-
-    # Flip the column vector
-    print(C[::-1, :])
 
     # Sort and argsort along axis
     print(nm.sort(A, axis=1))
     print(nm.argsort(A, axis=0))
 
-    # Sum the matrix
-    print(nm.sum(B))
-    print(nm.sum(B, axis=1))
+    # Sum along axis
+    print(nm.sum(A))
+    print(nm.sum(A, axis=1))
 
-    # Matrix multiplication
-    print(A @ B)
-
-    # Matrix inversion
-    print(A.inv())
-
-    # Solve linear algebra
+    # Solve a linear system
     print(nm.solve(A, B))
-
-    # Least square
-    print(nm.lstsq(A, C))
 ```
 
 An example of `ComplexNDArray` is as follows:

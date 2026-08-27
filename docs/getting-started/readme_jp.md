@@ -4,7 +4,7 @@
 
 NuMojoは、Python の NumPy、SciPy と同様の数値計算機能を Mojo 🔥 で提供するライブラリです。
 
-**[ドキュメントを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
+**[ドキュメントを見る»](https://numojo.readthedocs.io)**  |  **[サンプルを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
 
 **[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)** |  **[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_kr.md)**
 
@@ -26,7 +26,7 @@ NuMojoは、NumPy、SciPy、Scikit-learnなどのPythonパッケージにある�
 
 ***NuMojoとは***
 
-私たちは、ベクトル化、並列化、GPU加速（利用可能になった場合）を含む、Mojoの潜在能力を最大限に活用することを目指しています。現在、NuMojoは、標準ライブラリの数学関数の（ほぼ）すべてを配列入力に対応するように拡張しています。
+私たちは、ベクトル化、並列化、GPUアクセラレーションを含む、Mojoの潜在能力を最大限に活用することを目指しています。現在、NuMojoは、標準ライブラリの数学関数のほぼすべてを配列入力に対応するように拡張しています。
 
 NuMojoのビジョンは、機械学習の逆伝播システムの追加的な負荷なしに、高速な数学演算を必要とする他のMojoパッケージにとって不可欠な構成要素として機能することです。
 
@@ -41,7 +41,6 @@ NuMojoは機械学習ライブラリではなく、ベースライブラリの�
 コアデータ型：
 
 - ネイティブn次元配列（`numojo.NDArray`）
-- ネイティブ2次元配列、つまり行列（`numojo.Matrix`）
 - ネイティブn次元複素数配列（`numojo.ComplexNDArray`）
 - ネイティブ固定次元配列（トレイトパラメータ化が利用可能になったときに実装予定）
 
@@ -68,6 +67,8 @@ NuMojoは機械学習ライブラリではなく、ベースライブラリの�
 
 ## 使用方法
 
+実行可能なサンプルは`examples/`ディレクトリにあります（例：`examples/quickstart.mojo`）。
+
 n次元配列（`NDArray`型）の例は以下の通りです。
 
 ```mojo
@@ -77,7 +78,7 @@ from numojo.prelude import *
 
 def main() raises:
     # ランダムなfloat64値で2つの1000x1000行列を生成
-    var A = nm.random.randn(Shape(1000, 1000))
+    var A = nm.random.randn(Shape(1000, 1000)) # Shapeはnumojoにおいて形状に関するすべての操作に使用されます。
     var B = nm.random.randn(Shape(1000, 1000))
 
     # 文字列表現から3x2行列を生成
@@ -96,59 +97,19 @@ def main() raises:
     var A_slice = A[1:3, 4:19]
 
     # 配列からスカラーを取得
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)] # Item()はnumojoにおいてndarrayの座標を定義するために使用されます。
     var A_item_2 = A.item(291, 141)
-```
-
-行列（`Matrix`型）の例は以下の通りです。
-
-```mojo
-from numojo import Matrix
-from numojo.prelude import *
-
-
-def main() raises:
-    # ランダムなfloat64値で2つの1000x1000行列を生成
-    var A = Matrix.rand(shape=(1000, 1000))
-    var B = Matrix.rand(shape=(1000, 1000))
-
-    # ランダムなfloat64値で1000x1行列（列ベクトル）を生成
-    var C = Matrix.rand(shape=(1000, 1))
-
-    # 文字列表現から4x3行列を生成
-    var F = Matrix.fromstring[i8](
-        "[[12,11,10],[9,8,7],[6,5,4],[3,2,1]]", shape=(4, 3)
-    )
-
-    # 行列のスライス
-    var A_slice = A[1:3, 4:19]
-    var B_slice = B[255, 103:241:2]
-
-    # 行列からスカラーを取得
-    var A_item = A[291, 141]
-
-    # 列ベクトルを反転
-    print(C[::-1, :])
 
     # 軸に沿ってソートとargsort
     print(nm.sort(A, axis=1))
     print(nm.argsort(A, axis=0))
 
-    # 行列の合計
-    print(nm.sum(B))
-    print(nm.sum(B, axis=1))
+    # 軸に沿って合計
+    print(nm.sum(A))
+    print(nm.sum(A, axis=1))
 
-    # 行列の乗算
-    print(A @ B)
-
-    # 行列の逆行列
-    print(A.inv())
-
-    # 線形代数の求解
+    # 線形システムを解く
     print(nm.solve(A, B))
-
-    # 最小二乗法
-    print(nm.lstsq(A, C))
 ```
 
 `ComplexNDArray`の例は以下の通りです：
@@ -160,10 +121,13 @@ from numojo.prelude import *
 
 def main() raises:
     # 複素数スカラー 5 + 5j を作成
-    var complexscalar = ComplexSIMD[f32](re=5, im=5)
+    # cf32はnumojoにおいて複素数型を識別するために使用される、f32（DType.float32）の複素数版です。
+    var complexscalar = CScalar[cf32](5) # ComplexSIMD[cf32](5, 5) と同等
+    # 単純に 5 + 5*`1j` と定義することもできます！
+
     # 複素数配列を作成
-    var A = nm.full[f32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)
-    var B = nm.ones[f32](Shape(1000, 1000))                            # (1+1j)
+    var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)で埋める
+    var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)で埋める
 
     # 配列を出力
     print(A)
@@ -175,58 +139,129 @@ def main() raises:
     var C = A * B
 
     # 配列からスカラーを取得
-    var A_item = A[item(291, 141)]
+    var A_item = A[Item(291, 141)]
     # 配列の要素を設定
     A[item(291, 141)] = complexscalar
-```## インストール方法
+```
 
-NuMojoパッケージをインストールして使用するには、3つのアプローチがあります。
+## インストール方法
 
-### `pixi.toml`に`numojo`を追加
+NuMojoは、さまざまな開発ニーズに対応できるよう複数のインストール方法を提供しています。ワークフローに最も適した方法をお選びください。
 
-`pixi.toml`ファイルの依存関係セクションに、パッケージ`numojo`（再現性のため正確なバージョンに固定）を追加できます。
+### 方法1：pixi-build-mojoを用いたGitインストール（推奨）
+
+GitHubリポジトリから直接NuMojoをインストールすることで、安定版と最新機能の両方にアクセスできます。この方法は、最新の機能を使いたい開発者や、最新の安定版を利用したい開発者に最適です。
+
+既存の`pixi.toml`に以下を追加してください：
 
 ```toml
+[workspace]
+preview = ["pixi-build"]
+
+[package]
+name = "your_project_name"
+version = "0.1.0"
+
+[package.build]
+backend = {name = "pixi-build-mojo", version = "0.*"}
+
+[package.build.config.pkg]
+name = "your_package_name"
+
+[package.host-dependencies]
+modular = "0.26.2.*"
+
+[package.build-dependencies]
+modular = "0.26.2.*"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
+[package.run-dependencies]
+modular = "0.26.2.*"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+
 [dependencies]
-numojo = "=0.7.0"
+modular = "26.2.*"
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
-その後、`pixi install`を実行してパッケージをインストールします。
-
-以下の表は、`numojo`のバージョンと必要な対応する`mojo`のバージョンを示しています。
-
-| `numojo` | `mojo` |
-| -------- | ------ |
-| v0.7.0   | ==25.3 |
-| v0.6.1   | ==25.2 |
-| v0.6.0   | ==25.2 |
-
-### パッケージをビルド
-
-このアプローチでは、スタンドアロンパッケージファイル`numojo.mojopkg`をビルドし、他のプロジェクトにコピーできます（オフラインまたはhermetic buildに有用で、最新のNuMojoブランチを使用する場合に便利です）。
-
-1. リポジトリをクローンします。
-2. `pixi run package`を使用してパッケージをビルドします。
-3. `numojo.mojopkg`をコードを含むディレクトリに移動します（またはその親ディレクトリをインクルードパスに追加します）。
-
-### コンパイラとLSPにNuMojoのパスを含める
-
-このアプローチでは、パッケージファイルをビルドする必要がありません。コンパイル時に、NuMojoソースパスを直接インクルードします：
-
-```console
-mojo run -I "../NuMojo" example.mojo
+次に、以下を実行します：
+```bash
+pixi install
 ```
 
-これは、コードをテストする際にNuMojoソースファイルを編集できるため、より柔軟です。
+**ブランチの選択：**
+- **`main`ブランチ**：安定版を提供します。現在、Mojo 25.6.0に対応するNuMojo v0.8.0をサポートしています。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
+- **`pre-x.y`ブランチ**：最新のMojoバージョン（現在はmojo nightly 26.2.0.dev2026022717）をサポートする開発中のブランチです。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
 
-VSCodeのMojo LSPがインポートされた`numojo`パッケージを解決できるようにするには：
+パッケージはPixi環境内で自動的に利用可能になり、VSCode LSPがインテリジェントなコードヒントを提供します。
 
-1. VSCodeの設定ページに移動します。
-2. `Mojo › Lsp: Include Dirs`に移動します。
-3. `add item`をクリックして、Numojoリポジトリが配置されているパスを書き込みます。例：`/Users/Name/Programs/NuMojo`
-4. Mojo LSPサーバーを再起動します。
+### 方法2：Pixi（prefix.dev）経由での安定版インストール
 
-これで、VSCodeがNumojoパッケージの関数ヒントを表示できるようになりました！
+ほとんどのユーザーには、互換性と再現性を保証するため、Pixi経由で安定版をインストールすることをお勧めします。
+
+`pixi.toml`ファイルに以下を追加してください：
+
+```toml
+[workspace]
+channels = ["https://repo.prefix.dev/modular-community"]
+
+[dependencies]
+numojo = "=0.9.0"
+```
+
+次に、以下を実行します：
+```bash
+pixi install
+```
+
+**バージョン互換性：**
+
+| NuMojoバージョン | 必要なMojoバージョン |
+| --------------- | -------------------- |
+| v0.9.0          | ==26.2                |
+| v0.8.0          | ==25.7                |
+| v0.7.0          | ==25.3                |
+| v0.6.1          | ==25.2                |
+| v0.6.0          | ==25.2                |
+
+### 方法3：スタンドアロンパッケージのビルド
+
+この方法では、複数のプロジェクトで使い回せる可搬性の高い`numojo.mojopkg`ファイルを作成します。オフライン開発やhermetic buildに最適です。
+
+1. リポジトリをクローンします：
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   cd NuMojo
+   ```
+
+2. パッケージをビルドします：
+   ```bash
+   pixi run package
+   ```
+
+3. `numojo.mojopkg`をプロジェクトディレクトリにコピーするか、その親ディレクトリをインクルードパスに追加します。
+
+### 方法4：ソースコードを直接統合する
+
+開発中にNuMojoのソースコードを変更できるようにするなど、最大限の柔軟性を求める場合：
+
+1. リポジトリを任意の場所にクローンします：
+   ```bash
+   git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+   ```
+
+2. コードをコンパイルする際に、NuMojoのソースパスを含めます：
+   ```bash
+   mojo run -I "/path/to/NuMojo" your_program.mojo
+   ```
+
+3. **VSCode LSPの設定**（コードヒントと自動補完のため）：
+   - VSCodeの環境設定を開きます
+   - `Mojo › Lsp: Include Dirs`に移動します
+   - `Add Item`をクリックし、NuMojoディレクトリへのフルパスを入力します（例：`/Users/YourName/Projects/NuMojo`）
+   - Mojo LSPサーバーを再起動します
+
+設定後、VSCodeはNuMojoの関数に対してインテリジェントなコード補完とヒントを提供します！
 
 ## 貢献について
 
@@ -251,33 +286,3 @@ LLVM例外付きApache 2.0ライセンスの下で配布されています。詳
 <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=Mojo-Numerics-and-Algorithms-group/NuMojo" />
 </a>
-mojo run -I "../NuMojo" example.mojo
-```
-
-これは、コードをテストするときにNuMojoソースファイルを編集できるので、より柔軟です。
-
-VSCode LSPがインポートされた `numojo` パッケージを解決できるようにするには、次のようにします：
-
-1. VSCodeの環境設定ページを開きます。
-2. Mojo ' Lsp: Include Dirs` に移動します。
-3. add item` をクリックし、Numojo リポジトリがあるパスを追加します。例えば `/Users/Name/Programs/NuMojo` です。
-。
-4. Mojo LSPサーバーを再起動します。
-
-これでVSCodeがNumojoパッケージの関数ヒントを表示できるようになります！
-
-## 貢献
-
-どのような貢献でも大歓迎です**。コントリビュートに関する詳細やガイドラインは、[こちら](CONTRIBUTING.md)を参照してください。
-
-## 警告
-
-このライブラリはまだ非常に未完成であり、いつでも変更される可能性があります。
-
-## ライセンス
-
-LLVM例外を含むApache 2.0ライセンスの下で配布されています。詳細は[LICENSE](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE)とLLVM [License](https://llvm.org/LICENSE.txt)を参照してください。
-
-## 謝辞
-
-* [Modular](https://github.com/modularml)によって作成されたネイティブの[Mojo](https://github.com/modularml/mojo)で構築されています。

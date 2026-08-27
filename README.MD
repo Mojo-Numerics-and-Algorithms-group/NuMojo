@@ -169,17 +169,17 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 
 [package.build-dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
+mojo = "==1.0.0"
+max-core = "==26.5.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
@@ -210,7 +210,7 @@ Add the following to your `pixi.toml` file:
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.9.0"
+numojo = "=0.10.0"
 ```
 
 Then run:
@@ -222,6 +222,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | --------------------- |
+| v0.10.0        | ==1.0.0               |
 | v0.9.0         | ==26.2                |
 | v0.8.0         | ==25.7                |
 | v0.7.0         | ==25.3                |

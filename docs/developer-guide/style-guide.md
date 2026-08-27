@@ -2,13 +2,36 @@
 
 In the interest of keeping our code clean and consistent, and enabling some automation for documentation the following simple standards will be required for new commits.
 
+Run `pixi run check_standards` before opening a PR — it reports (without rewriting anything) any file that doesn't match this guide: missing headers, missing module docstrings, stale `Exports` sections, malformed section separators, or function docstrings that don't match the actual signature. See [pre-pr-checks.md](pre-pr-checks.md).
+
 ## File Level
-All files must begin with a triple quoted docstring describing the functionality created by the file. It should be a single sentence with the first letter capitalized and ending with a period.
+
+Every file starts with a license header, formatted as an 80-character separator, a one-line description of the file, the license lines, then a closing separator:
+```mojo
+# ===----------------------------------------------------------------------=== #
+# NuMojo: One-line description of the file.
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
+```
+
+After the header, every file must have a triple-quoted module docstring: a title line naming the module (in the form `Title (dotted.module.path)`) underlined with `=` characters of the exact same length, a short description, and, for any module that exports names other consumers should import, an `Exports` section listing them.
 ```mojo
 """
-Document docstring describing what it does, if it is in an init file it will be the docstring for the module.
+Title (numojo.path.to.module).
+===============================
+One or two sentence description of what the module provides.
+
+Exports
+-------
+- `name`: What it is.
 """
 ```
+
+Below the module docstring, imports are grouped under their own 80-character separators (`Stdlib`, `External`, `NuMojo`) — see [pre-pr-checks.md](pre-pr-checks.md) and `pixi run check_standards` for the automated checks; `scripts/organize_mojo_imports.py` will sort and group them for you.
+
 All comptimes and file-level variable definitions must have a docstring that describes what they are placed below the declaration.
 ```mojo
 comptime Example = Int
@@ -48,11 +71,14 @@ def func[param:Copyable](arg1:param)->param:
     ...
 ```
 
-If the function has compile time constraints or raises `Error`s include sections similar to return that specify those constraints and possible errors.
+If the function has compile time constraints or raises errors, include sections after `Returns:` that specify those constraints and possible errors. All errors raised in NuMojo are `NumojoError`, so `Raises:` should describe the conditions under which a `NumojoError` is raised rather than naming a Python-style exception type.
 ```mojo
 """
+Returns:
+    Describe what is returned.
+
 Raises:
-    A description of the errors raised by the function.
+    NumojoError: A description of the condition that raises it.
 
 Constraints:
     If the functions use compile time constraints they should be listed here.

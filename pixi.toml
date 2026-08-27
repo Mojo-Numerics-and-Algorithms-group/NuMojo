@@ -62,7 +62,7 @@ test_all = """pixi run package && bash tests/test_core.sh && bash tests/test_rou
 test_core = "pixi run package && bash tests/test_core.sh"
 test_routines = "pixi run package && bash tests/test_routines.sh"
 
-# check docstrings/headers/imports/error-handling against extras/cleanup.md
+# check docstrings/headers/imports/error-handling.
 # (reporting only, never rewrites files; see scripts/check_mojo_standards.py)
 check_standards = "python3 scripts/check_mojo_standards.py numojo"
 

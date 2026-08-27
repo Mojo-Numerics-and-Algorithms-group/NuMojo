@@ -1,7 +1,6 @@
 # Basic structure of NDArray
 
 > Date: 2026-02-23
-> This also applies to `Matrix` type.
 
 The `NDArray` is wrapper around `DataContainer` and other metadata such as shape, strides, offset, and flags. The actual data is stored in the `DataContainer`. The `DataContainer` manages the memory allocation and reference counting for the data buffer.
 

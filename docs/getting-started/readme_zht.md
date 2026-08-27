@@ -10,10 +10,13 @@
   <h1 align="center" style="font-size: 3em; color: white; font-family: 'Avenir'; text-shadow: 1px 1px orange;">NuMojo</h1>
 
   <p align="center">
-    NuMojo 是爲 Mojo 🔥 設計的多維數組運算庫，類似 Python 中的 NumPy, SciPy。
+    NuMojo 是爲 Mojo 🔥 設計的多維數組運算庫，類似 Python 中的 NumPy。
     <br />
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
+[![Mojo](https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg)](https://www.modular.com/mojo)
+
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
-        <a href="https://numojo.readthedocs.io"><strong>閲讀文檔» </strong></a> &nbsp; &nbsp;
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>查看範例» </strong></a> &nbsp; &nbsp;
         <a href="../user-guide/changelog.md"><strong>更新日誌» </strong></a> &nbsp; &nbsp;
         <a href="https://discord.gg/NcnSH5n26F" ><strong>加入 Discord 討論頻道» </strong></a>
@@ -28,19 +31,32 @@
   </p>
 </div>
 
+**目錄**
+
+1. [關於本項目](#關於本項目)
+2. [為什麼選擇 NuMojo](#為什麼選擇-numojo)
+3. [特性與目標](#特性與目標)
+4. [使用方法](#使用方法)
+5. [安裝方法](#安裝方法)
+6. [貢獻方式](#貢獻方式)
+7. [警告](#警告)
+8. [授權條款](#授權條款)
+9. [致謝](#致謝)
+10. [貢獻者](#貢獻者)
+
 ## 關於本項目
 
-NuMojo，旨在為 Mojo 語言生態系統提供數值計算和多維數組運算功能，類似於 NumPy、SciPy 和 Scikit 等數學庫在 Python 語言生態系統中所扮演的角色。
-
-***NuMojo 是什麼***
+NuMojo 旨在涵蓋 NumPy 中豐富的數值運算能力。
 
 我們致力於充分發揮 Mojo 的潛力，包括向量化、並行化和 GPU 加速。目前，NuMojo 已擴展了大部分（甚至全部）Mojo 標準庫中的數學函數，使其支援數組輸入。
 
-我們對 NuMojo 的願景，是讓它成為其他需要高速數值運算的 Mojo 第三方庫的基礎構件，同時不帶有機器學習反向傳播系統這類額外負擔。
+我們對 NuMojo 的願景，是讓它成為其他需要高速數值運算的 Mojo 第三方庫不可或缺的基礎構件。
 
-***NuMojo 不是什麼***
+## 為什麼選擇 NuMojo
 
-NuMojo 不是一個機器學習庫，它永遠不會在核心庫中包含反向傳播（back-propagation）功能。
+- **原生於 Mojo。** NuMojo 的 `NDArray` 是 Mojo 原生、以 SIMD 為底層實作的型別，並非圍繞 NumPy 或 MAX 張量型別打造的綁定層，因此可直接編譯進你的程式，沒有 Python 互操作的額外開銷。
+- **貼近 NumPy 的 API。** 切片、廣播（broadcasting）、以 `@` 進行矩陣乘法，以及函數命名，在合理之處都盡量與 NumPy 保持一致，讓你原有的使用直覺能夠沿用。
+- **為發揮 Mojo 優勢而生。** 向量化與平行運算貫穿整個運算流程，隨著 Mojo 自身的裝置支援日趨成熟，GPU 與其他加速器的支援（`AcceleratorNDArray`）也將陸續到位。
 
 ## 特性與目標
 
@@ -70,8 +86,6 @@ NuMojo 不是一個機器學習庫，它永遠不會在核心庫中包含反向�
 - 等等……
 
 所有可用的函數與物件，請參閱[此文檔](../user-guide/features.md)。我們也維護了一份持續更新的路線圖，詳見 [docs/user-guide/roadmap.md](../user-guide/roadmap.md)。
-
-詳細的路線圖，請參閱 [docs/user-guide/roadmap.md](../user-guide/roadmap.md) 文件。
 
 ## 使用方法
 
@@ -204,8 +218,8 @@ pixi install
 
 **分支選擇：**
 
-- **`main` 分支**：提供穩定版本，目前支援 NuMojo v0.9.0，相容於 Mojo 26.2。若需使用更早期的 NuMojo 版本，請改用方法二。
-- **`pre-x.y` 分支**：積極開發中的分支，支援最新的 Mojo 版本（目前為 NuMojo v0.10.0，需要 Mojo >=1.0.0, <1.1.0）。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
+- **`main` 分支**：提供最新的穩定版本。目前為 NuMojo v0.10.0，相容於 Mojo >=1.0.0, <1.1.0。若需使用更早期的 NuMojo 版本，請改用方法二。
+- **`pre-x.y` 分支**：下一版本的積極開發分支。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
 
 安裝完成後，該套件會自動出現在你的 Pixi 環境中，VSCode LSP 也會提供智能程式碼提示。
 
@@ -220,7 +234,7 @@ pixi install
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.9.0"
+numojo = "=0.10.0"
 ```
 
 接著執行：
@@ -285,7 +299,18 @@ pixi install
 
 ## 貢獻方式
 
-我們非常感謝任何形式的貢獻。貢獻指南（程式碼風格、測試、文檔撰寫、發佈週期）請參閱 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+我們非常感謝你所做的任何貢獻。NuMojo 目前仍處於早期發展階段，有許多地方需要協助：實作運算函數、撰寫測試、改善文檔，或單純是回報你覺得不對勁的問題。
+
+貢獻者快速上手：
+
+```bash
+git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+cd NuMojo
+pixi install
+pixi run final   # 格式化並執行測試
+```
+
+完整指南（程式碼風格、目錄結構、PR 流程）請參閱 [docs/developer-guide/contributing.md](../developer-guide/contributing.md)；文檔字串（docstring）與格式慣例請參閱 [docs/developer-guide/style-guide.md](../developer-guide/style-guide.md)；提交 PR 前應執行的檢查項目，請參閱 [docs/developer-guide/pre-pr-checks.md](../developer-guide/pre-pr-checks.md)。
 
 ## 警告
 

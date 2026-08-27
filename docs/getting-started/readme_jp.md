@@ -2,37 +2,41 @@
 
 ![logo](../../assets/numojo_logo_360x360.png)
 
-NuMojoは、Python の NumPy、SciPy と同様の数値計算機能を Mojo 🔥 で提供するライブラリです。
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
+[![Mojo](https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg)](https://www.modular.com/mojo)
 
-**[ドキュメントを見る»](https://numojo.readthedocs.io)**  |  **[サンプルを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/user-guide/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
+NuMojoは、Python の NumPy と同様の数値計算機能を Mojo 🔥 で提供するライブラリです。
 
-**[中文·简»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zhs.md)**  |  **[中文·繁»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_zht.md)**  |  **[English»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.md)** |  **[한국어»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/docs/getting-started/readme_kr.md)**
+**[サンプルを見る»](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md)**  |  **[変更履歴»](../user-guide/changelog.md)**  |  **[Discordに参加»](https://discord.gg/NcnSH5n26F)**
+
+**[中文·简»](./readme_zhs.md)**  |  **[中文·繁»](./readme_zht.md)**  |  **[English»](../../README.MD)**  |  **[한국어»](./readme_kr.md)**
 
 **目次**
 
-1. [プロジェクトについて](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#about-the-project)
-2. [目標](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#goals)
-3. [使用方法](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#usage)
-4. [インストール方法](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#how-to-install)
-5. [貢献について](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#contributing)
-6. [注意事項](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#warnings)
-7. [ライセンス](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#license)
-8. [謝辞](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#acknowledgments)
-9. [貢献者](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/README.MD#Contributors)
+1. [プロジェクトについて](#プロジェクトについて)
+2. [なぜNuMojoか](#なぜnumojoか)
+3. [機能と目標](#機能と目標)
+4. [使用方法](#使用方法)
+5. [インストール方法](#インストール方法)
+6. [貢献について](#貢献について)
+7. [注意事項](#注意事項)
+8. [ライセンス](#ライセンス)
+9. [謝辞](#謝辞)
+10. [貢献者](#貢献者)
 
 ## プロジェクトについて
 
-NuMojoは、NumPy、SciPy、Scikit-learnなどのPythonパッケージにある幅広い数値計算機能の実現を目指しています。
-
-***NuMojoとは***
+NuMojoは、NumPyにある幅広い数値計算機能を実現することを目指しています。
 
 私たちは、ベクトル化、並列化、GPUアクセラレーションを含む、Mojoの潜在能力を最大限に活用することを目指しています。現在、NuMojoは、標準ライブラリの数学関数のほぼすべてを配列入力に対応するように拡張しています。
 
-NuMojoのビジョンは、機械学習の逆伝播システムの追加的な負荷なしに、高速な数学演算を必要とする他のMojoパッケージにとって不可欠な構成要素として機能することです。
+NuMojoのビジョンは、機械学習の逆伝播システムの追加的な負荷なしに、高速な数学演算を必要とする他のMojoライブラリにとって不可欠な構成要素として機能することです。
 
-***NuMojoでないもの***
+## なぜNuMojoか
 
-NuMojoは機械学習ライブラリではなく、ベースライブラリの一部として逆伝播を含むことはありません。
+- **Mojoネイティブ。** NuMojoの`NDArray`は、NumPyやMAXのテンソル型をラップしたものではなく、Mojoネイティブな SIMD ベースの型です。そのため、Pythonとの相互運用によるオーバーヘッドなしにプログラムへコンパイルされます。
+- **NumPyに親しんだAPI。** スライス、ブロードキャスト、行列積のための`@`演算子、関数名などは、理にかなう範囲でNumPyに合わせているため、これまでの感覚をそのまま活かせます。
+- **Mojoの強みを活かす設計。** 各ルーチンではベクトル化と並列化が全面的に活用されており、Mojo自体のデバイスサポートが成熟するのに合わせて、GPUなどのアクセラレータ対応（`AcceleratorNDArray`）も実装されていく予定です。
 
 ## 機能と目標
 
@@ -61,9 +65,7 @@ NuMojoは機械学習ライブラリではなく、ベースライブラリの�
 - 統計（`numojo.statistics`）
 - その他...
 
-利用可能なすべての関数とオブジェクトは[こちら](../user-guide/features.md)でご確認ください。最新のロードマップは[../user-guide/roadmap.md](../user-guide/roadmap.md)で管理されています。
-
-詳細なロードマップについては、[../user-guide/roadmap.md](../user-guide/roadmap.md)ファイルを参照してください。
+利用可能なすべての関数とオブジェクトは[こちら](../user-guide/features.md)でご確認ください。最新のロードマップは[docs/user-guide/roadmap.md](../user-guide/roadmap.md)で管理されています。
 
 ## 使用方法
 
@@ -124,7 +126,7 @@ def main() raises:
     # cf32はnumojoにおいて複素数型を識別するために使用される、f32（DType.float32）の複素数版です。
     var complexscalar = CScalar[cf32](5) # ComplexSIMD[cf32](5, 5) と同等
     # 単純に 5 + 5*`1j` と定義することもできます！
-
+  
     # 複素数配列を作成
     var A = nm.full[cf32](Shape(1000, 1000), fill_value=complexscalar)  # (5+5j)で埋める
     var B = nm.ones[cf32](Shape(1000, 1000))                            # (1+1j)で埋める
@@ -194,8 +196,8 @@ pixi install
 ```
 
 **ブランチの選択：**
-- **`main`ブランチ**：安定版を提供します。現在、Mojo 26.2に対応するNuMojo v0.9.0をサポートしています。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
-- **`pre-x.y`ブランチ**：最新のMojoバージョンをサポートする開発中のブランチです（現在はNuMojo v0.10.0、Mojo >=1.0.0, <1.1.0 が必要）。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
+- **`main`ブランチ**：最新の安定版を提供します。現在はNuMojo v0.10.0で、Mojo >=1.0.0, <1.1.0 に対応しています。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
+- **`pre-x.y`ブランチ**：次のリリースに向けた開発中のブランチです。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
 
 パッケージはPixi環境内で自動的に利用可能になり、VSCode LSPがインテリジェントなコードヒントを提供します。
 
@@ -210,7 +212,7 @@ pixi install
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.9.0"
+numojo = "=0.10.0"
 ```
 
 次に、以下を実行します：
@@ -270,7 +272,18 @@ pixi install
 
 ## 貢献について
 
-どのような貢献でも**大変感謝いたします**。ガイドライン（コーディングスタイル、テスト、ドキュメント、リリースサイクル）については、[CONTRIBUTING.md](CONTRIBUTING.md)をご覧ください。
+どのような貢献でも**大変感謝いたします**。NuMojoはまだ発展途上のプロジェクトであり、貢献できる余地がたくさんあります。ルーチンの実装、テストの作成、ドキュメントの改善はもちろん、気になった点があれば issue を立てるだけでも大歓迎です。
+
+貢献者向けのクイックスタート：
+
+```bash
+git clone https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo.git
+cd NuMojo
+pixi install
+pixi run final   # フォーマット + テスト
+```
+
+コーディングスタイルやディレクトリ構成、PRの進め方などの詳細なガイドラインは[docs/developer-guide/contributing.md](../developer-guide/contributing.md)を、docstring やフォーマットの規約については[docs/developer-guide/style-guide.md](../developer-guide/style-guide.md)を、PRを開く前に実行すべき内容については[docs/developer-guide/pre-pr-checks.md](../developer-guide/pre-pr-checks.md)をご覧ください。
 
 ## 注意事項
 
@@ -278,7 +291,7 @@ pixi install
 
 ## ライセンス
 
-LLVM例外付きApache 2.0ライセンスの下で配布されています。詳細については、[LICENSE](https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE)およびLLVM [License](https://llvm.org/LICENSE.txt)をご覧ください。
+LLVM例外付きApache 2.0ライセンスの下で配布されています。詳細については、[LICENSE](../../LICENSE)およびLLVM [License](https://llvm.org/LICENSE.txt)をご覧ください。
 
 このプロジェクトには、Apache License v2.0 with LLVM Exceptions（LLVM [License](https://llvm.org/LICENSE.txt)を参照）でライセンスされた[Mojo Standard Library](https://github.com/modularml/mojo)からのコードが含まれています。MAXとMojoの使用と配布は、[MAX & Mojo Community License](https://www.modular.com/legal/max-mojo-license)の下でライセンスされています。
 

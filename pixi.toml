@@ -36,12 +36,15 @@ name = "numojo"
 
 [package.host-dependencies]
 mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.build-dependencies]
 mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [package.run-dependencies]
 mojo = ">=1.0.0, <1.1.0"
+max-core = ">=26.5.0,<27"
 
 [tasks]
 # compile the package and copy it to the tests folder

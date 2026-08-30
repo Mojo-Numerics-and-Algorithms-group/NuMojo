@@ -81,9 +81,7 @@ SECTION_CANONICAL = {
     "Example": "Examples",
     "Examples": "Examples",
 }
-SECTION_HEADER_RE = re.compile(
-    r"^(?P<indent>\s*)(?P<name>[A-Za-z]+):\s*$"
-)
+SECTION_HEADER_RE = re.compile(r"^(?P<indent>\s*)(?P<name>[A-Za-z]+):\s*$")
 
 VALID_ERROR_LABEL = "NumojoError"
 BAD_ERROR_LABELS = {
@@ -99,8 +97,12 @@ BAD_ERROR_LABELS = {
 TODO_RE = re.compile(r"#\s*(TODO|FIXME)\b")
 TODO_OK_RE = re.compile(r"#\s*(TODO|FIXME):\s+[A-Z0-9`@]")
 
-DEF_RE = re.compile(r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?P<kind>def|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)")
-STRUCT_RE = re.compile(r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?:struct|trait)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)")
+DEF_RE = re.compile(
+    r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?P<kind>def|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+)
+STRUCT_RE = re.compile(
+    r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?:struct|trait)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -246,9 +248,7 @@ def check_module_docstring(
     while idx < len(lines) and lines[idx].strip() == "":
         idx += 1
     if idx >= len(lines) or '"""' not in lines[idx]:
-        report.add(
-            header_end + 1, "docstring", "Missing module-level docstring."
-        )
+        report.add(header_end + 1, "docstring", "Missing module-level docstring.")
         return None
 
     doc_start = idx
@@ -256,7 +256,7 @@ def check_module_docstring(
         report.add(
             idx + 1,
             "docstring",
-            "Module docstring should open with a bare '\"\"\"' line "
+            'Module docstring should open with a bare \'"""\' line '
             "(title goes on the next line).",
         )
 
@@ -278,9 +278,7 @@ def check_module_docstring(
 
     title_line = lines[idx + 1].rstrip("\n")
     if close < idx + 3:
-        report.add(
-            idx + 2, "docstring", "Module docstring missing title/underline."
-        )
+        report.add(idx + 2, "docstring", "Module docstring missing title/underline.")
         return close
 
     underline_line = lines[idx + 2].rstrip("\n")
@@ -324,17 +322,15 @@ def check_module_docstring(
 
     body = lines[idx : close + 1]
     body_text = "".join(body)
-    if re.search(r"^\s*(TODO|FIXME):", body_text, re.M):
+    if re.search(r"^\s*(TODO|FIXME):", body_text, re.MULTILINE):
         report.add(
             idx + 1,
             "docstring",
             "TODO:/FIXME: item found inside module docstring — move it to a "
-            "standalone comment after the closing '\"\"\"'.",
+            'standalone comment after the closing \'"""\'.',
         )
 
-    has_exports_header = any(
-        line.strip() == "Exports" for line in body
-    )
+    has_exports_header = any(line.strip() == "Exports" for line in body)
     if not has_exports_header:
         # Only worth flagging if the module defines public top-level symbols.
         pass  # checked by caller against actual declarations
@@ -393,9 +389,7 @@ def find_public_top_level_symbols(lines: list[str], after: int) -> set[str]:
     for i in range(after + 1, len(lines)):
         line = lines[i]
         if re.match(r"^[A-Za-z_]", line):
-            m = re.match(
-                r"^(?:struct|trait)\s+([A-Za-z_][A-Za-z0-9_]*)", line
-            )
+            m = re.match(r"^(?:struct|trait)\s+([A-Za-z_][A-Za-z0-9_]*)", line)
             if m and not m.group(1).startswith("_"):
                 names.add(m.group(1))
                 continue
@@ -414,9 +408,7 @@ def find_public_top_level_symbols(lines: list[str], after: int) -> set[str]:
 # ===----------------------------------------------------------------------=== #
 
 
-def check_body(
-    lines: list[str], body_start: int, report: FileReport
-) -> None:
+def check_body(lines: list[str], body_start: int, report: FileReport) -> None:
     doc_spans = set()
     for s, e in docstring_spans(lines[body_start:]):
         for i in range(s, e + 1):
@@ -477,8 +469,10 @@ def check_imports(lines: list[str], body_start: int, report: FileReport) -> None
         if s.startswith("from ") or s.startswith("import "):
             first_import = idx
             break
-        if s.startswith("struct ") or s.startswith("trait ") or re.match(
-            r"^(def|fn)\s", s
+        if (
+            s.startswith("struct ")
+            or s.startswith("trait ")
+            or re.match(r"^(def|fn)\s", s)
         ):
             break
         idx += 1
@@ -499,8 +493,7 @@ def check_imports(lines: list[str], body_start: int, report: FileReport) -> None
         report.add(
             first_import + 1,
             "imports",
-            "Imports are not preceded by a '# ===' / <Group> / '# ===' "
-            "section header.",
+            "Imports are not preceded by a '# ===' / <Group> / '# ===' section header.",
         )
 
 
@@ -521,8 +514,7 @@ def check_error_handling(lines: list[str], report: FileReport) -> None:
         report.add(
             i + 1,
             "error-handling",
-            f"Raw 'raise Error(...)' not wrapped in NumojoError: "
-            f"{line.strip()!r}",
+            f"Raw 'raise Error(...)' not wrapped in NumojoError: {line.strip()!r}",
         )
 
 
@@ -571,7 +563,9 @@ def parse_signature(lines: list[str], start: int) -> Signature | None:
     def/fn keyword, possibly after decorator lines already consumed by the
     caller). Returns None if this doesn't look like a real signature."""
     line0 = lines[start]
-    m = re.match(r"^(?P<indent>\s*)(?P<kind>def|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)", line0)
+    m = re.match(
+        r"^(?P<indent>\s*)(?P<kind>def|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)", line0
+    )
     if not m:
         return None
     indent = len(m.group("indent"))
@@ -883,8 +877,7 @@ def check_signature_docstring(
         report.add(
             start + 1,
             "docstring",
-            f"'{sig.name}': has a return type but docstring has no "
-            f"'Returns:' section.",
+            f"'{sig.name}': has a return type but docstring has no 'Returns:' section.",
         )
 
     if sig.self_raises and "Raises" not in present_canonical:
@@ -973,10 +966,7 @@ def find_top_level_defs(lines: list[str]) -> list[int]:
             # indent on the closing ')...:' line — don't get misread as a
             # sibling/dedent that pops this def off the stack early.
             depth = (
-                line.count("[")
-                + line.count("(")
-                - line.count("]")
-                - line.count(")")
+                line.count("[") + line.count("(") - line.count("]") - line.count(")")
             )
             j = i
             while depth > 0 and j + 1 < n:

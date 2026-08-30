@@ -20,6 +20,8 @@
 *.css
 *.py
 *.pyc
+# ...but the developer tooling under scripts/ is tracked (see #392).
+!scripts/*.py
 
 # Miscellaneous files
 mojo

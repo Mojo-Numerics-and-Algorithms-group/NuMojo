@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
-"""Organize Mojo imports and remove unused imported names.
+"""Organize Mojo imports into the groups described in the style guide.
+
+See `docs/developer-guide/style-guide.md` for the grouping this produces
+(`Stdlib`, `External`, `NuMojo`, each under its own 80-character separator).
 
 Usage:
     python3 scripts/organize_mojo_imports.py numojo
 
 The script rewrites `.mojo` files under the given path by default. Use
 `--check` or `--diff` for dry runs.
+
+Sorting and grouping are safe and always applied. Dropping imported names
+that appear unused is *opt-in* (`--remove-unused`), because "unused" is
+decided by a text scan of the remaining source rather than by the compiler.
+
+Output is line-width compatible with `pixi run mojo format`: a `from ... import`
+that fits in 80 columns is emitted on one line, anything longer is
+parenthesized with a trailing comma (which `mojo format` then leaves alone).
 """
 
 from __future__ import annotations
@@ -17,18 +28,26 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-IMPORT_RE = re.compile(r"^(?P<indent>\s*)(?P<kind>from|import)\s+(?P<body>.+)$")
 FROM_RE = re.compile(r"^from\s+(?P<module>\S+)\s+import\s+(?P<names>.+)$", re.DOTALL)
 IMPORT_AS_RE = re.compile(r"^(?P<module>[^\s,]+)(?:\s+as\s+(?P<alias>\w+))?$")
 IDENT_RE = re.compile(r"`[^`]+`|[A-Za-z_][A-Za-z0-9_]*")
 BANNER_RE = re.compile(r"^# ===-+===\s*#?\s*$")
 
+# The three groups from the style guide, in emission order.
+GROUP_STDLIB = 0
+GROUP_EXTERNAL = 1
+GROUP_NUMOJO = 2
 GROUP_TITLES = {
-    0: "Stdlib",
-    1: "External",
-    2: "NuMojo",
-    4: "NuMojo",
+    GROUP_STDLIB: "Stdlib",
+    GROUP_EXTERNAL: "External",
+    GROUP_NUMOJO: "NuMojo",
 }
+
+# `mojo format` wraps at 80 columns; match it so the two tools agree.
+MAX_LINE_LENGTH = 80
+
+# The 80-character section separator from the style guide.
+SEPARATOR = "# ===" + "-" * 70 + "=== #"
 
 
 @dataclass(frozen=True)
@@ -112,7 +131,9 @@ def parse_from_import(text: str) -> ImportStatement | None:
         kind="from",
         module=module,
         imported=tuple(names),
-        force_parenthesized="\n" in text,
+        # True only when the statement really spanned several lines — `text`
+        # always ends in a newline, so test the stripped form.
+        force_parenthesized="\n" in text.strip(),
     )
 
 
@@ -241,7 +262,6 @@ def find_import_block(lines: list[str]) -> tuple[int, int, list[str]] | None:
         if idx in in_string:
             idx += 1
             continue
-        stripped = lines[idx].strip()
         if lines[idx].startswith("from ") or lines[idx].startswith("import "):
             start = idx
             break
@@ -278,43 +298,54 @@ def find_import_block(lines: list[str]) -> tuple[int, int, list[str]] | None:
 
 
 def import_group(module: str) -> int:
+    # Relative imports and the test helpers are in-tree, so they belong in
+    # the same `NuMojo` block as absolute `numojo.*` imports rather than in a
+    # second block under a duplicate title.
     if module.startswith("."):
-        return 4
+        return GROUP_NUMOJO
     root = module.split(".", 1)[0].split(",", 1)[0]
     if root == "std":
-        return 0
-    if root == "max":
-        return 1
+        return GROUP_STDLIB
     if root == "numojo":
-        return 2
+        return GROUP_NUMOJO
     if root == "utils_for_test":
-        return 4
-    return 1
+        return GROUP_NUMOJO
+    return GROUP_EXTERNAL
 
 
 def sort_imported_names(names: tuple[ImportedName, ...]) -> tuple[ImportedName, ...]:
     return tuple(sorted(names, key=lambda item: item.raw.replace("`", "").lower()))
 
 
-def render_from_import(module: str, names: tuple[ImportedName, ...]) -> str:
-    names = sort_imported_names(names)
-    if len(names) == 1:
-        return f"from {module} import {names[0].raw}\n"
-    if len(names) <= 4 and sum(len(name.raw) for name in names) + len(module) < 88:
-        return f"from {module} import {', '.join(name.raw for name in names)}\n"
-
+def render_parenthesized(module: str, names: tuple[ImportedName, ...]) -> str:
     body = "".join(f"    {name.raw},\n" for name in names)
     return f"from {module} import (\n{body})\n"
 
 
+def render_from_import(module: str, names: tuple[ImportedName, ...]) -> str:
+    names = sort_imported_names(names)
+    # Measure the rendered line, not an approximation of it: the `from `,
+    # ` import ` and `, ` separators all count against the 80-column budget
+    # `mojo format` enforces. Getting this wrong makes the two tools undo
+    # each other's work on every run.
+    one_line = f"from {module} import {', '.join(name.raw for name in names)}\n"
+    if len(one_line.rstrip("\n")) <= MAX_LINE_LENGTH:
+        return one_line
+    return render_parenthesized(module, names)
+
+
 def render_import_statement(statement: ImportStatement) -> str:
     if statement.kind == "from":
-        if statement.force_parenthesized and len(statement.imported) > 1:
-            names = sort_imported_names(statement.imported)
-            body = "".join(f"    {name.raw},\n" for name in names)
-            return f"from {statement.module} import (\n{body})\n"
+        # A statement the author already wrote parenthesized keeps that shape:
+        # the trailing comma is a "magic trailing comma" that `mojo format`
+        # honours, so collapsing it here would just be re-expanded.
+        if statement.force_parenthesized:
+            return render_parenthesized(
+                statement.module, sort_imported_names(statement.imported)
+            )
         return render_from_import(statement.module, statement.imported)
-    return f"import {', '.join(name.raw for name in sort_imported_names(statement.imported))}\n"
+    modules = ", ".join(name.raw for name in sort_imported_names(statement.imported))
+    return f"import {modules}\n"
 
 
 def strip_strings_and_comments(text: str) -> str:
@@ -330,6 +361,13 @@ def strip_strings_and_comments(text: str) -> str:
                 triple = False
                 idx += 3
                 result.append(" ")
+                continue
+            # A backslash escapes the next character, so `"a\"b"` is one
+            # string, not two. Without this the scanner ends the string early
+            # and starts reading code as string content (or vice versa).
+            if ch == "\\":
+                result.append("  ")
+                idx += 2
                 continue
             if not triple and ch == quote:
                 quote = None
@@ -360,10 +398,8 @@ def used_identifiers(text: str) -> set[str]:
 
 
 def remove_unused_imports(
-    statements: list[ImportStatement], body: str, *, skip_unused: bool
+    statements: list[ImportStatement], body: str
 ) -> list[ImportStatement]:
-    if skip_unused:
-        return statements
     used = used_identifiers(body)
     kept: list[ImportStatement] = []
     for statement in statements:
@@ -419,9 +455,7 @@ def merge_from_imports(statements: list[ImportStatement]) -> list[ImportStatemen
             imported=tuple(names),
             sortable=existing.sortable and statement.sortable,
             force_parenthesized=(
-                existing.force_parenthesized
-                or statement.force_parenthesized
-                or len(names) > 1
+                existing.force_parenthesized or statement.force_parenthesized
             ),
         )
         merged[statement.module] = combined
@@ -446,18 +480,14 @@ def organized_import_block(statements: list[ImportStatement]) -> str:
             ),
         )
         title = GROUP_TITLES.get(group, "Imports")
-        header = (
-            "# ===----------------------------------------------------------------------=== #\n"
-            f"# {title}\n"
-            "# ===----------------------------------------------------------------------=== #\n"
-        )
+        header = f"{SEPARATOR}\n# {title}\n{SEPARATOR}\n"
         rendered_groups.append(
             header + "".join(render_import_statement(stmt) for stmt in ordered)
         )
     return "\n".join(rendered_groups)
 
 
-def organize_file(path: Path, *, keep_unused: bool) -> str | None:
+def organize_file(path: Path, *, remove_unused: bool) -> str | None:
     original = path.read_text()
     lines = original.splitlines(keepends=True)
     block = find_import_block(lines)
@@ -472,10 +502,10 @@ def organize_file(path: Path, *, keep_unused: bool) -> str | None:
         statements.append(statement)
 
     body = "".join(lines[end:])
-    skip_unused = (
-        path.name == "__init__.mojo" or keep_unused or not body.strip()
-    )
-    statements = remove_unused_imports(statements, body, skip_unused=skip_unused)
+    # `__init__.mojo` re-exports on purpose, so nothing there is ever "unused".
+    prune = remove_unused and path.name != "__init__.mojo" and bool(body.strip())
+    if prune:
+        statements = remove_unused_imports(statements, body)
     new_block = organized_import_block(statements)
     tail = "".join(lines[end:]).lstrip("\n")
     if new_block and tail.strip():
@@ -512,15 +542,19 @@ def main() -> int:
     )
     parser.add_argument("--diff", action="store_true", help="Print unified diffs.")
     parser.add_argument(
-        "--keep-unused",
+        "--remove-unused",
         action="store_true",
-        help="Sort imports without removing unused imported names.",
+        help=(
+            "Also drop imported names that no longer appear in the file. This "
+            "is decided by a text scan, not by the compiler, so review the "
+            "result (pair it with --diff first)."
+        ),
     )
     args = parser.parse_args()
 
     changed = []
     for path in iter_mojo_files(args.paths):
-        updated = organize_file(path, keep_unused=args.keep_unused)
+        updated = organize_file(path, remove_unused=args.remove_unused)
         if updated is None:
             continue
         changed.append(path)

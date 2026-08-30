@@ -7,6 +7,9 @@ format, section-separator format, import grouping, TODO/FIXME formatting,
 and — for every `def`/`fn` — whether its docstring documents the parameters,
 args, raises, and return value that its signature actually has.
 
+The standard being checked is `docs/developer-guide/style-guide.md`; that
+document is the authority, this script is only an approximation of it.
+
 This is a *reporting* tool. It never rewrites files (use
 `organize_mojo_imports.py` for the import-reorg autofix). Exit code is 0 if
 clean, 1 if any file has findings, 2 on a usage/parse error.
@@ -32,7 +35,7 @@ from pathlib import Path
 # Constants
 # ===----------------------------------------------------------------------=== #
 
-SEPARATOR_WIDTH = 80  # "# ===" + 70 "-" + "=== #"
+# 80 characters: "# ===" + 70 "-" + "=== #".
 EXPECTED_SEPARATOR = "# ===" + "-" * 70 + "=== #"
 LICENSE_LINES = [
     "# Distributed under the Apache 2.0 License with LLVM Exceptions.",
@@ -41,14 +44,15 @@ LICENSE_LINES = [
     "# https://llvm.org/LICENSE.txt",
 ]
 
-# Canonical docstring section order (§1.5). Sections not in this list are
-# left alone (e.g. `Attributes:`, `Constants:` on struct docstrings).
-# NOTE: extras/cleanup.md §1.5 states Raises before Returns, but a survey of
-# the actual codebase (2026-08-22) found Returns-before-Raises outnumbers
-# Raises-before-Returns roughly 143 to a handful — i.e. that's the real de
-# facto convention here, not the documented one. This list follows what the
-# codebase actually does; if the team wants to enforce the documented order
-# instead, swap Raises/Returns below and update extras/cleanup.md to match.
+# Canonical docstring section order for functions, per the "Functions"
+# section of docs/developer-guide/style-guide.md: parameters and arguments
+# first, then `Returns:`, with constraints and raised errors "after
+# `Returns:`". Sections not in this list are left alone (e.g. `Attributes:`,
+# `Constants:` on struct docstrings).
+#
+# NOTE: the struct example in the style guide puts `Constraints:` *before*
+# `Parameters:`. Only functions are checked here, so the two don't collide in
+# practice, but the guide is inconsistent with itself on that point.
 SECTION_ORDER = [
     "Parameters",
     "Args",
@@ -94,16 +98,13 @@ BAD_ERROR_LABELS = {
     "ArithmeticError",
 }
 
+# Dunder methods have a contract fixed by the language, so their arguments and
+# return values are self-evident and don't need restating. `__init__` is the
+# exception: a constructor's arguments are real API surface.
+DOCUMENTED_DUNDERS = {"__init__"}
+
 TODO_RE = re.compile(r"#\s*(TODO|FIXME)\b")
 TODO_OK_RE = re.compile(r"#\s*(TODO|FIXME):\s+[A-Z0-9`@]")
-
-DEF_RE = re.compile(
-    r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?P<kind>def|fn)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
-)
-STRUCT_RE = re.compile(
-    r"^(?P<indent>\s*)(?:@\w+(\(.*\))?\s*\n\s*)*(?:struct|trait)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
-)
-
 
 # ===----------------------------------------------------------------------=== #
 # Data model
@@ -129,10 +130,6 @@ class FileReport:
 # ===----------------------------------------------------------------------=== #
 # Low-level helpers
 # ===----------------------------------------------------------------------=== #
-
-
-def strip_backticks(s: str) -> str:
-    return s.replace("`", "")
 
 
 def is_separator_line(line: str) -> bool:
@@ -174,23 +171,23 @@ def docstring_spans(lines: list[str]) -> list[tuple[int, int]]:
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: file header (§1.1)
+# Check: file header
 # ===----------------------------------------------------------------------=== #
 
 
 def check_header(lines: list[str], report: FileReport) -> int:
     """Returns the 0-indexed line number right after the header block."""
     if not lines:
-        report.add(1, "header", "File is empty.")
+        report.add(1, "headers", "File is empty.")
         return 0
 
     if not is_separator_line(lines[0]):
-        report.add(1, "header", "File must start with the header separator line.")
+        report.add(1, "headers", "File must start with the header separator line.")
         return 0
     if lines[0].rstrip("\n") != EXPECTED_SEPARATOR:
         report.add(
             1,
-            "header",
+            "headers",
             f"Header separator malformed (expected exactly 80 chars, "
             f"'# ===' + 70 dashes + '=== #'): {lines[0].rstrip()!r}",
         )
@@ -198,7 +195,7 @@ def check_header(lines: list[str], report: FileReport) -> int:
     if len(lines) < 2 or not lines[1].lstrip().startswith("# NuMojo:"):
         report.add(
             2,
-            "header",
+            "headers",
             "Second header line should read '# NuMojo: <short description>'.",
         )
 
@@ -207,18 +204,18 @@ def check_header(lines: list[str], report: FileReport) -> int:
         if idx >= len(lines) or lines[idx].rstrip("\n") != expected:
             report.add(
                 idx + 1,
-                "header",
+                "headers",
                 f"Header line does not match expected license text: {expected!r}",
             )
         idx += 1
 
     if idx >= len(lines) or not is_separator_line(lines[idx]):
-        report.add(idx + 1, "header", "Header must close with a separator line.")
+        report.add(idx + 1, "headers", "Header must close with a separator line.")
     else:
         if lines[idx].rstrip("\n") != EXPECTED_SEPARATOR:
             report.add(
                 idx + 1,
-                "header",
+                "headers",
                 f"Closing header separator malformed: {lines[idx].rstrip()!r}",
             )
         idx += 1
@@ -227,7 +224,7 @@ def check_header(lines: list[str], report: FileReport) -> int:
     if idx < len(lines) and lines[idx].strip() == "":
         report.add(
             idx + 1,
-            "header",
+            "headers",
             "Blank line between header and module docstring (should be none).",
         )
 
@@ -235,7 +232,7 @@ def check_header(lines: list[str], report: FileReport) -> int:
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: module docstring (§1.2)
+# Check: module docstring
 # ===----------------------------------------------------------------------=== #
 
 
@@ -251,7 +248,6 @@ def check_module_docstring(
         report.add(header_end + 1, "docstring", "Missing module-level docstring.")
         return None
 
-    doc_start = idx
     if lines[idx].strip() != '"""':
         report.add(
             idx + 1,
@@ -330,10 +326,9 @@ def check_module_docstring(
             'standalone comment after the closing \'"""\'.',
         )
 
-    has_exports_header = any(line.strip() == "Exports" for line in body)
-    if not has_exports_header:
-        # Only worth flagging if the module defines public top-level symbols.
-        pass  # checked by caller against actual declarations
+    # A missing `Exports` section is only worth flagging when the module
+    # actually declares public top-level symbols; `check_exports_accuracy`
+    # does that against the real declarations.
 
     for label in ("Example:", "Note:", "Return:", "Parameter:"):
         if any(line.strip() == label for line in body):
@@ -404,11 +399,22 @@ def find_public_top_level_symbols(lines: list[str], after: int) -> set[str]:
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: section separators (§1.4) + TODO/FIXME (§1.7)
+# Check: section separators + TODO/FIXME
 # ===----------------------------------------------------------------------=== #
 
 
-def check_body(lines: list[str], body_start: int, report: FileReport) -> None:
+def check_body(
+    lines: list[str],
+    body_start: int,
+    report: FileReport,
+    *,
+    separators: bool = True,
+    todos: bool = True,
+) -> None:
+    """Walk the body once, reporting only the categories asked for.
+
+    Both checks share this pass, so each is gated individually — otherwise
+    `--only todo` would also emit every separator finding."""
     doc_spans = set()
     for s, e in docstring_spans(lines[body_start:]):
         for i in range(s, e + 1):
@@ -420,13 +426,13 @@ def check_body(lines: list[str], body_start: int, report: FileReport) -> None:
         line = lines[i]
         stripped = line.rstrip("\n")
 
-        if re.match(r"^\s*#\s*=", stripped) and "=" in stripped:
+        if separators and re.match(r"^\s*#\s*=", stripped) and "=" in stripped:
             if is_separator_line(line):
                 indent = separator_indent(stripped)
                 if stripped != indent + EXPECTED_SEPARATOR:
                     report.add(
                         i + 1,
-                        "separator",
+                        "separators",
                         f"Section separator malformed (expected 80-char "
                         f"'# ===' + 70 dashes + '=== #', same indent as "
                         f"surrounding code): {stripped.strip()!r}",
@@ -435,15 +441,17 @@ def check_body(lines: list[str], body_start: int, report: FileReport) -> None:
                 # A "banner" comment that uses ===/--- decoration but isn't
                 # a bare separator line (e.g. has a title embedded in the
                 # same line) — not the standard 3-line
-                # separator/title/separator block from §1.4.
+                # separator/title/separator block from the style guide.
                 report.add(
                     i + 1,
-                    "separator",
+                    "separators",
                     f"Non-standard banner comment (should be a 3-line "
                     f"'# ===...=== #' / '# Title' / '# ===...=== #' block, "
                     f"not decoration on one line): {stripped!r}",
                 )
 
+        if not todos:
+            continue
         m = TODO_RE.search(stripped)
         if m and not stripped.lstrip().startswith(("# ===", "#===")):
             if not TODO_OK_RE.search(stripped):
@@ -456,7 +464,7 @@ def check_body(lines: list[str], body_start: int, report: FileReport) -> None:
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: imports (§1.3) — delegates structural check to organize script
+# Check: imports — delegates the structural rewrite to organize script
 # ===----------------------------------------------------------------------=== #
 
 
@@ -498,7 +506,7 @@ def check_imports(lines: list[str], body_start: int, report: FileReport) -> None
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: raw `raise Error(...)` (§1.6)
+# Check: raw `raise Error(...)`
 # ===----------------------------------------------------------------------=== #
 
 
@@ -538,7 +546,7 @@ def check_raises_docstring_labels(lines: list[str], report: FileReport) -> None:
 
 
 # ===----------------------------------------------------------------------=== #
-# Check: function/method signature vs. docstring (§1.5)
+# Check: function/method signature vs. docstring
 # ===----------------------------------------------------------------------=== #
 
 
@@ -788,19 +796,25 @@ def check_signature_docstring(
     if is_stub_body(lines, sig.sig_end):
         return  # trait method declaration, not a real implementation
 
+    # Private helpers and most dunders only need a one-line summary, if that:
+    # their signature is either an implementation detail or fixed by the
+    # language. They're still checked for section spelling and ordering below.
+    brief_is_enough = sig.is_private or (
+        sig.is_dunder and sig.name not in DOCUMENTED_DUNDERS
+    )
+
     doc_span = extract_docstring_for(lines, sig.sig_end)
     if doc_span is None:
-        if not sig.is_private:
+        if not brief_is_enough:
             report.add(
                 sig.sig_start + 1,
-                "docstring",
+                "signatures",
                 f"'{sig.kind} {sig.name}' has no docstring.",
             )
         return
 
     start, end = doc_span
     body = lines[start : end + 1]
-    body_text = "".join(body)
 
     # Which canonical sections are present, and are they labeled with a
     # non-canonical (singular/alternate) spelling?
@@ -819,7 +833,7 @@ def check_signature_docstring(
         if raw != canon:
             report.add(
                 start + 1,
-                "docstring",
+                "signatures",
                 f"'{sig.name}': docstring section '{raw}:' should be "
                 f"'{canon}:' (canonical plural form).",
             )
@@ -829,14 +843,14 @@ def check_signature_docstring(
     if seen_order != sorted(seen_order):
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': docstring sections out of order "
             f"({' -> '.join(present_order)}); expected order is "
             f"{' -> '.join(SECTION_ORDER)}.",
         )
 
-    if sig.is_private:
-        return  # one-line docstring is sufficient for private helpers
+    if brief_is_enough:
+        return
 
     # Documented parameter/arg names.
     documented_params = extract_documented_names(body, "Parameters")
@@ -846,14 +860,14 @@ def check_signature_docstring(
     if missing_params and "Parameters" not in present_canonical and sig.params:
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': has type parameter(s) {sig.params} but "
             f"docstring has no 'Parameters:' section.",
         )
     elif missing_params:
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': type parameter(s) not documented in "
             f"Parameters: {missing_params}",
         )
@@ -862,32 +876,32 @@ def check_signature_docstring(
     if missing_args and "Args" not in present_canonical and sig.args:
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': has argument(s) {sig.args} but docstring has "
             f"no 'Args:' section.",
         )
     elif missing_args:
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': argument(s) not documented in Args: {missing_args}",
         )
 
     if sig.returns and "Returns" not in present_canonical:
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': has a return type but docstring has no 'Returns:' section.",
         )
 
     if sig.self_raises and "Raises" not in present_canonical:
         # Only flagged when the function's own body has an explicit `raise`
         # statement (not merely `raises`-annotated because it calls other
-        # raising functions) — matches the plan's "don't add speculatively"
-        # rule.
+        # raising functions), so the docstring isn't asked to speculate about
+        # errors that originate elsewhere.
         report.add(
             start + 1,
-            "docstring",
+            "signatures",
             f"'{sig.name}': body has an explicit 'raise' but docstring has "
             f"no 'Raises:' section (should name NumojoError).",
         )
@@ -1025,7 +1039,13 @@ def check_file(path: Path, only: set[str] | None) -> FileReport:
     body_start = doc_end + 1 if doc_end is not None else header_end
 
     if enabled("separators") or enabled("todo"):
-        check_body(lines, body_start, report)
+        check_body(
+            lines,
+            body_start,
+            report,
+            separators=enabled("separators"),
+            todos=enabled("todo"),
+        )
     if enabled("imports"):
         check_imports(lines, body_start, report)
     if enabled("error-handling"):

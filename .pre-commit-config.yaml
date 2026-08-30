@@ -9,3 +9,13 @@ repos:
         stages: [pre-commit]
         # pass_filenames: false  # Don't pass filenames to the formatter
         # always_run: true  # Always run the formatter
+
+  # `mojo format` only understands Mojo, so the Python tooling under scripts/
+  # gets its own formatter. pre-commit installs ruff itself; it is not a pixi
+  # dependency.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.5
+    hooks:
+      - id: ruff-format
+        files: '^scripts/.*\.py$'
+        stages: [pre-commit]

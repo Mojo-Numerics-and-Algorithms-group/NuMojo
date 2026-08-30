@@ -69,6 +69,10 @@ test_routines = "pixi run package && bash tests/test_routines.sh"
 # (reporting only, never rewrites files; see scripts/check_mojo_standards.py)
 check_standards = "python3 scripts/check_mojo_standards.py numojo"
 
+# group and sort imports under their Stdlib/External/NuMojo separators.
+# (rewrites files; add --diff or --check for a dry run)
+organize_imports = "python3 scripts/organize_mojo_imports.py numojo"
+
 # run all final checks before a commit
 f = "clear && pixi run final"
 final = "pixi run format && pixi run test"

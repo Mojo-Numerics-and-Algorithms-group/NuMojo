@@ -4935,11 +4935,27 @@ struct NDArray[dtype: DType = DType.float64](
         return _flatnonzero(self)
 
     def count_nonzero(self) raises -> Int:
-        """Counts the number of non-zero elements in the array."""
+        """Counts the number of non-zero elements in the array.
+
+        Returns:
+            The number of elements in the array that are non-zero.
+        """
         return _count_nonzero(self)
 
     def count_nonzero(self, axis: Int) raises -> NDArray[DType.int]:
-        """Counts non-zero elements along a given axis."""
+        """Counts non-zero elements along a given axis.
+
+        Args:
+            axis: The axis along which to count non-zero elements.
+
+        Returns:
+            An integer `NDArray` with the array's shape minus the reduced
+            axis, containing the count of non-zero elements along that axis.
+
+        Raises:
+            NumojoError: If the axis is out of bound.
+            NumojoError: If the array is 1-D (use `count_nonzero()` instead).
+        """
         return _count_nonzero(self, axis)
 
     def contiguous(self) raises -> Self:

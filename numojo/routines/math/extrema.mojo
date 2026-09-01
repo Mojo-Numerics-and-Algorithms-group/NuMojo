@@ -17,6 +17,7 @@ Exports
 -------
 - `min`, `max`: Element-wise minimum and maximum.
 - `minimum`, `maximum`: Element-wise operations (aliases).
+- `ptp`: Range (max - min) of an array.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -244,6 +245,60 @@ def min[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
     return apply_along_axis_reduce[func1d=extrema_1d[is_max=False]](
         a=a, axis=normalized_axis
     )
+
+
+def ptp[dtype: DType](a: NDArray[dtype]) raises -> Scalar[dtype]:
+    """
+    Find the range (max - min) of an array.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+
+    Returns:
+        The difference between the max and min values.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var r = nm.ptp(a)
+        ```
+    """
+    return max(a) - min(a)
+
+
+def ptp[dtype: DType](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Find the range (max - min) of an array along an axis.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: An array.
+        axis: The axis along which the range is computed.
+
+    Returns:
+        An array with reduced number of dimensions.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.arange[f32](0, 6).reshape(Shape(2, 3))
+        var r = nm.ptp(a, axis=0)
+        ```
+    """
+    return max(a, axis) - min(a, axis)
 
 
 # ===-----------------------------------------------------------------------===#

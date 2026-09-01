@@ -88,7 +88,6 @@ from numojo.routines.indexing import (
     take_along_axis as _take_along_axis,
     nonzero as _nonzero,
     flatnonzero as _flatnonzero,
-    count_nonzero as _count_nonzero,
     put as _put,
     searchsorted as _searchsorted,
     fancy_index as _fancy_index,
@@ -4948,7 +4947,7 @@ struct NDArray[dtype: DType = DType.float64](
             print(a.count_nonzero())  # 3
             ```
         """
-        return _count_nonzero(self)
+        return searching.count_nonzero(self)
 
     def count_nonzero(self, axis: Int) raises -> NDArray[DType.int]:
         """Counts non-zero elements along a given axis.
@@ -4973,7 +4972,7 @@ struct NDArray[dtype: DType = DType.float64](
             print(a.count_nonzero(axis=0))  # [1, 0, 2]
             ```
         """
-        return _count_nonzero(self, axis)
+        return searching.count_nonzero(self, axis)
 
     def contiguous(self) raises -> Self:
         """Returns a new C-contiguous array owning a copy of the data.

@@ -78,7 +78,6 @@ from .functional import (
 )
 from .indexing import (
     compress,
-    count_nonzero,
     fancy_index,
     flatnonzero,
     nonzero,
@@ -189,6 +188,7 @@ from .operations import HostExecutor
 from .searching import (
     argmax,
     argmin,
+    count_nonzero,
 )
 from .sorting import (
     argsort,

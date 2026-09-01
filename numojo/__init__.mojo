@@ -267,7 +267,6 @@ from numojo.routines.indexing import (
     unravel_index,
     ravel_multi_index,
     flatnonzero,
-    count_nonzero,
     fancy_index,
 )
 
@@ -295,7 +294,7 @@ from numojo.routines import sorting
 from numojo.routines.sorting import sort, argsort
 
 from numojo.routines import searching
-from numojo.routines.searching import argmax, argmin
+from numojo.routines.searching import argmax, argmin, count_nonzero
 
 # ===----------------------------------------------------------------------=== #
 # Alias for users

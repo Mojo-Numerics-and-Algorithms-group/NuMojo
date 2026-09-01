@@ -4939,6 +4939,14 @@ struct NDArray[dtype: DType = DType.float64](
 
         Returns:
             The number of elements in the array that are non-zero.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.array[nm.i32]("[3, 0, 5, 0, 2]")
+            print(a.count_nonzero())  # 3
+            ```
         """
         return _count_nonzero(self)
 
@@ -4955,6 +4963,15 @@ struct NDArray[dtype: DType = DType.float64](
         Raises:
             NumojoError: If the axis is out of bound.
             NumojoError: If the array is 1-D (use `count_nonzero()` instead).
+
+        Examples:
+            ```mojo
+            import numojo as nm
+            from numojo.prelude import *
+
+            var a = nm.array[nm.i32]("[[1, 0, 3], [0, 0, 4]]")
+            print(a.count_nonzero(axis=0))  # [1, 0, 2]
+            ```
         """
         return _count_nonzero(self, axis)
 
@@ -5799,6 +5816,50 @@ struct NDArray[dtype: DType = DType.float64](
         """
 
         return numojo_math.min(self, axis=axis)
+
+    def ptp(self) raises -> Scalar[Self.dtype]:
+        """Finds the range (max - min) of an array.
+
+        When no axis is given, the array is flattened before computing.
+
+        Returns:
+            The difference between the max and min values.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.array[nm.i32]("[3, 7, 1, 9, 4]")
+            print(a.ptp())  # 8
+            ```
+        """
+
+        return numojo_math.ptp(self)
+
+    def ptp(self, axis: Int) raises -> Self:
+        """Finds the range (max - min) of an array along the axis. The
+        number of dimensions will be reduced by 1.
+
+        Args:
+            axis: The axis along which the range is computed.
+
+        Returns:
+            An array with reduced number of dimensions.
+
+        Raises:
+            NumojoError: If the axis is out of bound.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+            from numojo.prelude import *
+
+            var a = nm.array[nm.i32]("[[1, 5, 3], [4, 2, 9]]")
+            print(a.ptp(axis=0))  # [3, 3, 6]
+            ```
+        """
+
+        return numojo_math.ptp(self, axis=axis)
 
     def nditer(self) raises -> _NDIter[origin_of(self._buf.origin), Self.dtype]:
         """Returns an iterator yielding the array elements according to the

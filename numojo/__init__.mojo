@@ -178,6 +178,7 @@ from numojo.routines.math import (
     min,
     minimum,
     maximum,
+    ptp,
 )
 from numojo.routines.math import copysign
 from numojo.routines.math import (

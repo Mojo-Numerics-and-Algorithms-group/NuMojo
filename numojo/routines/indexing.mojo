@@ -1416,6 +1416,14 @@ def count_nonzero[
     Raises:
         NumojoError: If the axis is out of bound.
         NumojoError: If the array is 1-D (use `count_nonzero(a)` instead).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 0, 3], [0, 0, 4]]")
+        print(nm.count_nonzero(a, axis=0))  # [1, 0, 2]
+        ```
     """
     var normalized_axis: Int = axis
     if normalized_axis < 0:

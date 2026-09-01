@@ -88,6 +88,7 @@ from numojo.routines.indexing import (
     take_along_axis as _take_along_axis,
     nonzero as _nonzero,
     flatnonzero as _flatnonzero,
+    count_nonzero as _count_nonzero,
     put as _put,
     searchsorted as _searchsorted,
     fancy_index as _fancy_index,

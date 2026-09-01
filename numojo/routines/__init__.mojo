@@ -78,6 +78,7 @@ from .functional import (
 )
 from .indexing import (
     compress,
+    count_nonzero,
     fancy_index,
     flatnonzero,
     nonzero,

@@ -1371,6 +1371,9 @@ def count_nonzero[
 ](a: NDArray[dtype]) raises -> Int:
     """Counts the number of non-zero elements in an array.
 
+    Parameters:
+        dtype: Data type of the source array.
+
     Args:
         a: Input array.
 
@@ -1399,17 +1402,20 @@ def count_nonzero[
 ](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
     """Counts non-zero elements along a given axis.
 
+    Parameters:
+        dtype: Data type of the source array.
+
     Args:
         a: Input array.
         axis: The axis along which to count non-zero elements.
 
-    Raises:
-        NumojoError: If the axis is out of bound.
-        NumojoError: If the array is 1-D (use `count_nonzero(a)` instead).
-
     Returns:
         An integer `NDArray` with `a`'s shape minus the reduced axis,
         containing the count of non-zero elements along that axis.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+        NumojoError: If the array is 1-D (use `count_nonzero(a)` instead).
     """
     var normalized_axis: Int = axis
     if normalized_axis < 0:

@@ -122,6 +122,28 @@ def test_contents_isinf_isfinite_isnan() raises:
     check(isposinf(a), np.isposinf(p_arr), "isposinf")
     check(isneginf(a), np.isneginf(p_arr), "isneginf")
 
+    # The scalar overloads must agree with the array results checked above,
+    # element by element, and so with NumPy.
+    for i in range(a.size):
+        var x = a.item(i)
+        assert_equal(
+            Bool(nm.isinf(x)), Bool(np.isinf(p_arr[i])), "isinf(scalar)"
+        )
+        assert_equal(
+            Bool(nm.isfinite(x)),
+            Bool(np.isfinite(p_arr[i])),
+            "isfinite(scalar)",
+        )
+        assert_equal(
+            Bool(nm.isnan(x)), Bool(np.isnan(p_arr[i])), "isnan(scalar)"
+        )
+        assert_equal(
+            Bool(isposinf(x)), Bool(np.isposinf(p_arr[i])), "isposinf(scalar)"
+        )
+        assert_equal(
+            Bool(isneginf(x)), Bool(np.isneginf(p_arr[i])), "isneginf(scalar)"
+        )
+
 
 def test_truth_all_any() raises:
     var np = Python.import_module("numpy")

@@ -16,13 +16,16 @@ Exports
 -------
 - `argmax`: Index of maximum value.
 - `argmin`: Index of minimum value.
+- `count_nonzero`: Count of non-zero elements.
 """
 
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
+from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
+from numojo.routines.creation import zeros
 from numojo.routines.functional import apply_along_axis_reduce_to_int
 from numojo.routines.manipulation import ravel
 
@@ -248,3 +251,114 @@ def argmin[
     return apply_along_axis_reduce_to_int[dtype, func1d=argmin_1d](
         a=a, axis=normalized_axis
     )
+
+
+def count_nonzero[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> Int:
+    """Counts the number of non-zero elements in an array.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Input array.
+
+    Returns:
+        The number of elements in `a` that are non-zero.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[3, 0, 5, 0, 2]")
+        print(nm.count_nonzero(a))  # 3
+        ```
+    """
+    var a_c = a.contiguous()
+    var count: Int = 0
+    for i in range(a_c.size):
+        if a_c.unsafe_get(i) != 0:
+            count += 1
+    return count
+
+
+def count_nonzero[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], axis: Int) raises -> NDArray[DType.int]:
+    """Counts non-zero elements along a given axis.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Input array.
+        axis: The axis along which to count non-zero elements.
+
+    Returns:
+        An integer `NDArray` with `a`'s shape minus the reduced axis,
+        containing the count of non-zero elements along that axis.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+        NumojoError: If the array is 1-D (use `count_nonzero(a)` instead).
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 0, 3], [0, 0, 4]]")
+        print(nm.count_nonzero(a, axis=0))  # [1, 0, 2]
+        ```
+    """
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `count_nonzero`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="count_nonzero",
+            )
+        )
+    if a.ndim == 1:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "Cannot use axis with 1D array. Call `count_nonzero(a)`"
+                    " without axis, or reshape a to 2D or higher."
+                ),
+                location="count_nonzero",
+            )
+        )
+
+    var result_shape: List[Int] = List[Int]()
+    var size_of_axis: Int = a.shape[normalized_axis]
+    var slices: List[Slice] = List[Slice]()
+    for i in range(a.ndim):
+        if i != normalized_axis:
+            result_shape.append(a.shape[i])
+            slices.append(Slice(0, a.shape[i]))
+        else:
+            slices.append(Slice(0, 0))  # Temp value
+
+    var result: NDArray[DType.int] = zeros[DType.int](
+        NDArrayShape(result_shape)
+    )
+    for i in range(size_of_axis):
+        slices[normalized_axis] = Slice(i, i + 1)
+        var arr_slice: NDArray[dtype] = a._getitem_list_slices(slices.copy())
+        var mask = NDArray[DType.int](arr_slice.shape)
+        for j in range(arr_slice.size):
+            mask.unsafe_set(
+                j, Scalar[DType.int](1) if arr_slice.unsafe_get(j) != 0 else 0
+            )
+        result += mask
+
+    return result^

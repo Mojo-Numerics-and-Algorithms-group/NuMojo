@@ -62,6 +62,7 @@ from .extrema import (
     maximum,
     min,
     minimum,
+    ptp,
 )
 from .floating import copysign
 from .hyper import (

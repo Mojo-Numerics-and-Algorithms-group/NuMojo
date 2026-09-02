@@ -906,6 +906,14 @@ def check_signature_docstring(
             f"no 'Raises:' section (should name NumojoError).",
         )
 
+    if "Examples" not in present_canonical:
+        report.add(
+            start + 1,
+            "signatures",
+            f"'{sig.name}': docstring has no 'Examples:' section (required "
+            f"for all public functions/methods).",
+        )
+
 
 def extract_documented_names(body: list[str], section: str) -> set[str]:
     names = set()

@@ -178,6 +178,7 @@ from numojo.routines.math import (
     min,
     minimum,
     maximum,
+    ptp,
 )
 from numojo.routines.math import copysign
 from numojo.routines.math import (
@@ -293,7 +294,7 @@ from numojo.routines import sorting
 from numojo.routines.sorting import sort, argsort
 
 from numojo.routines import searching
-from numojo.routines.searching import argmax, argmin
+from numojo.routines.searching import argmax, argmin, count_nonzero
 
 # ===----------------------------------------------------------------------=== #
 # Alias for users

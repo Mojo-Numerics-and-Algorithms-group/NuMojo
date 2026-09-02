@@ -363,9 +363,28 @@ def check_exports_accuracy(
         return
 
     exported_names = set()
+    in_exports = False
     for line in body:
-        m = re.match(r"^-\s*`([A-Za-z_][A-Za-z0-9_]*)`", line.strip())
-        if m:
+        stripped = line.strip()
+        if stripped == "Exports":
+            in_exports = True
+            continue
+        if not in_exports:
+            continue
+        if stripped == "" or set(stripped) == {"-"}:
+            # Blank line or the "-------" underline: not yet inside a bullet,
+            # keep scanning (underline) or stay in the section (blank).
+            if stripped == "" and exported_names:
+                # A blank line after we've already seen bullets ends the
+                # Exports section (the next section, if any, follows).
+                break
+            continue
+        # A bullet (or its wrapped continuation line) may list several names
+        # before the ':' description, e.g.
+        # "- `min`, `max`: Element-wise minimum and maximum." or a name
+        # wrapped onto its own continuation line - collect every
+        # backtick-quoted name in the section, not just the first per line.
+        for m in re.finditer(r"`([A-Za-z_][A-Za-z0-9_]*)`", stripped):
             exported_names.add(m.group(1))
 
     top_level_public = find_public_top_level_symbols(lines, doc_end)

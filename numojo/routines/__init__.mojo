@@ -188,6 +188,7 @@ from .operations import HostExecutor
 from .searching import (
     argmax,
     argmin,
+    count_nonzero,
 )
 from .sorting import (
     argsort,

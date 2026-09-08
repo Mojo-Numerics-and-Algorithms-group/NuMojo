@@ -109,10 +109,16 @@ from .logic import (
     not_equal,
 )
 from .manipulation import (
+    atleast_1d,
+    atleast_2d,
+    atleast_3d,
     broadcast_to,
     column_stack,
     concatenate,
+    expand_dims,
     flip,
+    fliplr,
+    flipud,
     hstack,
     ndim,
     ravel,

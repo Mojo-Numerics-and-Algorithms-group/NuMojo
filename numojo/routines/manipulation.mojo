@@ -15,8 +15,9 @@ and other shape-changing operations on arrays.
 
 Exports
 -------
-- `reshape`, `ravel`: Shape changes.
-- `transpose`, `flip`: Layout changes.
+- `reshape`, `ravel`, `expand_dims`, `atleast_1d`, `atleast_2d`,
+  `atleast_3d`: Shape changes.
+- `transpose`, `flip`, `flipud`, `fliplr`: Layout changes.
 - `broadcast_to`: Broadcasting.
 - `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
 - `ndim`, `shape`, `size`: Array properties.
@@ -267,6 +268,159 @@ def ravel[
         )
 
     return res^
+
+
+def expand_dims[
+    dtype: DType
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """
+    Inserts a new axis of size 1 at the given position.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        a: A NDArray.
+        axis: Position in the resulting array's shape where the new axis
+            is placed. Supports negative indices, counted from
+            `a.ndim + 1` (the resulting array's rank).
+
+    Returns:
+        A new array with the same data and one additional dimension of
+        size 1.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 2, 3]")
+        print(nm.expand_dims(a, axis=0).shape)  # [1, 3]
+        print(nm.expand_dims(a, axis=1).shape)  # [3, 1]
+        ```
+    """
+    var result_ndim = a.ndim + 1
+    var normalized_axis = axis
+    if normalized_axis < 0:
+        normalized_axis += result_ndim
+    if (normalized_axis < 0) or (normalized_axis >= result_ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -result_ndim, result_ndim),
+                location="expand_dims",
+            )
+        )
+
+    var new_shape = List[Int]()
+    for i in range(result_ndim):
+        if i == normalized_axis:
+            new_shape.append(1)
+        elif i < normalized_axis:
+            new_shape.append(a.shape[i])
+        else:
+            new_shape.append(a.shape[i - 1])
+
+    return reshape(a, NDArrayShape(new_shape))
+
+
+def atleast_1d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Views the input as an array with at least one dimension.
+
+    A 0-d array is reshaped to shape `(1,)`; arrays that already have
+    1 or more dimensions are returned unchanged.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        a: A NDArray.
+
+    Returns:
+        An array with `ndim >= 1`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 2, 3]")
+        print(nm.atleast_1d(a).shape)  # [3]
+        ```
+    """
+    if a.ndim >= 1:
+        return a.copy()
+    return reshape(a, NDArrayShape(1))
+
+
+def atleast_2d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Views the input as an array with at least two dimensions.
+
+    A 0-d or 1-d array of size `n` is reshaped to shape `(1, n)`; arrays
+    that already have 2 or more dimensions are returned unchanged.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        a: A NDArray.
+
+    Returns:
+        An array with `ndim >= 2`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 2, 3]")
+        print(nm.atleast_2d(a).shape)  # [1, 3]
+        ```
+    """
+    if a.ndim >= 2:
+        return a.copy()
+    if a.ndim == 1:
+        return reshape(a, NDArrayShape(1, a.shape[0]))
+    return reshape(a, NDArrayShape(1, 1))
+
+
+def atleast_3d[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Views the input as an array with at least three dimensions.
+
+    Follows numpy's convention: a 1-d array of size `n` becomes shape
+    `(1, n, 1)`; a 2-d array of shape `(m, n)` becomes shape `(m, n, 1)`;
+    a 0-d array becomes shape `(1, 1, 1)`. Arrays that already have 3 or
+    more dimensions are returned unchanged.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        a: A NDArray.
+
+    Returns:
+        An array with `ndim >= 3`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 2], [3, 4]]")
+        print(nm.atleast_3d(a).shape)  # [2, 2, 1]
+        ```
+    """
+    if a.ndim >= 3:
+        return a.copy()
+    if a.ndim == 2:
+        return reshape(a, NDArrayShape(a.shape[0], a.shape[1], 1))
+    if a.ndim == 1:
+        return reshape(a, NDArrayShape(1, a.shape[0], 1))
+    return reshape(a, NDArrayShape(1, 1, 1))
 
 
 # ===----------------------------------------------------------------------=== #
@@ -572,6 +726,76 @@ def flip[
             A.unsafe_set(right, temp)
 
     return A^
+
+
+def flipud[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Reverses the order of elements along axis 0 (up/down).
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A new array with the elements along axis 0 reversed.
+
+    Raises:
+        NumojoError: If the array has zero dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 2], [3, 4]]")
+        print(nm.flipud(a))  # [[3, 4], [1, 2]]
+        ```
+    """
+    if array.ndim < 1:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Input array must have at least 1 dimension.",
+                location="flipud",
+            )
+        )
+    return flip(array, axis=0)
+
+
+def fliplr[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Reverses the order of elements along axis 1 (left/right).
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        array: A NDArray.
+
+    Returns:
+        A new array with the elements along axis 1 reversed.
+
+    Raises:
+        NumojoError: If the array has fewer than 2 dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 2], [3, 4]]")
+        print(nm.fliplr(a))  # [[2, 1], [4, 3]]
+        ```
+    """
+    if array.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="Input array must have at least 2 dimensions.",
+                location="fliplr",
+            )
+        )
+    return flip(array, axis=1)
 
 
 # ===----------------------------------------------------------------------=== #

@@ -746,8 +746,31 @@ def moveaxis[
     dtype: DType
 ](A: NDArray[dtype], source: Int, destination: Int) raises -> NDArray[dtype]:
     """
-    (overload) Moves a single axis of an array to a new position. See
-    docstring of `moveaxis`.
+    (overload) Moves a single axis of an array to a new position.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        source: Original position of the axis to move. Supports negative
+            indices.
+        destination: Destination position for the axis. Supports negative
+            indices.
+
+    Returns:
+        An array with the axis moved to its new position.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.random.rand(2, 3, 4, 5)
+        print(nm.moveaxis(a, 0, -1).shape)  # [3, 4, 5, 2]
+        ```
     """
     var src: List[Int] = [source]
     var dest: List[Int] = [destination]
@@ -1117,6 +1140,16 @@ def roll[
     Raises:
         NumojoError: If `shift` and `axis` do not have the same number of
             elements, or if an axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.reshape(nm.arange[nm.i32](0, 12, 1), nm.Shape(3, 4))
+        var shift: List[Int] = [1, -1]
+        var axis: List[Int] = [0, 1]
+        print(nm.roll(a, shift, axis))
+        ```
     """
     if len(shift) != len(axis):
         raise Error(

@@ -123,6 +123,77 @@ def test_transpose() raises:
     )
 
 
+def test_swapaxes() raises:
+    var np = Python.import_module("numpy")
+
+    var A = nm.random.randn(2, 3, 4)
+    var Anp = A.to_numpy()
+    check_is_close(
+        nm.swapaxes(A, 0, 1),
+        np.swapaxes(Anp, 0, 1),
+        "`swapaxes` (0, 1) fails.",
+    )
+    check_is_close(
+        nm.swapaxes(A, 0, 2),
+        np.swapaxes(Anp, 0, 2),
+        "`swapaxes` (0, 2) fails.",
+    )
+    check_is_close(
+        nm.swapaxes(A, -1, -2),
+        np.swapaxes(Anp, -1, -2),
+        "`swapaxes` with negative axes fails.",
+    )
+
+
+def test_moveaxis() raises:
+    var np = Python.import_module("numpy")
+
+    var A = nm.random.randn(2, 3, 4, 5)
+    var Anp = A.to_numpy()
+    check_is_close(
+        nm.moveaxis(A, 0, -1),
+        np.moveaxis(Anp, 0, -1),
+        "`moveaxis` single axis fails.",
+    )
+    var source: List[Int] = [0, 1]
+    var destination: List[Int] = [-1, -2]
+    check_is_close(
+        nm.moveaxis(A, source, destination),
+        np.moveaxis(Anp, Python.list(0, 1), Python.list(-1, -2)),
+        "`moveaxis` multiple axes fails.",
+    )
+
+
+def test_roll() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 10, 1)
+    var anp = a.to_numpy()
+    check_is_close(nm.roll(a, 2), np.roll(anp, 2), "`roll` 1-D fails.")
+    check_is_close(
+        nm.roll(a, -3), np.roll(anp, -3), "`roll` 1-D negative shift fails."
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 24, 1), Shape(2, 3, 4))
+    var Bnp = B.to_numpy()
+    check_is_close(
+        nm.roll(B, 1), np.roll(Bnp, 1), "`roll` without `axis` fails."
+    )
+    for i in range(3):
+        check_is_close(
+            nm.roll(B, 2, axis=i),
+            np.roll(Bnp, 2, axis=i),
+            String("`roll` by `axis` {} fails.").format(i),
+        )
+    var shifts: List[Int] = [1, -2]
+    var axes: List[Int] = [0, 2]
+    check_is_close(
+        nm.roll(B, shifts, axes),
+        np.roll(Bnp, Python.list(1, -2), axis=Python.list(0, 2)),
+        "`roll` with multiple axes fails.",
+    )
+
+
 def test_broadcast() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.rand(Shape(2, 1, 3))

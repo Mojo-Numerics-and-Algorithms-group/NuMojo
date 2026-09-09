@@ -17,7 +17,8 @@ Exports
 -------
 - `reshape`, `ravel`, `expand_dims`, `atleast_1d`, `atleast_2d`,
   `atleast_3d`: Shape changes.
-- `transpose`, `flip`, `flipud`, `fliplr`: Layout changes.
+- `transpose`, `swapaxes`, `moveaxis`, `flip`, `flipud`, `fliplr`, `roll`:
+  Layout changes.
 - `broadcast_to`: Broadcasting.
 - `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
 - `ndim`, `shape`, `size`: Array properties.
@@ -563,6 +564,219 @@ def transpose[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
         return transpose(A, axes=flipped_axes)
 
 
+def swapaxes[
+    dtype: DType
+](A: NDArray[dtype], axis1: Int, axis2: Int) raises -> NDArray[dtype]:
+    """
+    Interchange two axes of an array.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        axis1: First axis. Supports negative indices.
+        axis2: Second axis. Supports negative indices.
+
+    Returns:
+        An array with `axis1` and `axis2` interchanged.
+
+    Raises:
+        NumojoError: If either axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.random.rand(2, 3, 4)
+        print(nm.swapaxes(a, 0, 2).shape)  # [4, 3, 2]
+        ```
+    """
+    var ax1 = axis1
+    if ax1 < 0:
+        ax1 += A.ndim
+    var ax2 = axis2
+    if ax2 < 0:
+        ax2 += A.ndim
+    if (ax1 < 0) or (ax1 >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis1 out of range: got {}, expected {} <= axis1 < {}."
+                ).format(axis1, -A.ndim, A.ndim),
+                location="swapaxes",
+            )
+        )
+    if (ax2 < 0) or (ax2 >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis2 out of range: got {}, expected {} <= axis2 < {}."
+                ).format(axis2, -A.ndim, A.ndim),
+                location="swapaxes",
+            )
+        )
+
+    var axes = List[Int]()
+    for i in range(A.ndim):
+        axes.append(i)
+    var temp = axes[ax1]
+    axes[ax1] = axes[ax2]
+    axes[ax2] = temp
+
+    return transpose(A, axes)
+
+
+def _normalize_axis_list(
+    axis: List[Int], ndim: Int, name: String, location: String
+) raises -> List[Int]:
+    """Auxiliary function that normalizes a list of (possibly negative)
+    axes and checks bounds and uniqueness."""
+    var normalized = List[Int]()
+    for i in range(len(axis)):
+        var ax = axis[i]
+        if ax < 0:
+            ax += ndim
+        if (ax < 0) or (ax >= ndim):
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "{}: axis out of range: got {}, expected {} <= axis"
+                        " < {}."
+                    ).format(name, axis[i], -ndim, ndim),
+                    location=location,
+                )
+            )
+        if ax in normalized:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=String("{}: repeated axis {}.").format(name, ax),
+                    location=location,
+                )
+            )
+        normalized.append(ax)
+    return normalized^
+
+
+def moveaxis[
+    dtype: DType
+](
+    A: NDArray[dtype], source: List[Int], destination: List[Int]
+) raises -> NDArray[dtype]:
+    """
+    Moves axes of an array to new positions. Other axes remain in their
+    original order.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        source: Original positions of the axes to move. Supports negative
+            indices.
+        destination: Destination positions for each of the original axes.
+            Supports negative indices.
+
+    Returns:
+        An array with moved axes.
+
+    Raises:
+        NumojoError: If `source` and `destination` do not have the same
+            number of elements, or if an axis is out of bound / repeated.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.random.rand(2, 3, 4, 5)
+        print(nm.moveaxis(a, [0], [-1]).shape)  # [3, 4, 5, 2]
+        print(nm.moveaxis(a, [0, 1], [-1, -2]).shape)  # [4, 5, 3, 2]
+        ```
+    """
+    if len(source) != len(destination):
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "`source` ({} elements) and `destination` ({} elements)"
+                    " must have the same number of elements."
+                ).format(len(source), len(destination)),
+                location="moveaxis",
+            )
+        )
+
+    var norm_source = _normalize_axis_list(source, A.ndim, "source", "moveaxis")
+    var norm_dest = _normalize_axis_list(
+        destination, A.ndim, "destination", "moveaxis"
+    )
+
+    var order = List[Int]()
+    for i in range(A.ndim):
+        if i not in norm_source:
+            order.append(i)
+
+    # Sort (destination, source) pairs by destination (ascending) and
+    # insert each source axis at its destination position, matching numpy's
+    # `moveaxis` implementation.
+    var n = len(norm_dest)
+    for i in range(n):
+        var min_idx = i
+        for j in range(i + 1, n):
+            if norm_dest[j] < norm_dest[min_idx]:
+                min_idx = j
+        if min_idx != i:
+            var tmp_dest = norm_dest[i]
+            norm_dest[i] = norm_dest[min_idx]
+            norm_dest[min_idx] = tmp_dest
+            var tmp_src = norm_source[i]
+            norm_source[i] = norm_source[min_idx]
+            norm_source[min_idx] = tmp_src
+
+    for i in range(n):
+        order.insert(norm_dest[i], norm_source[i])
+
+    return transpose(A, order)
+
+
+def moveaxis[
+    dtype: DType
+](A: NDArray[dtype], source: Int, destination: Int) raises -> NDArray[dtype]:
+    """
+    (overload) Moves a single axis of an array to a new position.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        source: Original position of the axis to move. Supports negative
+            indices.
+        destination: Destination position for the axis. Supports negative
+            indices.
+
+    Returns:
+        An array with the axis moved to its new position.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.random.rand(2, 3, 4, 5)
+        print(nm.moveaxis(a, 0, -1).shape)  # [3, 4, 5, 2]
+        ```
+    """
+    var src: List[Int] = [source]
+    var dest: List[Int] = [destination]
+    return moveaxis(A, src^, dest^)
+
+
 def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -601,7 +815,6 @@ def broadcast_to[
     if not a.is_c_contiguous():
         return broadcast_to(a.contiguous(), shape)
 
-    # Check whether broadcasting is possible or not.
     var b_strides = NDArrayStrides(ndim=shape.ndim, initialized=False)
 
     for i in range(a.shape.ndim):
@@ -645,9 +858,7 @@ def _broadcast_back_to[
     var a_shape = shape
     a_shape[axis] = 1
 
-    var b_strides = NDArrayStrides(
-        a_shape
-    )  # Strides of the broadcast view, referring to data of `a`.
+    var b_strides = NDArrayStrides(a_shape)
     b_strides[axis] = 0
 
     return a.view_with_layout(shape, b_strides, a.offset)
@@ -796,6 +1007,187 @@ def fliplr[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
             )
         )
     return flip(array, axis=1)
+
+
+def roll[
+    dtype: DType
+](A: NDArray[dtype], shift: Int, axis: Int) raises -> NDArray[dtype]:
+    """
+    Rolls array elements along a given axis. Elements that roll beyond the
+    last position are re-introduced at the first.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        shift: The number of places by which elements are shifted. Can be
+            negative, in which case elements are shifted towards the
+            beginning.
+        axis: Axis along which elements are shifted. Supports negative
+            indices.
+
+    Returns:
+        An array with the same shape as `A`, with elements shifted along
+        `axis`.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 10, 1)
+        print(nm.roll(a, 2, axis=0))  # [8, 9, 0, 1, 2, 3, 4, 5, 6, 7]
+        print(nm.roll(a, -2, axis=0))  # [2, 3, 4, 5, 6, 7, 8, 9, 0, 1]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="roll",
+            )
+        )
+
+    var a_contiguous = A.contiguous()
+    var n = a_contiguous.shape[ax]
+    if n == 0:
+        return a_contiguous^
+
+    var offset = shift % n
+    if offset < 0:
+        offset += n
+    if offset == 0:
+        return a_contiguous^
+
+    var result = NDArray[dtype](a_contiguous.shape)
+    for flat_idx in range(result.size):
+        var remainder = flat_idx
+        var src_flat = 0
+        for d in range(a_contiguous.ndim):
+            var coord = remainder // result.strides[d]
+            remainder = remainder % result.strides[d]
+            if d == ax:
+                coord = (coord - offset) % n
+                if coord < 0:
+                    coord += n
+            src_flat += coord * a_contiguous.strides[d]
+        result.unsafe_set(flat_idx, a_contiguous.unsafe_get(src_flat))
+
+    return result^
+
+
+def roll[dtype: DType](A: NDArray[dtype], shift: Int) raises -> NDArray[dtype]:
+    """
+    (overload) Rolls array elements. The array is flattened before
+    shifting, and then restored to its original shape.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        shift: The number of places by which elements are shifted.
+
+    Returns:
+        An array with the same shape as `A`, with elements shifted.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 6, 1)
+        var b = nm.reshape(a, nm.Shape(2, 3))
+        print(nm.roll(b, 1))  # [[5, 0, 1], [2, 3, 4]]
+        ```
+    """
+    var flat = ravel(A, order="C")
+    var rolled = roll(flat, shift, axis=0)
+    return reshape(rolled, A.shape, order="C")
+
+
+def roll[
+    dtype: DType
+](A: NDArray[dtype], shift: List[Int], axis: List[Int]) raises -> NDArray[
+    dtype
+]:
+    """
+    (overload) Rolls array elements along multiple axes. If the same axis
+    is repeated, the shifts accumulate.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        shift: The number of places by which elements are shifted, one per
+            entry of `axis`.
+        axis: Axes along which elements are shifted. Supports negative
+            indices.
+
+    Returns:
+        An array with the same shape as `A`, with elements shifted along
+        the given axes.
+
+    Raises:
+        NumojoError: If `shift` and `axis` do not have the same number of
+            elements, or if an axis is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.reshape(nm.arange[nm.i32](0, 12, 1), nm.Shape(3, 4))
+        var shift: List[Int] = [1, -1]
+        var axis: List[Int] = [0, 1]
+        print(nm.roll(a, shift, axis))
+        ```
+    """
+    if len(shift) != len(axis):
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "`shift` ({} elements) and `axis` ({} elements) must"
+                    " have the same number of elements."
+                ).format(len(shift), len(axis)),
+                location="roll",
+            )
+        )
+
+    var accumulated = List[Int]()
+    for _ in range(A.ndim):
+        accumulated.append(0)
+
+    for i in range(len(axis)):
+        var ax = axis[i]
+        if ax < 0:
+            ax += A.ndim
+        if (ax < 0) or (ax >= A.ndim):
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Axis out of range: got {}, expected {} <= axis < {}."
+                    ).format(axis[i], -A.ndim, A.ndim),
+                    location="roll",
+                )
+            )
+        accumulated[ax] += shift[i]
+
+    var result = A.copy()
+    for ax in range(A.ndim):
+        if accumulated[ax] != 0:
+            result = roll(result, accumulated[ax], axis=ax)
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #

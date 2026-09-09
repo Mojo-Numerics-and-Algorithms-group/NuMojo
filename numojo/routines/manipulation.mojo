@@ -20,6 +20,7 @@ Exports
 - `transpose`, `swapaxes`, `moveaxis`, `flip`, `flipud`, `fliplr`, `roll`:
   Layout changes.
 - `broadcast_to`: Broadcasting.
+- `repeat`, `pad`: Repeating and padding.
 - `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
 - `ndim`, `shape`, `size`: Array properties.
 """
@@ -1188,6 +1189,474 @@ def roll[
         if accumulated[ax] != 0:
             result = roll(result, accumulated[ax], axis=ax)
     return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# Repeating and padding
+# ===----------------------------------------------------------------------=== #
+
+
+def _repeat_along_axis[
+    dtype: DType
+](A: NDArray[dtype], repeats: List[Int], axis: Int) raises -> NDArray[dtype]:
+    """Internal: repeats slices of a C-contiguous array `A` along `axis`,
+    where `repeats[i]` is the number of times the `i`-th slice along that
+    axis is repeated."""
+    var total: Int = 0
+    for i in range(len(repeats)):
+        if repeats[i] < 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="`repeats` must be non-negative.",
+                    location="repeat",
+                )
+            )
+        total += repeats[i]
+
+    var new_shape_list = List[Int]()
+    for d in range(A.ndim):
+        if d == axis:
+            new_shape_list.append(total)
+        else:
+            new_shape_list.append(A.shape[d])
+    var result = NDArray[dtype](NDArrayShape(new_shape_list))
+
+    # Map each output coordinate along `axis` back to a source coordinate.
+    var src_of = List[Int]()
+    for i in range(len(repeats)):
+        for _ in range(repeats[i]):
+            src_of.append(i)
+
+    for flat_idx in range(result.size):
+        var remainder = flat_idx
+        var src_flat = 0
+        for d in range(A.ndim):
+            var coord = remainder // result.strides[d]
+            remainder = remainder % result.strides[d]
+            if d == axis:
+                coord = src_of[coord]
+            src_flat += coord * A.strides[d]
+        result.unsafe_set(flat_idx, A.unsafe_get(src_flat))
+
+    return result^
+
+
+def repeat[
+    dtype: DType
+](A: NDArray[dtype], repeats: Int, axis: Int) raises -> NDArray[dtype]:
+    """
+    Repeats each slice of an array along the given axis a fixed number of
+    times.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        repeats: The number of repetitions for each slice. Must be
+            non-negative.
+        axis: The axis along which to repeat. Supports negative indices.
+
+    Returns:
+        An array with each slice along `axis` repeated `repeats` times.
+
+    Raises:
+        NumojoError: If `repeats` is negative or `axis` is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.reshape(nm.arange[nm.i32](0, 6, 1), nm.Shape(2, 3))
+        print(nm.repeat(a, 2, axis=0).shape)  # [4, 3]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="repeat",
+            )
+        )
+
+    var A_c = A.contiguous()
+    var repeats_list = List[Int]()
+    for _ in range(A_c.shape[ax]):
+        repeats_list.append(repeats)
+
+    return _repeat_along_axis(A_c, repeats_list, ax)
+
+
+def repeat[
+    dtype: DType
+](A: NDArray[dtype], repeats: List[Int], axis: Int) raises -> NDArray[dtype]:
+    """
+    (overload) Repeats each slice of an array along the given axis a
+    variable number of times, one count per slice.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        repeats: The number of repetitions for each slice along `axis`.
+            Must have the same length as `A.shape[axis]`, and all values
+            must be non-negative.
+        axis: The axis along which to repeat. Supports negative indices.
+
+    Returns:
+        An array with each slice along `axis` repeated according to
+        `repeats`.
+
+    Raises:
+        NumojoError: If the length of `repeats` does not match
+            `A.shape[axis]`, if any value of `repeats` is negative, or if
+            `axis` is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        var repeats: List[Int] = [1, 2, 3]
+        print(nm.repeat(a, repeats, axis=0))  # [0, 1, 1, 2, 2, 2]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="repeat",
+            )
+        )
+
+    var A_c = A.contiguous()
+    if len(repeats) != A_c.shape[ax]:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "`repeats` ({} elements) must match the length of axis"
+                    " {} ({})."
+                ).format(len(repeats), axis, A_c.shape[ax]),
+                location="repeat",
+            )
+        )
+
+    return _repeat_along_axis(A_c, repeats, ax)
+
+
+def repeat[
+    dtype: DType
+](A: NDArray[dtype], repeats: Int) raises -> NDArray[dtype]:
+    """
+    (overload) Repeats each element of a flattened array a fixed number of
+    times.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        repeats: The number of repetitions for each element. Must be
+            non-negative.
+
+    Returns:
+        A 1-d array with each element of the flattened `A` repeated
+        `repeats` times.
+
+    Raises:
+        NumojoError: If `repeats` is negative.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        print(nm.repeat(a, 2))  # [0, 0, 1, 1, 2, 2]
+        ```
+    """
+    var flat = ravel(A, order="C")
+    return repeat(flat, repeats, axis=0)
+
+
+def repeat[
+    dtype: DType
+](A: NDArray[dtype], repeats: List[Int]) raises -> NDArray[dtype]:
+    """
+    (overload) Repeats each element of a flattened array a variable number
+    of times, one count per element.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        repeats: The number of repetitions for each element of the
+            flattened `A`. Must have the same length as `A.size`, and all
+            values must be non-negative.
+
+    Returns:
+        A 1-d array with each element of the flattened `A` repeated
+        according to `repeats`.
+
+    Raises:
+        NumojoError: If the length of `repeats` does not match `A.size`,
+            or if any value of `repeats` is negative.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        var repeats: List[Int] = [1, 2, 3]
+        print(nm.repeat(a, repeats))  # [0, 1, 1, 2, 2, 2]
+        ```
+    """
+    var flat = ravel(A, order="C")
+    if len(repeats) != flat.size:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "`repeats` ({} elements) must match the size of `A` ({})."
+                ).format(len(repeats), flat.size),
+                location="repeat",
+            )
+        )
+    return repeat(flat, repeats, axis=0)
+
+
+def _pad_map_coord(coord: Int, size: Int, mode: String) raises -> Int:
+    """Internal: for a padded coordinate `coord` (already offset by
+    `before`) outside `[0, size)`, maps it back into a valid source
+    coordinate according to boundary `mode`."""
+    if (coord >= 0) and (coord < size):
+        return coord
+    if size <= 0:
+        return 0
+    if mode == "edge":
+        if coord < 0:
+            return 0
+        return size - 1
+    elif mode == "wrap":
+        var m = coord % size
+        if m < 0:
+            m += size
+        return m
+    elif mode == "reflect":
+        if size == 1:
+            return 0
+        var period = 2 * (size - 1)
+        var m = coord % period
+        if m < 0:
+            m += period
+        if m >= size:
+            m = period - m
+        return m
+    elif mode == "symmetric":
+        var period = 2 * size
+        var m = coord % period
+        if m < 0:
+            m += period
+        if m >= size:
+            m = period - 1 - m
+        return m
+    else:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String("Unsupported `mode` for `pad`: {}").format(mode),
+                location="pad",
+            )
+        )
+
+
+def pad[
+    dtype: DType
+](
+    A: NDArray[dtype],
+    pad_width: List[List[Int]],
+    mode: String = "constant",
+    constant_values: Scalar[dtype] = 0,
+) raises -> NDArray[dtype]:
+    """
+    Pads an array.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        pad_width: Number of values padded to the edges of each axis, as
+            `[before, after]` pairs. A single `[before, after]` pair
+            broadcasts to every axis; otherwise one pair per axis of `A`
+            is required.
+        mode: Padding mode. One of `"constant"`, `"edge"`, `"reflect"`,
+            `"symmetric"`, or `"wrap"`.
+        constant_values: The value to pad with when `mode` is
+            `"constant"`. Ignored otherwise.
+
+    Returns:
+        The padded array.
+
+    Raises:
+        NumojoError: If `pad_width` has an invalid length or contains
+            negative values, or if `mode` is not supported.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        var width: List[Int] = [1, 2]
+        var pad_width = List[List[Int]]()
+        pad_width.append(width)
+        print(nm.pad(a, pad_width))  # [0, 0, 1, 2, 0, 0]
+        print(nm.pad(a, pad_width, mode="edge"))  # [0, 0, 1, 2, 2, 2]
+        ```
+    """
+    var widths: List[List[Int]]
+    if len(pad_width) == 1:
+        widths = List[List[Int]]()
+        for _ in range(A.ndim):
+            widths.append(pad_width[0].copy())
+    elif len(pad_width) == A.ndim:
+        widths = pad_width.copy()
+    else:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "`pad_width` must have 1 or `A.ndim` ({}) entries, got {}."
+                ).format(A.ndim, len(pad_width)),
+                location="pad",
+            )
+        )
+
+    var new_shape_list = List[Int]()
+    for d in range(A.ndim):
+        if len(widths[d]) != 2:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Each entry of `pad_width` must be a `[before,"
+                        " after]` pair."
+                    ),
+                    location="pad",
+                )
+            )
+        if (widths[d][0] < 0) or (widths[d][1] < 0):
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="`pad_width` values must be non-negative.",
+                    location="pad",
+                )
+            )
+        new_shape_list.append(widths[d][0] + A.shape[d] + widths[d][1])
+
+    if (
+        (mode != "constant")
+        and (mode != "edge")
+        and (mode != "wrap")
+        and (mode != "reflect")
+        and (mode != "symmetric")
+    ):
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String("Unsupported `mode` for `pad`: {}").format(mode),
+                location="pad",
+            )
+        )
+
+    var A_c = A.contiguous()
+    var result = NDArray[dtype](NDArrayShape(new_shape_list))
+
+    if mode == "constant":
+        result.fill(constant_values)
+        for flat_idx in range(A_c.size):
+            var remainder = flat_idx
+            var dst_flat = 0
+            for d in range(A_c.ndim):
+                var coord = remainder // A_c.strides[d]
+                remainder = remainder % A_c.strides[d]
+                dst_flat += (coord + widths[d][0]) * result.strides[d]
+            result.unsafe_set(dst_flat, A_c.unsafe_get(flat_idx))
+    else:
+        for flat_idx in range(result.size):
+            var remainder = flat_idx
+            var src_flat = 0
+            for d in range(A_c.ndim):
+                var coord = remainder // result.strides[d]
+                remainder = remainder % result.strides[d]
+                var src_coord = _pad_map_coord(
+                    coord - widths[d][0], A_c.shape[d], mode
+                )
+                src_flat += src_coord * A_c.strides[d]
+            result.unsafe_set(flat_idx, A_c.unsafe_get(src_flat))
+
+    return result^
+
+
+def pad[
+    dtype: DType
+](
+    A: NDArray[dtype],
+    pad_width: Int,
+    mode: String = "constant",
+    constant_values: Scalar[dtype] = 0,
+) raises -> NDArray[dtype]:
+    """
+    (overload) Pads every axis of an array with the same number of
+    elements on both sides. See docstring of `pad`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        pad_width: Number of values padded to both edges of every axis.
+            Must be non-negative.
+        mode: Padding mode. One of `"constant"`, `"edge"`, `"reflect"`,
+            `"symmetric"`, or `"wrap"`.
+        constant_values: The value to pad with when `mode` is
+            `"constant"`. Ignored otherwise.
+
+    Returns:
+        The padded array.
+
+    Raises:
+        NumojoError: If `pad_width` is negative, or if `mode` is not
+            supported.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        print(nm.pad(a, 2))  # [0, 0, 0, 1, 2, 0, 0]
+        ```
+    """
+    var pair: List[Int] = [pad_width, pad_width]
+    var widths = List[List[Int]]()
+    widths.append(pair^)
+    return pad(A, widths, mode, constant_values)
 
 
 # ===----------------------------------------------------------------------=== #

@@ -194,6 +194,97 @@ def test_roll() raises:
     )
 
 
+def test_repeat() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 3, 1)
+    var anp = a.to_numpy()
+    check_is_close(
+        nm.repeat(a, 2), np.repeat(anp, 2), "`repeat` 1-D uniform fails."
+    )
+    var reps: List[Int] = [1, 2, 3]
+    check_is_close(
+        nm.repeat(a, reps),
+        np.repeat(anp, Python.list(1, 2, 3)),
+        "`repeat` 1-D variable fails.",
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 6, 1), Shape(2, 3))
+    var Bnp = B.to_numpy()
+    check_is_close(
+        nm.repeat(B, 2, axis=0),
+        np.repeat(Bnp, 2, axis=0),
+        "`repeat` axis=0 uniform fails.",
+    )
+    check_is_close(
+        nm.repeat(B, 2, axis=1),
+        np.repeat(Bnp, 2, axis=1),
+        "`repeat` axis=1 uniform fails.",
+    )
+    var reps2: List[Int] = [1, 2]
+    check_is_close(
+        nm.repeat(B, reps2, axis=0),
+        np.repeat(Bnp, Python.list(1, 2), axis=0),
+        "`repeat` axis=0 variable fails.",
+    )
+
+
+def test_pad() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 3, 1)
+    var anp = a.to_numpy()
+    check_is_close(
+        nm.pad(a, 2), np.pad(anp, 2), "`pad` constant (uniform int) fails."
+    )
+
+    var width: List[Int] = [1, 2]
+    var pad_width = List[List[Int]]()
+    pad_width.append(width^)
+    check_is_close(
+        nm.pad(a, pad_width),
+        np.pad(anp, Python.tuple(1, 2)),
+        "`pad` constant with [before, after] fails.",
+    )
+    check_is_close(
+        nm.pad(a, pad_width, mode="edge"),
+        np.pad(anp, Python.tuple(1, 2), mode="edge"),
+        "`pad` edge mode fails.",
+    )
+    check_is_close(
+        nm.pad(a, pad_width, mode="reflect"),
+        np.pad(anp, Python.tuple(1, 2), mode="reflect"),
+        "`pad` reflect mode fails.",
+    )
+    check_is_close(
+        nm.pad(a, pad_width, mode="symmetric"),
+        np.pad(anp, Python.tuple(1, 2), mode="symmetric"),
+        "`pad` symmetric mode fails.",
+    )
+    check_is_close(
+        nm.pad(a, pad_width, mode="wrap"),
+        np.pad(anp, Python.tuple(1, 2), mode="wrap"),
+        "`pad` wrap mode fails.",
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 6, 1), Shape(2, 3))
+    var Bnp = B.to_numpy()
+    var w0: List[Int] = [1, 1]
+    var w1: List[Int] = [0, 2]
+    var pad_width_2d = List[List[Int]]()
+    pad_width_2d.append(w0^)
+    pad_width_2d.append(w1^)
+    check_is_close(
+        nm.pad(B, pad_width_2d, mode="edge"),
+        np.pad(
+            Bnp,
+            Python.tuple(Python.tuple(1, 1), Python.tuple(0, 2)),
+            mode="edge",
+        ),
+        "`pad` 2-D per-axis edge mode fails.",
+    )
+
+
 def test_broadcast() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.rand(Shape(2, 1, 3))

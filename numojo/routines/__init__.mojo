@@ -40,6 +40,7 @@ from . import (
     operations,
     random,
     searching,
+    setops,
     sorting,
     statistics,
 )
@@ -122,7 +123,9 @@ from .manipulation import (
     hstack,
     moveaxis,
     ndim,
+    pad,
     ravel,
+    repeat,
     reshape,
     roll,
     row_stack,
@@ -198,6 +201,13 @@ from .searching import (
     argmax,
     argmin,
     count_nonzero,
+)
+from .setops import (
+    unique,
+    unique_all,
+    unique_counts,
+    unique_index,
+    unique_inverse,
 )
 from .sorting import (
     argsort,

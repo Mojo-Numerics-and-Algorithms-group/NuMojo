@@ -286,6 +286,8 @@ from numojo.routines.manipulation import (
     fliplr,
     flipud,
     roll,
+    repeat,
+    pad,
     expand_dims,
     atleast_1d,
     atleast_2d,
@@ -304,6 +306,15 @@ from numojo.routines.sorting import sort, argsort
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin, count_nonzero
+
+from numojo.routines import setops
+from numojo.routines.setops import (
+    unique,
+    unique_all,
+    unique_counts,
+    unique_index,
+    unique_inverse,
+)
 
 # ===----------------------------------------------------------------------=== #
 # Alias for users

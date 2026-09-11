@@ -140,6 +140,7 @@ from numojo.routines.io import (
     save,
 )
 from numojo.routines.io import set_printoptions
+from numojo.routines.io import load_npy, save_npy, load_torch, save_torch
 
 from numojo.routines import linalg
 from numojo.routines.linalg.misc import diagonal

@@ -114,12 +114,15 @@ from .logic import (
     not_equal,
 )
 from .manipulation import (
+    append,
+    array_split,
     atleast_1d,
     atleast_2d,
     atleast_3d,
     broadcast_to,
     column_stack,
     concatenate,
+    delete,
     expand_dims,
     flip,
     fliplr,
@@ -135,6 +138,7 @@ from .manipulation import (
     row_stack,
     shape,
     size,
+    split,
     swapaxes,
     transpose,
     vstack,

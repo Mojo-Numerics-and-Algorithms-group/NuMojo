@@ -21,7 +21,9 @@ Exports
   Layout changes.
 - `broadcast_to`: Broadcasting.
 - `repeat`, `pad`: Repeating and padding.
+- `split`, `array_split`: Splitting.
 - `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
+- `delete`, `append`: Removing and adding elements.
 - `ndim`, `shape`, `size`: Array properties.
 """
 
@@ -29,6 +31,7 @@ Exports
 # Stdlib
 # ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
+from std.collections.optional import Optional
 from std.memory import UnsafePointer, unsafe_memcpy
 from std.sys import simd_width_of
 
@@ -1660,6 +1663,298 @@ def pad[
 
 
 # ===----------------------------------------------------------------------=== #
+# Splitting arrays
+# ===----------------------------------------------------------------------=== #
+
+
+def _norm_split_bound(idx: Int, n: Int) -> Int:
+    """Internal: normalizes a split boundary the same way Python slicing
+    normalizes `start`/`stop` (negative indices count from the end,
+    out-of-range values are clamped to `[0, n]`)."""
+    var i = idx
+    if i < 0:
+        i += n
+    if i < 0:
+        i = 0
+    if i > n:
+        i = n
+    return i
+
+
+def _axis_slice_copy[
+    dtype: DType
+](A: NDArray[dtype], start: Int, end: Int, axis: Int) raises -> NDArray[dtype]:
+    """Internal: copies the half-open range `[start, end)` of a
+    C-contiguous array `A` along `axis`. `start`/`end` must already be
+    normalized; `end < start` yields an empty slice, matching Python slice
+    semantics."""
+    var length = max(end - start, 0)
+    var new_shape_list = List[Int]()
+    for d in range(A.ndim):
+        if d == axis:
+            new_shape_list.append(length)
+        else:
+            new_shape_list.append(A.shape[d])
+    var result = NDArray[dtype](NDArrayShape(new_shape_list))
+
+    for flat_idx in range(result.size):
+        var remainder = flat_idx
+        var src_flat = 0
+        for d in range(A.ndim):
+            var coord = remainder // result.strides[d]
+            remainder = remainder % result.strides[d]
+            if d == axis:
+                coord += start
+            src_flat += coord * A.strides[d]
+        result.unsafe_set(flat_idx, A.unsafe_get(src_flat))
+
+    return result^
+
+
+def _split_at_indices[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int], axis: Int) raises -> List[
+    NDArray[dtype]
+]:
+    """Internal: splits `A` along `axis` at the given boundary indices
+    (not required to be sorted; negative/out-of-range values are
+    normalized like Python slice bounds)."""
+    var A_c = A.contiguous()
+    var n = A_c.shape[axis]
+
+    var points = List[Int]()
+    points.append(0)
+    for i in range(len(indices)):
+        points.append(indices[i])
+    points.append(n)
+
+    var result = List[NDArray[dtype]]()
+    for i in range(len(points) - 1):
+        var start = _norm_split_bound(points[i], n)
+        var end = _norm_split_bound(points[i + 1], n)
+        result.append(_axis_slice_copy(A_c, start, end, axis))
+
+    return result^
+
+
+def split[
+    dtype: DType
+](A: NDArray[dtype], sections: Int, axis: Int = 0) raises -> List[
+    NDArray[dtype]
+]:
+    """
+    Splits an array into `sections` equal arrays along `axis`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        sections: The number of equal sections to split the array into.
+            Must divide `A.shape[axis]` evenly.
+        axis: The axis along which to split. Supports negative indices.
+            Defaults to 0.
+
+    Returns:
+        A list of `sections` arrays.
+
+    Raises:
+        NumojoError: If `sections` is not positive, if `axis` is out of
+            bound, or if `A.shape[axis]` is not evenly divisible by
+            `sections`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 6, 1)
+        var parts = nm.split(a, 3)
+        print(parts[0])  # [0, 1]
+        print(parts[1])  # [2, 3]
+        print(parts[2])  # [4, 5]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="split",
+            )
+        )
+    if sections <= 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Number of sections must be larger than 0.",
+                location="split",
+            )
+        )
+
+    var n = A.shape[ax]
+    if n % sections != 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="array split does not result in an equal division",
+                location="split",
+            )
+        )
+
+    var step = n // sections
+    var indices = List[Int]()
+    for i in range(1, sections):
+        indices.append(i * step)
+
+    return _split_at_indices(A, indices, ax)
+
+
+def split[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int], axis: Int = 0) raises -> List[
+    NDArray[dtype]
+]:
+    """
+    (overload) Splits an array along `axis` at the given boundary indices.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        indices: The boundary indices at which to split. Need not be
+            sorted; supports negative indices, and out-of-range values are
+            clamped, matching Python slice semantics.
+        axis: The axis along which to split. Supports negative indices.
+            Defaults to 0.
+
+    Returns:
+        A list of `len(indices) + 1` arrays.
+
+    Raises:
+        NumojoError: If `axis` is out of bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 6, 1)
+        var indices: List[Int] = [2, 4]
+        var parts = nm.split(a, indices)
+        print(parts[0])  # [0, 1]
+        print(parts[1])  # [2, 3]
+        print(parts[2])  # [4, 5]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="split",
+            )
+        )
+
+    return _split_at_indices(A, indices, ax)
+
+
+def array_split[
+    dtype: DType
+](A: NDArray[dtype], sections: Int, axis: Int = 0) raises -> List[
+    NDArray[dtype]
+]:
+    """
+    Splits an array into `sections` arrays along `axis`, as equally as
+    possible. Unlike `split`, `A.shape[axis]` need not be evenly divisible
+    by `sections`: the first `A.shape[axis] % sections` sub-arrays get one
+    extra element.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        sections: The number of sections to split the array into. Must be
+            positive.
+        axis: The axis along which to split. Supports negative indices.
+            Defaults to 0.
+
+    Returns:
+        A list of `sections` arrays.
+
+    Raises:
+        NumojoError: If `sections` is not positive, or if `axis` is out of
+            bound.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 7, 1)
+        var parts = nm.array_split(a, 3)
+        print(parts[0])  # [0, 1, 2]
+        print(parts[1])  # [3, 4]
+        print(parts[2])  # [5, 6]
+        ```
+    """
+    var ax = axis
+    if ax < 0:
+        ax += A.ndim
+    if (ax < 0) or (ax >= A.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Axis out of range: got {}, expected {} <= axis < {}."
+                ).format(axis, -A.ndim, A.ndim),
+                location="array_split",
+            )
+        )
+    if sections <= 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Number of sections must be larger than 0.",
+                location="array_split",
+            )
+        )
+
+    var n = A.shape[ax]
+    var base = n // sections
+    var extra = n % sections
+
+    var indices = List[Int]()
+    var pos = 0
+    for i in range(sections - 1):
+        pos += base + (1 if i < extra else 0)
+        indices.append(pos)
+
+    return _split_at_indices(A, indices, ax)
+
+
+def array_split[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int], axis: Int = 0) raises -> List[
+    NDArray[dtype]
+]:
+    """
+    (overload) Same as `split` with explicit boundary indices. See
+    docstring of `split`.
+    """
+    return split(A, indices, axis)
+
+
+# ===----------------------------------------------------------------------=== #
 # Joining arrays
 # ===----------------------------------------------------------------------=== #
 
@@ -2017,3 +2312,171 @@ def vstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
             transformed.append(arrays[i].copy())
 
     return _concatenate_list(transformed, axis=0)
+
+
+# ===----------------------------------------------------------------------=== #
+# Removing and adding elements
+# ===----------------------------------------------------------------------=== #
+
+
+def delete[
+    dtype: DType
+](
+    A: NDArray[dtype], obj: List[Int], axis: Optional[Int] = None
+) raises -> NDArray[dtype]:
+    """
+    Returns a copy of an array with the sub-arrays at `obj` removed along
+    `axis`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        obj: Indices of the slices to remove along `axis`. Supports
+            negative indices; repeated indices are only removed once.
+        axis: The axis along which to remove slices. Supports negative
+            indices. If not given, `A` is flattened before removing
+            elements.
+
+    Returns:
+        A copy of `A` with the given slices removed.
+
+    Raises:
+        NumojoError: If `axis` is out of bound, or if any index in `obj`
+            is out of bound for the corresponding axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 5, 1)
+        print(nm.delete(a, [1, 2]))  # [0, 3, 4]
+        ```
+    """
+    var source: NDArray[dtype]
+    var ax: Int
+    if axis:
+        source = A.contiguous()
+        ax = axis.value()
+        if ax < 0:
+            ax += source.ndim
+        if (ax < 0) or (ax >= source.ndim):
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Axis out of range: got {}, expected {} <= axis < {}."
+                    ).format(axis.value(), -source.ndim, source.ndim),
+                    location="delete",
+                )
+            )
+    else:
+        source = ravel(A, order="C")
+        ax = 0
+
+    var n = source.shape[ax]
+    var keep = List[Bool]()
+    for _ in range(n):
+        keep.append(True)
+
+    for i in range(len(obj)):
+        var idx = obj[i]
+        if idx < 0:
+            idx += n
+        if (idx < 0) or (idx >= n):
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "Index {} out of bound for axis of size {}."
+                    ).format(obj[i], n),
+                    location="delete",
+                )
+            )
+        keep[idx] = False
+
+    var src_of = List[Int]()
+    for i in range(n):
+        if keep[i]:
+            src_of.append(i)
+
+    var new_shape_list = List[Int]()
+    for d in range(source.ndim):
+        if d == ax:
+            new_shape_list.append(len(src_of))
+        else:
+            new_shape_list.append(source.shape[d])
+    var result = NDArray[dtype](NDArrayShape(new_shape_list))
+
+    for flat_idx in range(result.size):
+        var remainder = flat_idx
+        var src_flat = 0
+        for d in range(source.ndim):
+            var coord = remainder // result.strides[d]
+            remainder = remainder % result.strides[d]
+            if d == ax:
+                coord = src_of[coord]
+            src_flat += coord * source.strides[d]
+        result.unsafe_set(flat_idx, source.unsafe_get(src_flat))
+
+    return result^
+
+
+def delete[
+    dtype: DType
+](A: NDArray[dtype], obj: Int, axis: Optional[Int] = None) raises -> NDArray[
+    dtype
+]:
+    """
+    (overload) Removes a single slice at index `obj` along `axis`. See
+    docstring of `delete`.
+    """
+    var indices: List[Int] = [obj]
+    return delete(A, indices, axis)
+
+
+def append[
+    dtype: DType
+](
+    A: NDArray[dtype], values: NDArray[dtype], axis: Optional[Int] = None
+) raises -> NDArray[dtype]:
+    """
+    Appends `values` to the end of `A`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        values: The values to append. If `axis` is given, `values` must
+            have the same number of dimensions as `A`, and the same shape
+            except along `axis`.
+        axis: The axis along which to append. Supports negative indices.
+            If not given, both `A` and `values` are flattened before
+            appending.
+
+    Returns:
+        A new array with `values` appended to `A`.
+
+    Raises:
+        NumojoError: If `axis` is out of bound, or if the shapes of `A`
+            and `values` are incompatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        var b = nm.arange[nm.i32](3, 6, 1)
+        print(nm.append(a, b))  # [0, 1, 2, 3, 4, 5]
+        ```
+    """
+    if axis:
+        var result = concatenate(A, values, axis=axis.value())
+        return result^
+
+    var flat_a = ravel(A, order="C")
+    var flat_v = ravel(values, order="C")
+    var result = concatenate(flat_a, flat_v, axis=0)
+    return result^

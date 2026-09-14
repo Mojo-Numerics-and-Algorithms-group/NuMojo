@@ -293,11 +293,15 @@ from numojo.routines.manipulation import (
     atleast_1d,
     atleast_2d,
     atleast_3d,
+    split,
+    array_split,
     concatenate,
     column_stack,
     row_stack,
     hstack,
     vstack,
+    delete,
+    append,
 )
 
 from numojo.routines import random

@@ -301,6 +301,85 @@ def test_broadcast() raises:
     )
 
 
+def test_split() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 6, 1)
+    var anp = a.to_numpy()
+
+    var parts = nm.split(a, 3)
+    var partsnp = np.split(anp, 3)
+    for i in range(3):
+        check_is_close(
+            parts[i],
+            partsnp[i],
+            String("`split` by sections, part {} fails.").format(i),
+        )
+
+    var indices: List[Int] = [2, 4]
+    var parts2 = nm.split(a, indices)
+    var parts2np = np.split(anp, Python.list(2, 4))
+    for i in range(3):
+        check_is_close(
+            parts2[i],
+            parts2np[i],
+            String("`split` by indices, part {} fails.").format(i),
+        )
+
+    # Unsorted / negative indices produce the same slices as raw Python
+    # slicing, including empty sub-arrays.
+    var indices2: List[Int] = [2, -2]
+    var parts3 = nm.split(a, indices2)
+    var parts3np = np.split(anp, Python.list(2, -2))
+    for i in range(3):
+        check_is_close(
+            parts3[i],
+            parts3np[i],
+            String("`split` unsorted/negative indices, part {} fails.").format(
+                i
+            ),
+        )
+
+    # 2-D array, split along axis=1
+    var B = nm.reshape(nm.arange[nm.i32](0, 12, 1), Shape(3, 4))
+    var Bnp = B.to_numpy()
+    var partsB = nm.split(B, 2, axis=1)
+    var partsBnp = np.split(Bnp, 2, axis=1)
+    for i in range(2):
+        check_is_close(
+            partsB[i],
+            partsBnp[i],
+            String("`split` 2-D axis=1, part {} fails.").format(i),
+        )
+
+
+def test_array_split() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 7, 1)
+    var anp = a.to_numpy()
+
+    var parts = nm.array_split(a, 3)
+    var partsnp = np.array_split(anp, 3)
+    for i in range(3):
+        check_is_close(
+            parts[i],
+            partsnp[i],
+            String("`array_split` uneven sections, part {} fails.").format(i),
+        )
+
+    var parts2 = nm.array_split(a, 4)
+    var parts2np = np.array_split(anp, 4)
+    for i in range(4):
+        check_is_close(
+            parts2[i],
+            parts2np[i],
+            String("`array_split` uneven sections (4), part {} fails.").format(
+                i
+            ),
+        )
+
+
 def test_concatenate() raises:
     var np = Python.import_module("numpy")
 
@@ -421,6 +500,70 @@ def test_row_stack() raises:
     var c = nm.row_stack(a, b)
     var cnp = np.vstack(Python.list(a.to_numpy(), b.to_numpy()))
     check_is_close(c, cnp, "`row_stack` 1-D arrays fails.")
+
+
+def test_delete() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 5, 1)
+    var anp = a.to_numpy()
+    check_is_close(
+        nm.delete(a, 1), np.delete(anp, 1), "`delete` single index fails."
+    )
+    check_is_close(
+        nm.delete(a, -1), np.delete(anp, -1), "`delete` negative index fails."
+    )
+    var idx: List[Int] = [1, 1, 2]
+    check_is_close(
+        nm.delete(a, idx),
+        np.delete(anp, Python.list(1, 1, 2)),
+        "`delete` duplicate indices fails.",
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 12, 1), Shape(3, 4))
+    var Bnp = B.to_numpy()
+    check_is_close(
+        nm.delete(B, 1, axis=0),
+        np.delete(Bnp, 1, axis=0),
+        "`delete` axis=0 fails.",
+    )
+    var idx2: List[Int] = [0, 2]
+    check_is_close(
+        nm.delete(B, idx2, axis=1),
+        np.delete(Bnp, Python.list(0, 2), axis=1),
+        "`delete` axis=1 fails.",
+    )
+    check_is_close(
+        nm.delete(B, 1),
+        np.delete(Bnp, 1),
+        "`delete` axis=None (flatten) fails.",
+    )
+
+
+def test_append() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 3, 1)
+    var b = nm.arange[nm.i32](3, 6, 1)
+    check_is_close(
+        nm.append(a, b),
+        np.append(a.to_numpy(), b.to_numpy()),
+        "`append` axis=None fails.",
+    )
+
+    var A = nm.reshape(nm.arange[nm.i32](0, 4, 1), Shape(2, 2))
+    var Bv = nm.reshape(nm.arange[nm.i32](4, 6, 1), Shape(1, 2))
+    check_is_close(
+        nm.append(A, Bv, axis=0),
+        np.append(A.to_numpy(), Bv.to_numpy(), axis=0),
+        "`append` axis=0 fails.",
+    )
+
+    check_is_close(
+        nm.append(A, Bv),
+        np.append(A.to_numpy(), Bv.to_numpy()),
+        "`append` axis=None on 2-D arrays fails.",
+    )
 
 
 def main() raises:

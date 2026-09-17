@@ -14,7 +14,7 @@ Exports
 -------
 - Decompositions: `lu_decomposition`.
 - Norms: `det`, `trace`.
-- Products: `dot`, `matmul`, `cross`.
+- Products: `dot`, `matmul`, `cross`, `outer`, `kron`, `tensordot`.
 - Solving: `solve`, `lstsq`, `inv`.
 - Miscellaneous: `diagonal`.
 """
@@ -31,7 +31,10 @@ from .norms import (
 from .products import (
     cross,
     dot,
+    kron,
     matmul,
+    outer,
+    tensordot,
 )
 from .solving import (
     inv,

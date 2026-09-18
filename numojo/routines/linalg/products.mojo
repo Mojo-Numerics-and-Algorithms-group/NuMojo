@@ -18,6 +18,9 @@ Exports
 - `dot`: Dot product of vectors.
 - `matmul`: Matrix multiplication.
 - `cross`: Cross product.
+- `outer`: Outer product of two flattened arrays.
+- `kron`: Kronecker product.
+- `tensordot`: Sum of products over given axes.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -43,6 +46,7 @@ from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import zeros
+from numojo.routines.manipulation import reshape, transpose
 from numojo.routines.math.sums import sum
 
 
@@ -492,3 +496,299 @@ def matmul_naive[
         )
 
     return result^
+
+
+def outer[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Compute the outer product of two arrays.
+
+    Both inputs are flattened (in C order) before the product is taken,
+    matching `numpy.outer`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: First input, treated as a flat vector of length `A.size`.
+        B: Second input, treated as a flat vector of length `B.size`.
+
+    Returns:
+        A 2-D array of shape `(A.size, B.size)`, where
+        `result[i, j] = A_flat[i] * B_flat[j]`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](3)
+        var b = nm.arange[nm.f64](4)
+        print(nm.linalg.outer(a, b))
+        ```
+    """
+
+    var a_flat = A.flatten()
+    var b_flat = B.flatten()
+    var m = a_flat.size
+    var n = b_flat.size
+    var result = NDArray[dtype](Shape(m, n))
+
+    for i in range(m):
+        var a_val = a_flat.unsafe_get(i)
+        for j in range(n):
+            result.unsafe_set(i * n + j, a_val * b_flat.unsafe_get(j))
+
+    return result^
+
+
+def kron[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Compute the Kronecker product of two arrays.
+
+    If `A` and `B` have different numbers of dimensions, the shape of the
+    array with fewer dimensions is padded with leading 1s, matching
+    `numpy.kron`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: First input array.
+        B: Second input array.
+
+    Returns:
+        The Kronecker product. If `A` has (padded) shape
+        `(r0, r1, ..., rN)` and `B` has (padded) shape
+        `(s0, s1, ..., sN)`, the result has shape
+        `(r0 * s0, r1 * s1, ..., rN * sN)`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(2, 3))
+        var b = nm.eye[nm.f64](2, 2)
+        print(nm.linalg.kron(a, b))
+        ```
+    """
+
+    if not A.is_c_contiguous():
+        return kron(A.contiguous(), B)
+    if not B.is_c_contiguous():
+        return kron(A, B.contiguous())
+
+    var ndim = max(A.ndim, B.ndim)
+
+    var a_shape = List[Int]()
+    var b_shape = List[Int]()
+    for i in range(ndim):
+        var a_dim_index = i - (ndim - A.ndim)
+        a_shape.append(A.shape[a_dim_index] if a_dim_index >= 0 else 1)
+        var b_dim_index = i - (ndim - B.ndim)
+        b_shape.append(B.shape[b_dim_index] if b_dim_index >= 0 else 1)
+
+    var out_shape = List[Int]()
+    for i in range(ndim):
+        out_shape.append(a_shape[i] * b_shape[i])
+
+    var result = NDArray[dtype](Shape(out_shape))
+
+    # Strides (row-major) for the padded logical shapes of A, B and the
+    # result, used to convert a flat result-index into per-axis
+    # coordinates and back into flat source offsets.
+    var out_strides = List[Int](capacity=ndim)
+    var a_strides = List[Int](capacity=ndim)
+    var b_strides = List[Int](capacity=ndim)
+    for _ in range(ndim):
+        out_strides.append(0)
+        a_strides.append(0)
+        b_strides.append(0)
+    var out_acc = 1
+    var a_acc = 1
+    var b_acc = 1
+    for i in range(ndim - 1, -1, -1):
+        out_strides[i] = out_acc
+        out_acc *= out_shape[i]
+        a_strides[i] = a_acc
+        a_acc *= a_shape[i]
+        b_strides[i] = b_acc
+        b_acc *= b_shape[i]
+
+    for flat in range(result.size):
+        var rem = flat
+        var a_offset = 0
+        var b_offset = 0
+        for i in range(ndim):
+            var coord = rem // out_strides[i]
+            rem = rem % out_strides[i]
+            var a_coord = coord // b_shape[i]
+            var b_coord = coord % b_shape[i]
+            a_offset += a_coord * a_strides[i]
+            b_offset += b_coord * b_strides[i]
+        result.unsafe_set(flat, A.unsafe_get(a_offset) * B.unsafe_get(b_offset))
+
+    return result^
+
+
+def tensordot[
+    dtype: DType
+](
+    A: NDArray[dtype],
+    B: NDArray[dtype],
+    axes_a: List[Int],
+    axes_b: List[Int],
+) raises -> NDArray[dtype]:
+    """
+    Compute the tensor dot product along specified axes.
+
+    Sums the products of the elements of `A` and `B` over the axes given
+    in `axes_a` and `axes_b`. This is a generalization of `dot` and
+    `matmul` to arbitrary axes, matching `numpy.tensordot`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: First input array.
+        B: Second input array.
+        axes_a: Axes of `A` to sum over. Negative values count from the
+            end.
+        axes_b: Axes of `B` to sum over, paired positionally with
+            `axes_a`. Negative values count from the end.
+
+    Returns:
+        The tensor dot product. Its shape is the concatenation of the
+        axes of `A` not in `axes_a` followed by the axes of `B` not in
+        `axes_b`.
+
+    Raises:
+        NumojoError: If `axes_a` and `axes_b` have different lengths, or
+            the paired axis lengths of `A` and `B` do not match.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](60).reshape(nm.Shape(3, 4, 5))
+        var b = nm.arange[nm.f64](24).reshape(nm.Shape(4, 3, 2))
+        print(nm.linalg.tensordot(a, b, axes_a=[1, 0], axes_b=[0, 1]))
+        ```
+    """
+
+    if len(axes_a) != len(axes_b):
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "tensordot: `axes_a` (len {}) and `axes_b` (len {}) must"
+                    " have the same length"
+                ).format(len(axes_a), len(axes_b)),
+                location="tensordot",
+            )
+        )
+
+    var norm_axes_a = List[Int]()
+    for ax in axes_a:
+        norm_axes_a.append(ax + A.ndim if ax < 0 else ax)
+    var norm_axes_b = List[Int]()
+    for ax in axes_b:
+        norm_axes_b.append(ax + B.ndim if ax < 0 else ax)
+
+    for i in range(len(norm_axes_a)):
+        if A.shape[norm_axes_a[i]] != B.shape[norm_axes_b[i]]:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "tensordot: shape mismatch on paired axes {} (size"
+                        " {}) and {} (size {})"
+                    ).format(
+                        norm_axes_a[i],
+                        A.shape[norm_axes_a[i]],
+                        norm_axes_b[i],
+                        B.shape[norm_axes_b[i]],
+                    ),
+                    location="tensordot",
+                )
+            )
+
+    var notin_a = List[Int]()
+    for i in range(A.ndim):
+        if i not in norm_axes_a:
+            notin_a.append(i)
+    var notin_b = List[Int]()
+    for i in range(B.ndim):
+        if i not in norm_axes_b:
+            notin_b.append(i)
+
+    var newaxes_a = List[Int]()
+    for i in notin_a:
+        newaxes_a.append(i)
+    for i in norm_axes_a:
+        newaxes_a.append(i)
+    var newaxes_b = List[Int]()
+    for i in norm_axes_b:
+        newaxes_b.append(i)
+    for i in notin_b:
+        newaxes_b.append(i)
+
+    var olda = List[Int]()
+    for i in notin_a:
+        olda.append(A.shape[i])
+    var oldb = List[Int]()
+    for i in notin_b:
+        oldb.append(B.shape[i])
+
+    var n_free_a = 1
+    for d in olda:
+        n_free_a *= d
+    var n_free_b = 1
+    for d in oldb:
+        n_free_b *= d
+    var n_contract = 1
+    for i in norm_axes_a:
+        n_contract *= A.shape[i]
+
+    var at = transpose(A, newaxes_a).reshape(Shape(n_free_a, n_contract))
+    var bt = transpose(B, newaxes_b).reshape(Shape(n_contract, n_free_b))
+
+    var out_shape = List[Int]()
+    for d in olda:
+        out_shape.append(d)
+    for d in oldb:
+        out_shape.append(d)
+    var result = matmul_2darray(at, bt)
+    if len(out_shape) == 0:
+        return result.reshape(Shape(1))
+    return result.reshape(Shape(out_shape))
+
+
+def tensordot[
+    dtype: DType
+](A: NDArray[dtype], B: NDArray[dtype], axes: Int = 2) raises -> NDArray[dtype]:
+    """
+    (overload) Tensor dot product summing over the last `axes` axes of
+    `A` and the first `axes` axes of `B`.
+
+    `axes=2` reproduces `matmul` for 2-D inputs; `axes=1` reproduces
+    `dot`-like contraction over one axis; `axes=0` reproduces the full
+    outer product (no summation).
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        A: First input array.
+        B: Second input array.
+        axes: Number of trailing/leading axes of `A`/`B` to sum over.
+
+    Returns:
+        The tensor dot product. See the `axes_a`/`axes_b` overload.
+    """
+
+    var axes_a = List[Int]()
+    var axes_b = List[Int]()
+    for i in range(axes):
+        axes_a.append(A.ndim - axes + i)
+        axes_b.append(i)
+    return tensordot(A, B, axes_a, axes_b)

@@ -177,5 +177,67 @@ def test_misc() raises:
         )
 
 
+# ===-----------------------------------------------------------------------===#
+# Products: outer, kron, tensordot
+# ===-----------------------------------------------------------------------===#
+
+
+def test_outer() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.arange[nm.f64](6).reshape(Shape(2, 3))
+    var b = nm.arange[nm.f64](4)
+    check_is_close(
+        nm.linalg.outer(a, b),
+        np.outer(a.to_numpy(), b.to_numpy()),
+        "`outer` is broken",
+    )
+
+
+def test_kron() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.arange[nm.f64](6).reshape(Shape(2, 3))
+    var B = nm.eye[nm.f64](2, 2)
+    check_is_close(
+        nm.linalg.kron(A, B),
+        np.kron(A.to_numpy(), B.to_numpy()),
+        "`kron` is broken for equal-ndim inputs",
+    )
+
+    var A1 = nm.arange[nm.f64](6)
+    var B1 = nm.arange[nm.f64](6).reshape(Shape(2, 3))
+    check_is_close(
+        nm.linalg.kron(A1, B1),
+        np.kron(A1.to_numpy(), B1.to_numpy()),
+        "`kron` is broken for mismatched ndim inputs",
+    )
+
+
+def test_tensordot() raises:
+    var np = Python.import_module("numpy")
+    var t1 = nm.arange[nm.f64](60).reshape(Shape(3, 4, 5))
+    var t2 = nm.arange[nm.f64](24).reshape(Shape(4, 3, 2))
+    var py_axes = Python.list(Python.list(1, 0), Python.list(0, 1))
+    check_is_close(
+        nm.linalg.tensordot(t1, t2, axes_a=[1, 0], axes_b=[0, 1]),
+        np.tensordot(t1.to_numpy(), t2.to_numpy(), axes=py_axes),
+        "`tensordot` with explicit axes lists is broken",
+    )
+
+    var t3 = nm.arange[nm.f64](120).reshape(Shape(4, 5, 6))
+    check_is_close(
+        nm.linalg.tensordot(t1, t3, axes=2),
+        np.tensordot(t1.to_numpy(), t3.to_numpy(), axes=2),
+        "`tensordot` with `axes=2` is broken",
+    )
+
+    var v1 = nm.arange[nm.f64](3)
+    var v2 = nm.arange[nm.f64](4)
+    check_is_close(
+        nm.linalg.tensordot(v1, v2, axes=0),
+        np.tensordot(v1.to_numpy(), v2.to_numpy(), axes=0),
+        "`tensordot` with `axes=0` is broken",
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

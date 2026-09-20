@@ -17,6 +17,7 @@ Exports
 -------
 - `solve`: Solve linear system.
 - `inv`: Matrix inverse.
+- `lstsq`: Least-squares solution to a linear system.
 """
 
 # TODO: Add partial pivot support.
@@ -37,7 +38,9 @@ from numojo.routines.creation import (
     full,
     zeros,
 )
-from numojo.routines.linalg.decompositions import lu_decomposition
+from numojo.routines.linalg.decompositions import lu_decomposition, qr
+from numojo.routines.linalg.products import matmul
+from numojo.routines.manipulation import transpose
 
 
 def forward_substitution[
@@ -335,6 +338,82 @@ def solve[
     #         X._buf.ptr.store(i * n + col, _temp2)
 
     # return X
+
+
+def lstsq[
+    dtype: DType
+](A: NDArray[dtype], Y: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Compute the least-squares solution to `Ax = Y`.
+
+    `A` is an `(m, n)` matrix and `Y` is a vector of length `m` or a
+    matrix of shape `(m, p)`. Returns `x` (shape `(n,)` or `(n, p)`,
+    matching the shape of `Y`) minimizing `||Ax - Y||`.
+
+    For overdetermined or square systems (`m >= n`) with `A` of full
+    column rank, this uses QR decomposition. For underdetermined systems
+    (`m < n`) with `A` of full row rank, this returns the minimum-norm
+    solution via `A.T @ solve(A @ A.T, Y)`.
+
+    This does not currently support rank-deficient `A`; for that case,
+    use a SVD-based pseudoinverse instead once available.
+
+    Parameters:
+        dtype: Data type of the solution.
+
+    Args:
+        A: Coefficient matrix of shape `(m, n)`.
+        Y: Right-hand side, of shape `(m,)` or `(m, p)`.
+
+    Returns:
+        The least-squares solution `x`, of shape `(n,)` or `(n, p)`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        def main() raises:
+            var A = nm.fromstring("[[1, 1], [1, 2], [1, 3]]")
+            var y = nm.fromstring("[6, 0, 0]")
+            var x = nm.linalg.lstsq(A, y)
+            print(x)
+        ```
+    """
+
+    if not A.is_c_contiguous():
+        return lstsq(A.contiguous(), Y)
+    if not Y.is_c_contiguous():
+        return lstsq(A, Y.contiguous())
+
+    var m = A.shape[0]
+    var n = A.shape[1]
+
+    var y_was_1d = Y.ndim == 1
+    var Y2: NDArray[dtype] = Y.reshape(Shape(m, 1)) if y_was_1d else Y.copy()
+    var p = Y2.shape[1]
+
+    var X2: NDArray[dtype]
+    if m >= n:
+        var Q_R: Tuple[NDArray[dtype], NDArray[dtype]] = qr[dtype](A)
+        var Q: NDArray[dtype] = Q_R[0].copy()
+        var R: NDArray[dtype] = Q_R[1].copy()
+        var Qty = matmul(transpose(Q), Y2)
+
+        X2 = zeros[dtype](Shape(n, p))
+        for c in range(p):
+            var col_y = full[dtype](Shape(n), fill_value=SIMD[dtype, 1](0))
+            for i in range(n):
+                col_y.store(i, Qty.item(i, c))
+            var x_col = back_substitution(R, col_y)
+            for i in range(n):
+                X2.store(i, c, val=x_col.item(i))
+    else:
+        var A_T = transpose(A)
+        var AAT = matmul(A, A_T)
+        var Z = solve(AAT, Y2)
+        X2 = matmul(A_T, Z)
+
+    if y_was_1d:
+        return X2.reshape(Shape(n))
+    return X2^
 
 
 # TODO: remove unnecessary copies going on here later.

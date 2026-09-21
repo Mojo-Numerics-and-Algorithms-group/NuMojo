@@ -239,5 +239,75 @@ def test_tensordot() raises:
     )
 
 
+# ===-----------------------------------------------------------------------===#
+# Decompositions: qr, cholesky; Solving: lstsq
+# ===-----------------------------------------------------------------------===#
+
+
+def test_qr() raises:
+    def check_qr(m: Int, n: Int, msg: String) raises:
+        var np = Python.import_module("numpy")
+        var A = nm.random.randn(m, n)
+        var Q_R = nm.linalg.qr(A)
+        var Q = Q_R[0].copy()
+        var R = Q_R[1].copy()
+        var k = min(m, n)
+        assert_true(Q.shape[0] == m and Q.shape[1] == k, msg + ": Q shape")
+        assert_true(R.shape[0] == k and R.shape[1] == n, msg + ": R shape")
+        check_is_close(
+            Q @ R, A.to_numpy(), msg + ": Q @ R does not reconstruct A"
+        )
+        var identity_k = np.eye(k)
+        check_is_close(
+            nm.transpose(Q) @ Q,
+            identity_k,
+            msg + ": columns of Q are not orthonormal",
+        )
+
+    check_qr(5, 3, "qr tall")
+    check_qr(3, 6, "qr wide")
+    check_qr(4, 4, "qr square")
+
+
+def test_cholesky() raises:
+    var np = Python.import_module("numpy")
+    var M = nm.random.randn(5, 5)
+    var SPD = M @ nm.transpose(M) + nm.eye[nm.f64](5, 5) * 5.0
+    var L = nm.linalg.cholesky(SPD)
+    check_is_close(
+        L, np.linalg.cholesky(SPD.to_numpy()), "`cholesky` is broken"
+    )
+
+
+def test_lstsq() raises:
+    var np = Python.import_module("numpy")
+
+    # Overdetermined, vector rhs.
+    var A = nm.random.randn(8, 3)
+    var b = nm.random.randn(8)
+    check_is_close(
+        nm.linalg.lstsq(A, b),
+        np.linalg.lstsq(A.to_numpy(), b.to_numpy(), rcond=Python.none())[0],
+        "`lstsq` is broken for an overdetermined system",
+    )
+
+    # Overdetermined, matrix rhs.
+    var B = nm.random.randn(8, 2)
+    check_is_close(
+        nm.linalg.lstsq(A, B),
+        np.linalg.lstsq(A.to_numpy(), B.to_numpy(), rcond=Python.none())[0],
+        "`lstsq` is broken for a matrix right-hand side",
+    )
+
+    # Underdetermined, full row rank.
+    var A2 = nm.random.randn(3, 6)
+    var b2 = nm.random.randn(3)
+    check_is_close(
+        nm.linalg.lstsq(A2, b2),
+        np.linalg.lstsq(A2.to_numpy(), b2.to_numpy(), rcond=Python.none())[0],
+        "`lstsq` is broken for an underdetermined system",
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

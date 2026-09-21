@@ -784,6 +784,14 @@ def tensordot[
 
     Returns:
         The tensor dot product. See the `axes_a`/`axes_b` overload.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        var a = nm.arange[nm.f64](60).reshape(nm.Shape(3, 4, 5))
+        var b = nm.arange[nm.f64](120).reshape(nm.Shape(4, 5, 6))
+        print(nm.linalg.tensordot(a, b, axes=2))
+        ```
     """
 
     var axes_a = List[Int]()

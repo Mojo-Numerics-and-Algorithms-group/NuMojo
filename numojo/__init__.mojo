@@ -231,6 +231,9 @@ from numojo.routines.statistics import (
     nanmean,
     nanmax,
     nanmin,
+    nanvar,
+    nanstd,
+    nanmedian,
 )
 
 from numojo.routines import bitwise

@@ -20,6 +20,9 @@ Exports
 - `nanmean`: Arithmetic mean of array elements, ignoring `NaN`.
 - `nanmax`: Maximum array element, ignoring `NaN`.
 - `nanmin`: Minimum array element, ignoring `NaN`.
+- `nanvar`: Variance of array elements, ignoring `NaN`.
+- `nanstd`: Standard deviation of array elements, ignoring `NaN`.
+- `nanmedian`: Median value of array elements, ignoring `NaN`.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -32,8 +35,11 @@ import std.math as math
 # ===----------------------------------------------------------------------=== #
 from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
+from numojo.routines.creation import _0darray
 from numojo.routines.functional import apply_along_axis_reduce
 from numojo.routines.manipulation import ravel
+from numojo.routines.sorting import sort
 
 
 def nansum_1d[
@@ -465,3 +471,354 @@ def nanmin[
     return apply_along_axis_reduce[dtype, func1d=nanextrema_1d_min](
         a=a, axis=normalized_axis
     )
+
+
+def nanvar_1d[
+    dtype: DType, //
+](a: NDArray[dtype], ddof: Int = 0) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Compute the variance of all items in a 1-d array, ignoring `NaN`
+    elements. It is the backend function for `nanvar`, with or without
+    `axis`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: A 1-d array.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        The variance of the non-`NaN` elements as a scalar of `dtype`.
+
+    Raises:
+        NumojoError: If all elements are `NaN`.
+        NumojoError: If `ddof` is not smaller than the number of non-`NaN`
+            elements.
+    """
+
+    var total = Scalar[dtype](0)
+    var count = 0
+    for i in range(a.size):
+        var value = a.item(i)
+        if not math.isnan(value):
+            total += value
+            count += 1
+
+    if count == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Error in `nanvar`: All-NaN slice encountered.",
+                location="nanvar",
+            )
+        )
+    if ddof >= count:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "Error in `nanvar`: ddof {} should be smaller than the"
+                    " number of non-NaN elements {}"
+                ).format(ddof, count),
+                location="nanvar",
+            )
+        )
+
+    var mean_value = total / Scalar[dtype](count)
+
+    var sq_total = Scalar[dtype](0)
+    for i in range(a.size):
+        var value = a.item(i)
+        if not math.isnan(value):
+            var deviation = value - mean_value
+            sq_total += deviation * deviation
+
+    return sq_total / Scalar[dtype](count - ddof)
+
+
+def nanvar[
+    dtype: DType
+](a: NDArray[dtype], ddof: Int = 0) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Compute the variance of all items in the array, ignoring `NaN`
+    elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        The variance of the non-`NaN` elements as a scalar of `dtype`.
+
+    Raises:
+        NumojoError: If all elements are `NaN`.
+        NumojoError: If `ddof` is not smaller than the number of non-`NaN`
+            elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.array[f64]("[1.0, nan, 3.0]")
+        print(nm.nanvar(a))  # 1.0
+        ```
+    """
+    return nanvar_1d(ravel(a), ddof=ddof)
+
+
+def nanvar[
+    dtype: DType
+](a: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Variance of array elements over a given axis, ignoring `NaN` elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+        axis: The axis along which the variance is performed.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        An array with reduced number of dimensions.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+        NumojoError: If a slice along the axis is all `NaN`.
+        NumojoError: If `ddof` is not smaller than the number of non-`NaN`
+            elements in a slice.
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `nanvar`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="nanvar",
+            )
+        )
+
+    if a.ndim == 1:
+        return _0darray[dtype](nanvar_1d(a, ddof=ddof))
+
+    var new_shape = a.shape.pop(axis=normalized_axis)
+    var res = NDArray[dtype](new_shape)
+    var iterator = a.iter_along_axis(axis=normalized_axis)
+    for i in range(a.size // a.shape[normalized_axis]):
+        res.unsafe_set(i, nanvar_1d(iterator.ith(i), ddof=ddof))
+
+    return res^
+
+
+def nanstd[
+    dtype: DType
+](a: NDArray[dtype], ddof: Int = 0) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Compute the standard deviation of all items in the array, ignoring
+    `NaN` elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        The standard deviation of the non-`NaN` elements as a scalar of
+        `dtype`.
+
+    Raises:
+        NumojoError: If all elements are `NaN`.
+        NumojoError: If `ddof` is not smaller than the number of non-`NaN`
+            elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.array[f64]("[1.0, nan, 3.0]")
+        print(nm.nanstd(a))  # 1.0
+        ```
+    """
+    return nanvar(a, ddof=ddof) ** Scalar[dtype](0.5)
+
+
+def nanstd[
+    dtype: DType
+](a: NDArray[dtype], axis: Int, ddof: Int = 0) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Standard deviation of array elements over a given axis, ignoring `NaN`
+    elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+        axis: The axis along which the standard deviation is performed.
+        ddof: Delta degree of freedom.
+
+    Returns:
+        An array with reduced number of dimensions.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+        NumojoError: If a slice along the axis is all `NaN`.
+        NumojoError: If `ddof` is not smaller than the number of non-`NaN`
+            elements in a slice.
+    """
+    return nanvar(a, axis=axis, ddof=ddof) ** Scalar[dtype](0.5)
+
+
+def nanmedian_1d[
+    dtype: DType, //
+](a: NDArray[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the median of all items in a 1-d array, ignoring `NaN`
+    elements. It is the backend function for `nanmedian`, with or without
+    `axis`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: A 1-d array.
+
+    Returns:
+        The median of the non-`NaN` elements as a scalar of `dtype`.
+
+    Raises:
+        NumojoError: If all elements are `NaN`.
+    """
+
+    var count = 0
+    for i in range(a.size):
+        if not math.isnan(a.item(i)):
+            count += 1
+
+    if count == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Error in `nanmedian`: All-NaN slice encountered.",
+                location="nanmedian",
+            )
+        )
+
+    var filtered = NDArray[dtype](Shape(count))
+    var idx = 0
+    for i in range(a.size):
+        var value = a.item(i)
+        if not math.isnan(value):
+            filtered.itemset(idx, value)
+            idx += 1
+
+    var sorted_array = sort(filtered)
+    if count % 2 == 1:
+        return sorted_array.item(count // 2)
+    else:
+        return (
+            sorted_array.item(count // 2 - 1) + sorted_array.item(count // 2)
+        ) / 2
+
+
+def nanmedian[
+    dtype: DType
+](a: NDArray[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the median of all items in the array, ignoring `NaN` elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+
+    Returns:
+        The median of the non-`NaN` elements as a scalar of `dtype`.
+
+    Raises:
+        NumojoError: If all elements are `NaN`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.array[f64]("[1.0, nan, 3.0]")
+        print(nm.nanmedian(a))  # 2.0
+        ```
+    """
+    return nanmedian_1d(ravel(a))
+
+
+def nanmedian[
+    dtype: DType
+](a: NDArray[dtype], axis: Int) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Median of array elements over a given axis, ignoring `NaN` elements.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        a: NDArray.
+        axis: The axis along which the median is performed.
+
+    Returns:
+        An array with reduced number of dimensions.
+
+    Raises:
+        NumojoError: If the axis is out of bound.
+        NumojoError: If a slice along the axis is all `NaN`.
+    """
+
+    var normalized_axis = axis
+    if axis < 0:
+        normalized_axis += a.ndim
+    if (normalized_axis < 0) or (normalized_axis >= a.ndim):
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "Error in `nanmedian`: Axis {} not in bound [-{}, {})"
+                ).format(axis, a.ndim, a.ndim),
+                location="nanmedian",
+            )
+        )
+
+    if a.ndim == 1:
+        return _0darray[dtype](nanmedian_1d(a))
+
+    var new_shape = a.shape.pop(axis=normalized_axis)
+    var res = NDArray[dtype](new_shape)
+    var iterator = a.iter_along_axis(axis=normalized_axis)
+    for i in range(a.size // a.shape[normalized_axis]):
+        res.unsafe_set(i, nanmedian_1d(iterator.ith(i)))
+
+    return res^

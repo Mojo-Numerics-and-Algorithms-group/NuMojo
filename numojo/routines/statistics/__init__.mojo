@@ -18,7 +18,7 @@ Exports
 - `min`, `max`: Minimum and maximum values.
 - `variance`: Variance of array elements.
 - `stddev`: Standard deviation of array elements.
-- `nansum`, `nanmean`, `nanmax`, `nanmin`: NaN-aware reductions.
+- `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`: NaN-aware reductions.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -36,6 +36,9 @@ from .averages import (
 from .nanfunctions import (
     nanmax,
     nanmean,
+    nanmedian,
     nanmin,
+    nanstd,
     nansum,
+    nanvar,
 )

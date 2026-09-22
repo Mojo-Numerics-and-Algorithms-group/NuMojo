@@ -175,5 +175,71 @@ def test_nanmax_nanmin() raises:
         _ = nm.nanmin(all_nan)
 
 
+def test_nanvar_nanstd() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(nm.nanvar(A), np.nanvar(Anp), atol=PythonObject(0.001)),
+        "`nanvar` is broken",
+    )
+    assert_true(
+        np.isclose(nm.nanstd(A), np.nanstd(Anp), atol=PythonObject(0.001)),
+        "`nanstd` is broken",
+    )
+    assert_true(
+        np.isclose(
+            nm.nanvar(A, ddof=1),
+            np.nanvar(Anp, ddof=PythonObject(1)),
+            atol=PythonObject(0.001),
+        ),
+        "`nanvar` with ddof is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanvar(A, axis=axis),
+            np.nanvar(Anp, axis=axis),
+            String("`nanvar` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.nanstd(A, axis=axis),
+            np.nanstd(Anp, axis=axis),
+            String("`nanstd` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanvar(all_nan)
+
+    with assert_raises():
+        # ddof not smaller than the number of non-NaN elements
+        var a = nm.array[f64](data=[1.0, nan[f64]()], shape=[2])
+        _ = nm.nanvar(a, ddof=1)
+
+
+def test_nanmedian() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(
+            nm.nanmedian(A), np.nanmedian(Anp), atol=PythonObject(0.001)
+        ),
+        "`nanmedian` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanmedian(A, axis=axis),
+            np.nanmedian(Anp, axis=axis),
+            String("`nanmedian` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanmedian(all_nan)
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

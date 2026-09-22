@@ -1,5 +1,6 @@
 from std.python import Python, PythonObject
 from std.testing.testing import assert_raises, assert_true
+from std.utils.numerics import nan
 from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
@@ -81,6 +82,97 @@ def test_mean_median_var_std() raises:
             np.std(Anp, axis),
             String("`std` is broken for axis {}").format(axis),
         )
+
+
+# ===-----------------------------------------------------------------------===#
+# NaN-aware reductions
+# ===-----------------------------------------------------------------------===#
+
+
+def _make_nan_array() raises -> NDArray[f64]:
+    return nm.array[f64](
+        data=[
+            Scalar[f64](1.0),
+            nan[f64](),
+            3.0,
+            4.0,
+            5.0,
+            nan[f64](),
+        ],
+        shape=[2, 3],
+    )
+
+
+def test_nansum() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(nm.nansum(A), np.nansum(Anp), atol=PythonObject(0.001)),
+        "`nansum` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nansum(A, axis=axis),
+            np.nansum(Anp, axis=axis),
+            String("`nansum` is broken for axis {}").format(axis),
+        )
+
+
+def test_nanmean() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(nm.nanmean(A), np.nanmean(Anp), atol=PythonObject(0.001)),
+        "`nanmean` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanmean(A, axis=axis),
+            np.nanmean(Anp, axis=axis),
+            String("`nanmean` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanmean(all_nan)
+
+
+def test_nanmax_nanmin() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(nm.nanmax(A), np.nanmax(Anp), atol=PythonObject(0.001)),
+        "`nanmax` is broken",
+    )
+    assert_true(
+        np.isclose(nm.nanmin(A), np.nanmin(Anp), atol=PythonObject(0.001)),
+        "`nanmin` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanmax(A, axis=axis),
+            np.nanmax(Anp, axis=axis),
+            String("`nanmax` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.nanmin(A, axis=axis),
+            np.nanmin(Anp, axis=axis),
+            String("`nanmin` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanmax(all_nan)
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanmin(all_nan)
 
 
 def main() raises:

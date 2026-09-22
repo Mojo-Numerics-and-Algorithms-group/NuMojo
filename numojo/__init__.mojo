@@ -227,6 +227,10 @@ from numojo.routines.statistics import (
     median,
     variance,
     stddev,
+    nansum,
+    nanmean,
+    nanmax,
+    nanmin,
 )
 
 from numojo.routines import bitwise

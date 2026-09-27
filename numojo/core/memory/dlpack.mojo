@@ -605,7 +605,7 @@ def _get_c_char_p_from_string[s: StringLiteral]() raises -> PythonObject:
     var ctypes = Python.import_module("ctypes")
 
     return ctypes.cast(
-        Int(s.as_c_string_slice().unsafe_ptr().unsafe_bitcast[NoneType]()),
+        Int(s.as_c_string_span().ptr().unsafe_bitcast[NoneType]()),
         ctypes.c_char_p,
     )
 

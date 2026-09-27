@@ -172,8 +172,7 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
     var Z = zeros[dtype](Shape(m, m))
     var X = zeros[dtype](Shape(m, m))
 
-    @parameter
-    def calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) {mut Z, mut X, Y, U, L, m} -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y.unsafe_load[width=1](i * m + col)
@@ -194,7 +193,7 @@ def inv_lu[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
             _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
             X.unsafe_store[width=1](i * m + col, _temp2)
 
-    parallelize[calculate_X](m, m)
+    parallelize(calculate_X, m, m)
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy
@@ -280,8 +279,7 @@ def solve[
     # TODO: Remove manual prolonging of lifetime in future if allowed.
     ####################################################################
 
-    @parameter
-    def calculate_X(col: Int) -> None:
+    def calculate_X(col: Int) {mut Z, mut X, Y, U, L, m, n} -> None:
         # Solve `LZ = Y` for `Z` for each col
         for i in range(m):  # row of L
             var _temp = Y.unsafe_load[width=1](i * n + col)
@@ -302,7 +300,7 @@ def solve[
             _temp2 = _temp2 / U.unsafe_load[width=1](i * m + i)
             X.unsafe_store[width=1](i * n + col, _temp2)
 
-    parallelize[calculate_X](n, n)
+    parallelize(calculate_X, n, n)
 
     # Force extending the lifetime of the matrices because they are destroyed before `parallelize`
     # This is disadvantage of Mojo's ASAP policy

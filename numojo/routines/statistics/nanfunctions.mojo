@@ -44,9 +44,7 @@ from numojo.routines.sorting import sort
 
 def nansum_1d[
     dtype: DType, //
-](a: NDArray[dtype]) capturing raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Sum all items in an array, treating `NaN` elements as zero.
     Regardless of the shape of input, it is treated as a 1-d array.
@@ -141,9 +139,7 @@ def nansum[
 
 def nanmean_1d[
     dtype: DType, //
-](a: NDArray[dtype]) capturing raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Calculate the arithmetic mean of all items in an array, ignoring `NaN`
     elements. Regardless of the shape of input, it is treated as a 1-d
@@ -258,9 +254,7 @@ def nanmean[
 
 def nanextrema_1d[
     dtype: DType, //, is_max: Bool
-](a: NDArray[dtype]) capturing raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """
     Find the max or min value in the buffer, ignoring `NaN` elements.
 
@@ -312,19 +306,15 @@ def nanextrema_1d[
 
 
 def nanextrema_1d_max[
-    dtype: DType
-](a: NDArray[dtype]) capturing raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+    dtype: DType, //
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """Find the max value in a 1-D array, ignoring `NaN` elements."""
     return nanextrema_1d[is_max=True](a)
 
 
 def nanextrema_1d_min[
-    dtype: DType
-](a: NDArray[dtype]) capturing raises -> Scalar[
-    dtype
-] where dtype.is_floating_point():
+    dtype: DType, //
+](a: NDArray[dtype]) capturing raises -> Scalar[dtype]:
     """Find the min value in a 1-D array, ignoring `NaN` elements."""
     return nanextrema_1d[is_max=False](a)
 

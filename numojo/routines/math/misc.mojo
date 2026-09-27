@@ -41,7 +41,7 @@ from numojo.routines import HostExecutor
 # ===----------------------------------------------------------------------=== #
 
 
-def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Element-wise cube root of a NDArray.
 
@@ -55,15 +55,14 @@ def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         A NDArray equal to array**(1/3).
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return stdlib_math.cbrt(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 # ===----------------------------------------------------------------------=== #
@@ -141,10 +140,9 @@ def rsqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         A NDArray equal to 1/NDArray**(1/2).
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd: SIMD[dtype, simd_w]) capturing -> SIMD[dtype, simd_w]:
         return _mt_rsqrt(simd)
 
     return HostExecutor.apply_unary[dtype, _kernel](array)
@@ -164,10 +162,9 @@ def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         A NDArray equal to NDArray**(1/2).
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[dtype, simd_w]:
+    ](simd: SIMD[dtype, simd_w]) capturing -> SIMD[dtype, simd_w]:
         return stdlib_math.sqrt(simd)
 
     return HostExecutor.apply_unary[dtype, _kernel](array)
@@ -180,7 +177,9 @@ def sqrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 
 def scalb[
     dtype: DType
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply scalb element-wise to two arrays.
 
@@ -198,12 +197,11 @@ def scalb[
         A NDArray with values equal to scalb(array1, array2).
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return stdlib_math.scalb(simd1, simd2)
 
-    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
+    return HostExecutor.apply_binary_float[dtype, _kernel](array1, array2)

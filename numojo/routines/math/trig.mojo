@@ -38,7 +38,7 @@ from numojo.routines.math.misc import sqrt
 # ===------------------------------------------------------------------------===#
 
 
-def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply inverse cosine.
 
@@ -52,23 +52,22 @@ def acos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise acos of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.acos(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arccos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def arccos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """Apply inverse cosine element-wise."""
     return acos(array)
 
 
-def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply inverse sine.
 
@@ -82,23 +81,22 @@ def asin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise asin of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.asin(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arcsin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def arcsin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """Apply inverse sine element-wise."""
     return asin(array)
 
 
-def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply inverse tangent.
 
@@ -112,25 +110,26 @@ def atan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise atan of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.atan(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arctan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def arctan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """Apply inverse tangent element-wise."""
     return atan(array)
 
 
 def atan2[
     dtype: DType
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply inverse tangent with two arrays.
 
@@ -151,18 +150,17 @@ def atan2[
         https://en.wikipedia.org/wiki/Atan2.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.atan2(simd1, simd2)
 
-    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
+    return HostExecutor.apply_binary_float[dtype, _kernel](array1, array2)
 
 
-def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply cosine.
 
@@ -176,18 +174,17 @@ def cos[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise cos of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.cos(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply sine.
 
@@ -201,18 +198,17 @@ def sin[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise sin of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.sin(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
+def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Apply tangent.
 
@@ -226,15 +222,14 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
         The element-wise tan of `array`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.tan(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 # ===------------------------------------------------------------------------===#
@@ -242,7 +237,9 @@ def tan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype]:
 # ===------------------------------------------------------------------------===#
 def hypot[
     dtype: DType
-](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply hypotenuse calculation to two arrays.
 
@@ -260,15 +257,14 @@ def hypot[
         The element-wise hypotenuse of `array1` and `array2`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.hypot(simd1, simd2)
 
-    return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
+    return HostExecutor.apply_binary_float[dtype, _kernel](array1, array2)
 
 
 def hypot_fma[

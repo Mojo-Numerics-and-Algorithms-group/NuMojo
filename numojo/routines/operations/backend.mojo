@@ -89,6 +89,32 @@ def _apply_unary_chunk[
 
 
 @always_inline
+def _apply_unary_chunk_float[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) thin -> SIMD[
+        type, simd_w
+    ] where type.is_floating_point(),
+    src_origin: Origin,
+    dst_origin: MutOrigin,
+](
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
+    start: Int,
+    end: Int,
+) where dtype.is_floating_point():
+    var i = start
+    while i + width <= end:
+        dst.unsafe_store(
+            i, kernel[dtype, width](src.unsafe_load[width=width](i))
+        )
+        i += width
+    while i < end:
+        dst.unsafe_store(i, kernel[dtype, 1](src.unsafe_load[width=1](i)))
+        i += 1
+
+
+@always_inline
 def _apply_binary_chunk[
     dtype: DType,
     width: Int,
@@ -105,6 +131,43 @@ def _apply_binary_chunk[
     start: Int,
     end: Int,
 ):
+    var i = start
+    while i + width <= end:
+        dst.unsafe_store(
+            i,
+            kernel[dtype, width](
+                src1.unsafe_load[width=width](i),
+                src2.unsafe_load[width=width](i),
+            ),
+        )
+        i += width
+    while i < end:
+        dst.unsafe_store(
+            i,
+            kernel[dtype, 1](
+                src1.unsafe_load[width=1](i), src2.unsafe_load[width=1](i)
+            ),
+        )
+        i += 1
+
+
+@always_inline
+def _apply_binary_chunk_float[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    src1_origin: Origin,
+    src2_origin: Origin,
+    dst_origin: MutOrigin,
+](
+    src1: Pointer[Scalar[dtype], src1_origin],
+    src2: Pointer[Scalar[dtype], src2_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
+    start: Int,
+    end: Int,
+) where dtype.is_floating_point():
     var i = start
     while i + width <= end:
         dst.unsafe_store(
@@ -143,6 +206,41 @@ def _apply_binary_scalar_chunk[
     start: Int,
     end: Int,
 ):
+    var i = start
+    while i + width <= end:
+        var data = src.unsafe_load[width=width](i)
+        comptime if scalar_first:
+            dst.unsafe_store(i, kernel[dtype, width](scalar, data))
+        else:
+            dst.unsafe_store(i, kernel[dtype, width](data, scalar))
+        i += width
+    while i < end:
+        var data = src.unsafe_load[width=1](i)
+        comptime if scalar_first:
+            dst.unsafe_store(i, kernel[dtype, 1](scalar, data))
+        else:
+            dst.unsafe_store(i, kernel[dtype, 1](data, scalar))
+        i += 1
+
+
+@always_inline
+def _apply_binary_scalar_chunk_float[
+    dtype: DType,
+    width: Int,
+    kernel: def[type: DType, simd_w: Int](
+        SIMD[type, simd_w], SIMD[type, simd_w]
+    ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    *,
+    scalar_first: Bool,
+    src_origin: Origin,
+    dst_origin: MutOrigin,
+](
+    src: Pointer[Scalar[dtype], src_origin],
+    dst: Pointer[Scalar[dtype], dst_origin],
+    scalar: Scalar[dtype],
+    start: Int,
+    end: Int,
+) where dtype.is_floating_point():
     var i = start
     while i + width <= end:
         var data = src.unsafe_load[width=width](i)
@@ -417,6 +515,33 @@ struct HostExecutor:
         return kernel[dtype, simd_width](scalar)
 
     @staticmethod
+    def apply_unary_float[
+        dtype: DType,
+        simd_width: Int,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](scalar: SIMD[dtype, simd_width]) -> SIMD[
+        dtype, simd_width
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible unary function that requires a
+        floating-point `dtype` to a SIMD value.
+
+        Parameters:
+            dtype: The element type.
+            simd_width: The SIMD width of the input and output.
+            kernel: The SIMD-compatible function to apply.
+
+        Args:
+            scalar: The input SIMD value.
+
+        Returns:
+            A new SIMD value containing the result of applying the function.
+        """
+        return kernel[dtype, simd_width](scalar)
+
+    @staticmethod
     def apply_binary[
         dtype: DType,
         simd_width: Int,
@@ -428,6 +553,34 @@ struct HostExecutor:
     ]:
         """
         Applies a SIMD-compatible binary function to two SIMD values.
+
+        Parameters:
+            dtype: The element type.
+            simd_width: The SIMD width of the input and output.
+            kernel: The SIMD-compatible binary function to apply.
+
+        Args:
+            simd1: The first input SIMD value.
+            simd2: The second input SIMD value.
+
+        Returns:
+            A new SIMD value containing the result of applying the function.
+        """
+        return kernel[dtype, simd_width](simd1, simd2)
+
+    @staticmethod
+    def apply_binary_float[
+        dtype: DType,
+        simd_width: Int,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](simd1: SIMD[dtype, simd_width], simd2: SIMD[dtype, simd_width]) -> SIMD[
+        dtype, simd_width
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible binary function that requires a
+        floating-point `dtype` to two SIMD values.
 
         Parameters:
             dtype: The element type.
@@ -537,8 +690,7 @@ struct HostExecutor:
         else:
             var chunk_size = (array.size + num_tasks - 1) // num_tasks
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {chunk_size, array, src, dst}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, array.size)
                 if end > start:
@@ -546,7 +698,67 @@ struct HostExecutor:
                         src, dst, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
+
+        return result_array^
+
+    @staticmethod
+    def apply_unary_float[
+        dtype: DType,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible unary function that requires a
+        floating-point `dtype` to an NDArray.
+
+        Parameters:
+            dtype: The element type of the NDArray.
+            kernel: The SIMD-compatible function to apply.
+
+        Args:
+            array: The input NDArray.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return Self.apply_unary_float[dtype, kernel](array.contiguous())
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(
+                val=kernel[dtype, 1](array.unsafe_get(0))
+            )
+            return result_array^
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        comptime width = simd_width_of[dtype]()
+        var num_tasks = _num_tasks_for(array.size, width)
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
+
+        if num_tasks == 1:
+            _apply_unary_chunk_float[dtype, width, kernel](
+                src, dst, 0, array.size
+            )
+        else:
+            var chunk_size = (array.size + num_tasks - 1) // num_tasks
+
+            def worker(tid: Int) {chunk_size, array, src, dst}:
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, array.size)
+                if end > start:
+                    _apply_unary_chunk_float[dtype, width, kernel](
+                        src, dst, start, end
+                    )
+
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -608,17 +820,158 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src1, src2}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, result_array.size)
+                var end = min(start + chunk_size, res_arr_size)
                 if end > start:
                     _apply_binary_chunk[dtype, width, kernel](
                         src1, src2, dst, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
+
+        return result_array^
+
+    @staticmethod
+    def apply_binary_float[
+        dtype: DType,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible binary function that requires a
+        floating-point `dtype` to two NDArrays.
+
+        Parameters:
+            dtype: The element type of the NDArrays.
+            kernel: The SIMD-compatible binary function to apply.
+
+        Args:
+            array1: The first input NDArray.
+            array2: The second input NDArray.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+        if not array1.is_c_contiguous() and not array2.is_c_contiguous():
+            return Self.apply_binary_float[dtype, kernel](
+                array1.contiguous(), array2.contiguous()
+            )
+
+        if not array1.is_c_contiguous():
+            return Self.apply_binary_float[dtype, kernel](
+                array1.contiguous(), array2
+            )
+        if not array2.is_c_contiguous():
+            return Self.apply_binary_float[dtype, kernel](
+                array1, array2.contiguous()
+            )
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array1.ndim == 0:
+            return Self.apply_binary_float[dtype, kernel](array1[], array2)
+        if array2.ndim == 0:
+            return Self.apply_binary_float[dtype, kernel](array1, array2[])
+
+        if array1.shape != array2.shape:
+            var common_shape = array1.shape.broadcast(array2.shape)
+            return Self.apply_binary_float[dtype, kernel](
+                broadcast_to(array1, common_shape),
+                broadcast_to(array2, common_shape),
+            )
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array1.shape)
+        comptime width = simd_width_of[dtype]()
+        var src1 = array1.unsafe_ptr()
+        var src2 = array2.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
+
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_chunk_float[dtype, width, kernel](
+                src1, src2, dst, 0, result_array.size
+            )
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
+
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src1, src2}:
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, res_arr_size)
+                if end > start:
+                    _apply_binary_chunk_float[dtype, width, kernel](
+                        src1, src2, dst, start, end
+                    )
+
+            parallelize(worker, num_tasks)
+
+        return result_array^
+
+    @staticmethod
+    def apply_binary_float[
+        dtype: DType,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](array: NDArray[dtype], scalar: SIMD[dtype, 1]) raises -> NDArray[
+        dtype
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible binary function that requires a
+        floating-point `dtype` to an NDArray and a scalar.
+
+        Parameters:
+            dtype: The element type of the NDArray.
+            kernel: The SIMD-compatible binary function to apply.
+
+        Args:
+            array: The input NDArray.
+            scalar: The input scalar value.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return Self.apply_binary_float[dtype, kernel](
+                array.contiguous(), scalar
+            )
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(val=kernel[dtype, 1](array[], scalar))
+            return result_array^
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        comptime width = simd_width_of[dtype]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
+
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_scalar_chunk_float[
+                dtype, width, kernel, scalar_first=False
+            ](src, dst, scalar, 0, result_array.size)
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
+
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, res_arr_size)
+                if end > start:
+                    _apply_binary_scalar_chunk_float[
+                        dtype, width, kernel, scalar_first=False
+                    ](src, dst, scalar, start, end)
+
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -665,17 +1018,17 @@ struct HostExecutor:
             ](src, dst, scalar, 0, result_array.size)
         else:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, result_array.size)
+                var end = min(start + chunk_size, res_arr_size)
                 if end > start:
                     _apply_binary_scalar_chunk[
                         dtype, width, kernel, scalar_first=False
                     ](src, dst, scalar, start, end)
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -723,17 +1076,80 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, result_array.size)
+                var end = min(start + chunk_size, res_arr_size)
                 if end > start:
                     _apply_binary_scalar_chunk[
                         dtype, width, kernel, scalar_first=True
                     ](src, dst, scalar, start, end)
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
+
+        return result_array^
+
+    @staticmethod
+    def apply_binary_float[
+        dtype: DType,
+        kernel: def[type: DType, simd_w: Int](
+            SIMD[type, simd_w], SIMD[type, simd_w]
+        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+    ](scalar: SIMD[dtype, 1], array: NDArray[dtype]) raises -> NDArray[
+        dtype
+    ] where dtype.is_floating_point():
+        """
+        Applies a SIMD-compatible binary function that requires a
+        floating-point `dtype` to a scalar and an NDArray.
+
+        Parameters:
+            dtype: The element type of the NDArray.
+            kernel: The SIMD-compatible binary function to apply.
+
+        Args:
+            scalar: The input scalar value.
+            array: The input NDArray.
+
+        Returns:
+            A new NDArray containing the result of applying the function.
+        """
+
+        # View safety guard: ensure input is C-contiguous before SIMD access.
+        if not array.is_c_contiguous():
+            return Self.apply_binary_float[dtype, kernel](
+                scalar, array.contiguous()
+            )
+
+        # For 0darray (numojo scalar)
+        # Treat it as a scalar and apply the function
+        if array.ndim == 0:
+            var result_array = _0darray(val=kernel[dtype, 1](scalar, array[]))
+            return result_array^
+
+        var result_array: NDArray[dtype] = NDArray[dtype](array.shape)
+        comptime width = simd_width_of[dtype]()
+        var src = array.unsafe_ptr()
+        var dst = result_array.unsafe_ptr()
+
+        var num_tasks = _num_tasks_for(result_array.size, width)
+        if num_tasks == 1:
+            _apply_binary_scalar_chunk_float[
+                dtype, width, kernel, scalar_first=True
+            ](src, dst, scalar, 0, result_array.size)
+        else:
+            var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
+            var res_arr_size = result_array.size
+
+            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+                var start = tid * chunk_size
+                var end = min(start + chunk_size, res_arr_size)
+                if end > start:
+                    _apply_binary_scalar_chunk_float[
+                        dtype, width, kernel, scalar_first=True
+                    ](src, dst, scalar, start, end)
+
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -774,17 +1190,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array.size + num_tasks - 1) // num_tasks
+            var array_size = array.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array_size, src, intval}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array.size)
+                var end = min(start + chunk_size, array_size)
                 if end > start:
                     _apply_binary_int_chunk[dtype, width, kernel](
                         src, dst, intval, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -855,17 +1271,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
+            var array_size = array1.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array_size, src1, src2}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array1.size)
+                var end = min(start + chunk_size, array_size)
                 if end > start:
                     _apply_binary_predicate_chunk[dtype, width, kernel](
                         src1, src2, dst, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -918,17 +1334,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
+            var array_size = array1.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array_size, src, scalar}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array1.size)
+                var end = min(start + chunk_size, array_size)
                 if end > start:
                     _apply_binary_predicate_scalar_chunk[dtype, width, kernel](
                         src, dst, scalar, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -968,17 +1384,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array.size + num_tasks - 1) // num_tasks
+            var array_size = array.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array_size, src}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array.size)
+                var end = min(start + chunk_size, array_size)
                 if end > start:
                     _apply_unary_predicate_chunk[dtype, width, kernel](
                         src, dst, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -1054,17 +1470,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
+            var array_size = array1.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array_size, src1, src2, src3}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array1.size)
+                var end = min(start + chunk_size, array_size)
                 if end > start:
                     _apply_ternary_chunk[dtype, width, kernel](
                         src1, src2, src3, dst, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 
@@ -1131,17 +1547,17 @@ struct HostExecutor:
             )
         else:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
+            var array1_size = array1.size
 
-            @parameter
-            def worker(tid: Int):
+            def worker(tid: Int) {mut dst, chunk_size, array1_size, src1, src2, scalar}:
                 var start = tid * chunk_size
-                var end = min(start + chunk_size, array1.size)
+                var end = min(start + chunk_size, array1_size)
                 if end > start:
                     _apply_ternary_scalar_chunk[dtype, width, kernel](
                         src1, src2, dst, scalar, start, end
                     )
 
-            parallelize[worker](num_tasks)
+            parallelize(worker, num_tasks)
 
         return result_array^
 

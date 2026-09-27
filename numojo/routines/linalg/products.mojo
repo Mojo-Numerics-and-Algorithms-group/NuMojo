@@ -26,10 +26,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
-from std.algorithm import (
-    Static2DTileUnitFunc as Tile2DFunc,
-    vectorize,
-)
+from std.algorithm import vectorize
 from std.memory import unsafe_memcpy
 from std.sys import simd_width_of
 
@@ -155,17 +152,6 @@ def dot[
             )
         )
 
-
-# Perform 2D tiling on the iteration space defined by end_x and end_y.
-def tile[
-    tiled_fn: Tile2DFunc, tile_x: Int, tile_y: Int
-](end_x: Int, end_y: Int):
-    # Note: this assumes that ends are multiples of the tiles.
-    for y in range(0, end_y, tile_y):
-        for x in range(0, end_x, tile_x):
-            tiled_fn[tile_x, tile_y](x, y)
-
-
 # https://docs.modular.com/mojo/notebooks/Matmul
 def matmul_tiled_unrolled_parallelized[
     dtype: DType
@@ -184,40 +170,43 @@ def matmul_tiled_unrolled_parallelized[
     var t1 = A.shape[1]
     var t2 = B.shape[1]
 
-    @parameter
-    def calculate_A_rows(m: Int):
-        @parameter
-        def calc_tile[tile_x: Int, tile_y: Int](x: Int, y: Int):
-            for k in range(y, y + tile_y):
+    comptime tile_size = 4
+    comptime tile_x = width * tile_size
+    comptime tile_y = tile_size
+    comptime unroll_factor = tile_x // width
 
-                def dot[
-                    simd_width: Int
-                ](n: Int) {
-                    mut result,
-                    imm A,
-                    imm B,
-                    imm t1,
-                    imm t2,
-                    imm x,
-                    imm m,
-                    imm k,
-                } -> None:
-                    result.unsafe_store[width=simd_width](
-                        m * t2 + (n + x),
-                        val=result.unsafe_load[width=simd_width](
-                            m * t2 + (n + x)
+    def calculate_A_rows(m: Int) {mut result, A, B, t1, t2}:
+        # Note: this assumes that t1 and t2 are multiples of the tiles.
+        for y in range(0, t2, tile_y):
+            for x in range(0, t1, tile_x):
+                for k in range(y, y + tile_y):
+
+                    def dot[
+                        simd_width: Int
+                    ](n: Int) {
+                        mut result,
+                        imm A,
+                        imm B,
+                        imm t1,
+                        imm t2,
+                        imm x,
+                        imm m,
+                        imm k,
+                    } -> None:
+                        result.unsafe_store[width=simd_width](
+                            m * t2 + (n + x),
+                            val=result.unsafe_load[width=simd_width](
+                                m * t2 + (n + x)
+                            )
+                            + A.unsafe_load[width=1](m * t1 + k)
+                            * B.unsafe_load[width=simd_width](
+                                k * t2 + (n + x)
+                            ),
                         )
-                        + A.unsafe_load[width=1](m * t1 + k)
-                        * B.unsafe_load[width=simd_width](k * t2 + (n + x)),
-                    )
 
-                comptime unroll_factor = tile_x // width
-                vectorize[width, unroll_factor=unroll_factor](tile_x, dot)
+                    vectorize[width, unroll_factor=unroll_factor](tile_x, dot)
 
-        comptime tile_size = 4
-        tile[calc_tile, width * tile_size, tile_size](t1, t2)
-
-    parallelize[calculate_A_rows](t0, t0)
+    parallelize(calculate_A_rows, t0, t0)
     return result^
 
 
@@ -334,8 +323,7 @@ def matmul_2darray[
     var t1 = A.shape[1]
     var t2 = B.shape[1]
 
-    @parameter
-    def calculate_A_rows(m: Int):
+    def calculate_A_rows(m: Int) {mut result, A, B, t1, t2}:
         for k in range(t1):
 
             def dot[
@@ -352,7 +340,7 @@ def matmul_2darray[
 
             vectorize[width](t2, dot)
 
-    parallelize[calculate_A_rows](t0, t0)
+    parallelize(calculate_A_rows, t0, t0)
 
     return result^
 

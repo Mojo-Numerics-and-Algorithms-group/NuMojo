@@ -1374,7 +1374,6 @@ def choice[
 # ===----------------------------------------------------------------------=== #
 
 
-@parameter
 def _int_rand_func[
     dtype: DType
 ](
@@ -1399,7 +1398,6 @@ def _int_rand_func[
     )
 
 
-@parameter
 def _float_rand_func[
     dtype: DType
 ](mut result: NDArray[dtype], min: Scalar[dtype], max: Scalar[dtype]):

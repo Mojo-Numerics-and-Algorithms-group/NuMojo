@@ -252,11 +252,9 @@ struct AcceleratorNDArray[
     # Device helpers
     # ===------------------------------------------------------------------=== #
 
-    @parameter
     def is_cpu(self) -> Bool:
         return Self.device.type == "cpu"
 
-    @parameter
     def is_gpu(self) -> Bool:
         return Self.device.type == "gpu"
 

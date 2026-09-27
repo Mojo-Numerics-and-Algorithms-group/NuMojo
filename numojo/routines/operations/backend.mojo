@@ -518,9 +518,9 @@ struct HostExecutor:
     def apply_unary_float[
         dtype: DType,
         simd_width: Int,
-        kernel: def[type: DType, simd_w: Int](
-            SIMD[type, simd_w]
-        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) thin -> SIMD[
+            type, simd_w
+        ] where type.is_floating_point(),
     ](scalar: SIMD[dtype, simd_width]) -> SIMD[
         dtype, simd_width
     ] where dtype.is_floating_point():
@@ -705,9 +705,9 @@ struct HostExecutor:
     @staticmethod
     def apply_unary_float[
         dtype: DType,
-        kernel: def[type: DType, simd_w: Int](
-            SIMD[type, simd_w]
-        ) thin -> SIMD[type, simd_w] where type.is_floating_point(),
+        kernel: def[type: DType, simd_w: Int](SIMD[type, simd_w]) thin -> SIMD[
+            type, simd_w
+        ] where type.is_floating_point(),
     ](array: NDArray[dtype]) raises -> NDArray[
         dtype
     ] where dtype.is_floating_point():
@@ -822,7 +822,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src1, src2}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src1, src2}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -901,7 +903,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src1, src2}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src1, src2}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -963,7 +967,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -1020,7 +1026,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -1078,7 +1086,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -1141,7 +1151,9 @@ struct HostExecutor:
             var chunk_size = (result_array.size + num_tasks - 1) // num_tasks
             var res_arr_size = result_array.size
 
-            def worker(tid: Int) {mut dst, chunk_size, res_arr_size, src, scalar}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, res_arr_size, src, scalar}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, res_arr_size)
                 if end > start:
@@ -1472,7 +1484,9 @@ struct HostExecutor:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
             var array_size = array1.size
 
-            def worker(tid: Int) {mut dst, chunk_size, array_size, src1, src2, src3}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, array_size, src1, src2, src3}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, array_size)
                 if end > start:
@@ -1549,7 +1563,9 @@ struct HostExecutor:
             var chunk_size = (array1.size + num_tasks - 1) // num_tasks
             var array1_size = array1.size
 
-            def worker(tid: Int) {mut dst, chunk_size, array1_size, src1, src2, scalar}:
+            def worker(
+                tid: Int,
+            ) {mut dst, chunk_size, array1_size, src1, src2, scalar}:
                 var start = tid * chunk_size
                 var end = min(start + chunk_size, array1_size)
                 if end > start:

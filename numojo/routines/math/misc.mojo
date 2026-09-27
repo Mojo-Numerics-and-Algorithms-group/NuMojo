@@ -41,7 +41,11 @@ from numojo.routines import HostExecutor
 # ===----------------------------------------------------------------------=== #
 
 
-def cbrt[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def cbrt[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Element-wise cube root of a NDArray.
 

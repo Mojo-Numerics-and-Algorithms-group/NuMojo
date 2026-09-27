@@ -152,6 +152,7 @@ def dot[
             )
         )
 
+
 # https://docs.modular.com/mojo/notebooks/Matmul
 def matmul_tiled_unrolled_parallelized[
     dtype: DType
@@ -199,9 +200,7 @@ def matmul_tiled_unrolled_parallelized[
                                 m * t2 + (n + x)
                             )
                             + A.unsafe_load[width=1](m * t1 + k)
-                            * B.unsafe_load[width=simd_width](
-                                k * t2 + (n + x)
-                            ),
+                            * B.unsafe_load[width=simd_width](k * t2 + (n + x)),
                         )
 
                     vectorize[width, unroll_factor=unroll_factor](tile_x, dot)

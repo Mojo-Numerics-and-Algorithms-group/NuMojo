@@ -37,7 +37,11 @@ from numojo.routines import HostExecutor
 # ===----------------------------------------------------------------------=== #
 
 
-def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def acosh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply inverse hyperbolic cosine.
 
@@ -61,12 +65,20 @@ def acosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dt
     return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arccosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def arccosh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """Apply inverse hyperbolic cosine element-wise."""
     return acosh(array)
 
 
-def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def asinh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply inverse hyperbolic sine.
 
@@ -90,12 +102,20 @@ def asinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dt
     return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arcsinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def arcsinh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """Apply inverse hyperbolic sine element-wise."""
     return asinh(array)
 
 
-def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def atanh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply inverse hyperbolic tangent.
 
@@ -119,7 +139,11 @@ def atanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dt
     return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def arctanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def arctanh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """Apply inverse hyperbolic tangent element-wise."""
     return atanh(array)
 
@@ -129,7 +153,11 @@ def arctanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where 
 # ===----------------------------------------------------------------------=== #
 
 
-def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def cosh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply hyperbolic cosine.
 
@@ -153,7 +181,11 @@ def cosh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dty
     return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def sinh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply hyperbolic sine.
 
@@ -177,7 +209,11 @@ def sinh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dty
     return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
-def tanh[dtype: DType](array: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def tanh[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
     """
     Apply hyperbolic tangent.
 

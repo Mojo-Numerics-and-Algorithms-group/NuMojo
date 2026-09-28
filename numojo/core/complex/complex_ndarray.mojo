@@ -2373,7 +2373,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 result = temp^
             return result^
 
-    def __pow__(self, rhs: Scalar[Self.dtype]) raises -> Self:
+    def __pow__(
+        self, rhs: Scalar[Self.dtype]
+    ) raises -> Self where Self.dtype.is_floating_point():
         """
         Raise complex array to real scalar power element-wise.
 

@@ -66,10 +66,9 @@ def isinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    @parameter
     def is_inf_kernel[
         dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+    ](x: SIMD[dtype, simd_width]) capturing -> SIMD[DType.bool, simd_width]:
         return math.isinf(x)
 
     return HostExecutor.apply_unary_predicate[dtype, is_inf_kernel](array)
@@ -126,10 +125,9 @@ def isfinite[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    @parameter
     def is_finite_kernel[
         dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+    ](x: SIMD[dtype, simd_width]) capturing -> SIMD[DType.bool, simd_width]:
         return math.isfinite(x)
 
     return HostExecutor.apply_unary_predicate[dtype, is_finite_kernel](array)
@@ -185,10 +183,9 @@ def isnan[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    @parameter
     def is_nan_kernel[
         dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+    ](x: SIMD[dtype, simd_width]) capturing -> SIMD[DType.bool, simd_width]:
         return math.isnan(x)
 
     return HostExecutor.apply_unary_predicate[dtype, is_nan_kernel](array)
@@ -245,10 +242,9 @@ def isneginf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    @parameter
     def is_neginf[
         dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+    ](x: SIMD[dtype, simd_width]) capturing -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](neg_inf[dtype]()))
 
     return HostExecutor.apply_unary_predicate[dtype, is_neginf](array)
@@ -305,10 +301,9 @@ def isposinf[dtype: DType](array: NDArray[dtype]) raises -> NDArray[DType.bool]:
         ```
     """
 
-    @parameter
     def is_posinf[
         dtype: DType, simd_width: Int
-    ](x: SIMD[dtype, simd_width]) -> SIMD[DType.bool, simd_width]:
+    ](x: SIMD[dtype, simd_width]) capturing -> SIMD[DType.bool, simd_width]:
         return x.eq(SIMD[dtype, simd_width](inf[dtype]()))
 
     return HostExecutor.apply_unary_predicate[dtype, is_posinf](array)

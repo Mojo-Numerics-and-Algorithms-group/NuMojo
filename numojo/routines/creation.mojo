@@ -353,20 +353,22 @@ def _linspace_parallel[
         var denominator: SIMD[dtype, 1] = Scalar[dtype](num) - 1.0
         var step: SIMD[dtype, 1] = (stop - start) / denominator
 
-        @parameter
-        def parallelized_linspace(idx: Int) -> None:
+        def parallelized_linspace(
+            idx: Int,
+        ) {mut result, imm start, imm step} -> None:
             result.unsafe_set(idx, start + step * Scalar[dtype](idx))
 
-        parallelize[parallelized_linspace](num)
+        parallelize(parallelized_linspace, num)
 
     else:
         var step: SIMD[dtype, 1] = (stop - start) / Scalar[dtype](num)
 
-        @parameter
-        def parallelized_linspace1(idx: Int) -> None:
+        def parallelized_linspace1(
+            idx: Int,
+        ) {mut result, imm start, imm step} -> None:
             result.unsafe_set(idx, start + step * Scalar[dtype](idx))
 
-        parallelize[parallelized_linspace1](num)
+        parallelize(parallelized_linspace1, num)
 
     return result^
 
@@ -505,8 +507,9 @@ def _linspace_parallel[
         var step_im: Scalar[dtype] = (stop.im - start.im) / denominator
 
         # need better error handling here later
-        @parameter
-        def parallelized_linspace(idx: Int) -> None:
+        def parallelized_linspace(
+            idx: Int,
+        ) {mut result, imm start, imm step_re, imm step_im} -> None:
             try:
                 result.store[width=1](
                     idx,
@@ -518,14 +521,15 @@ def _linspace_parallel[
             except:
                 print("Error in parallelized_linspace")
 
-        parallelize[parallelized_linspace](num)
+        parallelize(parallelized_linspace, num)
 
     else:
         var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num)
         var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num)
 
-        @parameter
-        def parallelized_linspace1(idx: Int) -> None:
+        def parallelized_linspace1(
+            idx: Int,
+        ) {mut result, imm start, imm step_re, imm step_im} -> None:
             try:
                 result.store[width=1](
                     idx,
@@ -537,7 +541,7 @@ def _linspace_parallel[
             except:
                 print("Error in parallelized_linspace1")
 
-        parallelize[parallelized_linspace1](num)
+        parallelize(parallelized_linspace1, num)
 
     return result^
 
@@ -674,20 +678,22 @@ def _logspace_parallel[
     if endpoint:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num - 1)
 
-        @parameter
-        def parallelized_logspace(idx: Int) -> None:
+        def parallelized_logspace(
+            idx: Int,
+        ) {mut result, start, base, step} -> None:
             result.unsafe_set(idx, base ** (start + step * Scalar[dtype](idx)))
 
-        parallelize[parallelized_logspace](num)
+        parallelize(parallelized_logspace, num)
 
     else:
         var step: Scalar[dtype] = (stop - start) / Scalar[dtype](num)
 
-        @parameter
-        def parallelized_logspace1(idx: Int) -> None:
+        def parallelized_logspace1(
+            idx: Int,
+        ) {mut result, base, start, step} -> None:
             result.unsafe_set(idx, base ** (start + step * Scalar[dtype](idx)))
 
-        parallelize[parallelized_logspace1](num)
+        parallelize(parallelized_logspace1, num)
 
     return result^
 
@@ -836,8 +842,9 @@ def _logspace_parallel[
             num - 1
         )
 
-        @parameter
-        def parallelized_logspace(idx: Int) -> None:
+        def parallelized_logspace(
+            idx: Int,
+        ) {mut result, base, start, step_re, step_im} -> None:
             try:
                 result.store[1](
                     idx,
@@ -849,14 +856,15 @@ def _logspace_parallel[
             except:
                 print("Error in parallelized_logspace")
 
-        parallelize[parallelized_logspace](num)
+        parallelize(parallelized_logspace, num)
 
     else:
         var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num)
         var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num)
 
-        @parameter
-        def parallelized_logspace1(idx: Int) -> None:
+        def parallelized_logspace1(
+            idx: Int,
+        ) {mut result, base, start, step_re, step_im} -> None:
             try:
                 result.store[1](
                     idx,
@@ -868,7 +876,7 @@ def _logspace_parallel[
             except:
                 print("Error in parallelized_logspace")
 
-        parallelize[parallelized_logspace1](num)
+        parallelize(parallelized_logspace1, num)
 
     return result^
 
@@ -2828,8 +2836,9 @@ def meshgrid[
             inner_size *= final_shape[j]
 
         # for outer in range(outer_size):
-        @parameter
-        def closure(outer: Int) -> None:
+        def closure(
+            outer: Int,
+        ) {mut grid, arrays, i, dim_size, inner_size} -> None:
             for k in range(dim_size):
                 for inner in range(inner_size):
                     var idx = (
@@ -2837,7 +2846,7 @@ def meshgrid[
                     )
                     grid.unsafe_set(idx, arrays[i].unsafe_get(k))
 
-        parallelize[closure](outer_size, outer_size)
+        parallelize(closure, outer_size, outer_size)
         grids.append(grid^)
 
     return grids^

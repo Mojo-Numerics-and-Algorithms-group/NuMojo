@@ -131,14 +131,13 @@ def apply_along_axis_reduce_to_int[
     else:
         res = NDArray[DType.int](a.shape.pop(axis=axis))
 
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut res, iterator}:
             try:
                 res.unsafe_set(i, func1d[dtype](iterator.ith(i)))
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return res^
 
@@ -187,8 +186,7 @@ def apply_along_axis_reduce[
         #     var func_result = func1d[dtype](ith)
         #     res._buf.store(i, func_result)
 
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut res, iterator}:
             try:
                 res.unsafe_set(i, func1d[dtype](iterator.ith(i)))
             except e:
@@ -200,7 +198,7 @@ def apply_along_axis_reduce[
             # except e:
             #     print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return res^
 
@@ -242,8 +240,7 @@ def apply_along_axis_reduce_with_dtype[
     else:
         res = NDArray[returned_dtype](a.shape.pop(axis=axis))
 
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut res, iterator}:
             try:
                 res.unsafe_set(
                     i, func1d[dtype, returned_dtype](iterator.ith(i))
@@ -251,7 +248,7 @@ def apply_along_axis_reduce_with_dtype[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return res^
 
@@ -289,8 +286,7 @@ def apply_along_axis_preserve[
 
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
-        @parameter
-        def parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int) {mut result, iterator}:
             try:
                 var elements: NDArray[dtype] = func1d[dtype](iterator.ith(i))
                 unsafe_memcpy(
@@ -301,12 +297,11 @@ def apply_along_axis_preserve[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func_c](a.size // a.shape[axis])
+        parallelize(parallelized_func_c, a.size // a.shape[axis])
 
     else:
         # The memory layout is not contiguous
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut result, iterator, a, axis}:
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]
@@ -327,7 +322,7 @@ def apply_along_axis_preserve[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return result^
 
@@ -362,8 +357,7 @@ def apply_along_axis_inplace[
 
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
-        @parameter
-        def parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int) {mut a, iterator}:
             try:
                 var elements: NDArray[dtype] = iterator.ith(i)
                 func1d[dtype](elements)
@@ -375,12 +369,11 @@ def apply_along_axis_inplace[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func_c](a.size // a.shape[axis])
+        parallelize(parallelized_func_c, a.size // a.shape[axis])
 
     else:
         # The memory layout is not contiguous
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut a, iterator, axis}:
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]
@@ -398,7 +391,7 @@ def apply_along_axis_inplace[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return None
 
@@ -434,8 +427,7 @@ def apply_along_axis_indices[
 
     if a.is_c_contiguous() and (axis == a.ndim - 1):
         # The memory layout is C-contiguous
-        @parameter
-        def parallelized_func_c(i: Int):
+        def parallelized_func_c(i: Int) {mut res, iterator}:
             try:
                 var elements: NDArray[DType.int] = func1d[dtype](
                     iterator.ith(i)
@@ -448,12 +440,11 @@ def apply_along_axis_indices[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func_c](a.size // a.shape[axis])
+        parallelize(parallelized_func_c, a.size // a.shape[axis])
 
     else:
         # The memory layout is not contiguous
-        @parameter
-        def parallelized_func(i: Int):
+        def parallelized_func(i: Int) {mut res, iterator, a, axis}:
             try:
                 # The indices of the input array in each iteration
                 var indices: NDArray[DType.int]
@@ -473,7 +464,7 @@ def apply_along_axis_indices[
             except e:
                 print("Error in parallelized_func", e)
 
-        parallelize[parallelized_func](a.size // a.shape[axis])
+        parallelize(parallelized_func, a.size // a.shape[axis])
 
     return res^
 

@@ -55,10 +55,9 @@ def copysign[
         A NDArray with the magnitude of `array2` and the sign of `array1`.
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return math.copysign(simd1, simd2)

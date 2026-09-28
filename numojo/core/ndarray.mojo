@@ -6271,7 +6271,7 @@ struct NDArray[dtype: DType = DType.float64](
         """
         return (
             self._buf.ptr.unsafe_offset(self.offset)
-            .mut_cast[mutable]()
+            .unsafe_mut_cast[mutable]()
             .unsafe_origin_cast[org]()
         )
 

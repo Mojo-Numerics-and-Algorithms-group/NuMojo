@@ -81,10 +81,11 @@ def logical_and[
             )
         )
 
-    @parameter
     def kernel[
         dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) capturing -> SIMD[
+        DType.bool, width
+    ]:
         return SIMD[DType.bool, width](a & b)
 
     return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
@@ -133,10 +134,11 @@ def logical_or[
             )
         )
 
-    @parameter
     def kernel[
         dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) capturing -> SIMD[
+        DType.bool, width
+    ]:
         return SIMD[DType.bool, width](a | b)
 
     return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)
@@ -172,10 +174,9 @@ def logical_not[
         ```
     """
 
-    @parameter
     def kernel[
         dtype: DType, width: Int
-    ](a: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+    ](a: SIMD[dtype, width]) capturing -> SIMD[DType.bool, width]:
         return SIMD[DType.bool, width](~a)
 
     return HostExecutor.apply_unary_predicate[dtype, kernel](a)
@@ -224,10 +225,11 @@ def logical_xor[
             )
         )
 
-    @parameter
     def kernel[
         dtype: DType, width: Int
-    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) -> SIMD[DType.bool, width]:
+    ](a: SIMD[dtype, width], b: SIMD[dtype, width]) capturing -> SIMD[
+        DType.bool, width
+    ]:
         return SIMD[DType.bool, width](a ^ b)
 
     return HostExecutor.apply_binary_predicate[dtype, kernel](a, b)

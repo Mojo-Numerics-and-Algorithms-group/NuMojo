@@ -28,7 +28,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
-from std.builtin.simd import FastMathFlag
+from std.simd import FastMathFlag
 from std.utils import Variant
 
 # ===----------------------------------------------------------------------=== #
@@ -63,10 +63,9 @@ def add[
         The element-wise sum of `array1` and`array2`.
     """
 
-    @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 + simd2
@@ -91,12 +90,11 @@ def add[
         The element-wise sum of array and scalar.
     """
 
-    @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w], scalar_simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ]:
+    ](
+        simd: SIMD[dtype, simd_w], scalar_simd: SIMD[dtype, simd_w]
+    ) capturing -> SIMD[dtype, simd_w]:
         return simd + scalar_simd
 
     return HostExecutor.apply_binary[dtype, add_kernel](array, scalar)
@@ -119,12 +117,11 @@ def add[
         The element-wise sum of scalar and array.
     """
 
-    @parameter
     def add_kernel[
         dtype: DType, simd_w: Int
-    ](scalar_simd: SIMD[dtype, simd_w], simd: SIMD[dtype, simd_w]) -> SIMD[
-        dtype, simd_w
-    ]:
+    ](
+        scalar_simd: SIMD[dtype, simd_w], simd: SIMD[dtype, simd_w]
+    ) capturing -> SIMD[dtype, simd_w]:
         return scalar_simd + simd
 
     return HostExecutor.apply_binary[dtype, add_kernel](scalar, array)
@@ -197,10 +194,9 @@ def sub[
         The element-wise difference of `array1` and`array2`.
     """
 
-    @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 - simd2
@@ -225,10 +221,9 @@ def sub[
         The element-wise difference of array and scalar.
     """
 
-    @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 - simd2
@@ -253,10 +248,9 @@ def sub[
         The element-wise difference of scalar and array.
     """
 
-    @parameter
     def sub_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 - simd2
@@ -286,10 +280,9 @@ def mod[
         A NDArray equal to array1 % array2.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2
@@ -314,10 +307,9 @@ def mod[
         A NDArray equal to array % scalar.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2
@@ -342,10 +334,9 @@ def mod[
         A NDArray equal to scalar % array.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2
@@ -378,10 +369,9 @@ def mul[
         A NDArray equal to array1*array2.
     """
 
-    @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 * simd2
@@ -406,10 +396,9 @@ def mul[
         The element-wise product of array and scalar.
     """
 
-    @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 * simd2
@@ -434,10 +423,9 @@ def mul[
         The element-wise product of scalar and array.
     """
 
-    @parameter
     def mul_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 * simd2
@@ -514,10 +502,9 @@ def div[
         A NDArray equal to array1/array2.
     """
 
-    @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 / simd2
@@ -542,10 +529,9 @@ def div[
         The element-wise quotient of array and scalar.
     """
 
-    @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 / simd2
@@ -570,10 +556,9 @@ def div[
         The element-wise quotient of scalar and array.
     """
 
-    @parameter
     def truediv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 / simd2
@@ -606,10 +591,9 @@ def floor_div[
         A NDArray equal to array1/array2.
     """
 
-    @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 // simd2
@@ -634,10 +618,9 @@ def floor_div[
         The element-wise quotient of array and scalar.
     """
 
-    @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 // simd2
@@ -662,10 +645,9 @@ def floor_div[
         The element-wise quotient of scalar and array.
     """
 
-    @parameter
     def floordiv_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 // simd2
@@ -704,14 +686,13 @@ def fma[
     # TODO: Support passing through the FastMathFlag parameter
     # For now, FastMathFlag.CONTRACT is was default prior to this error.
 
-    @parameter
     def fma_kernel[
         dtype: DType, simd_w: Int
     ](
         simd1: SIMD[dtype, simd_w],
         simd2: SIMD[dtype, simd_w],
         simd3: SIMD[dtype, simd_w],
-    ) -> SIMD[dtype, simd_w]:
+    ) capturing -> SIMD[dtype, simd_w]:
         return simd1.fma(simd2, simd3)
 
     return HostExecutor.apply_ternary[dtype, fma_kernel](array1, array2, array3)
@@ -740,14 +721,13 @@ def fma[
         A a new NDArray that is NDArray with the function func applied.
     """
 
-    @parameter
     def fma_kernel[
         dtype: DType, simd_w: Int
     ](
         simd1: SIMD[dtype, simd_w],
         simd2: SIMD[dtype, simd_w],
         simd3: SIMD[dtype, simd_w],
-    ) -> SIMD[dtype, simd_w]:
+    ) capturing -> SIMD[dtype, simd_w]:
         return simd1.fma(simd2, simd3)
 
     return HostExecutor.apply_ternary[dtype, fma_kernel](array1, array2, simd)
@@ -778,10 +758,9 @@ def remainder[
         A NDArray equal to array1//array2.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2
@@ -806,10 +785,9 @@ def remainder[
         A NDArray equal to array//scalar.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2
@@ -834,10 +812,9 @@ def remainder[
         A NDArray equal to scalar//array.
     """
 
-    @parameter
     def mod_kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return simd1 % simd2

@@ -72,13 +72,12 @@ def greater[
         ```
     """
 
-    @parameter
     def gt_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.gt(b)
@@ -113,13 +112,12 @@ def greater[
         ```
     """
 
-    @parameter
     def gt_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.gt(b)
@@ -155,13 +153,12 @@ def greater_equal[
         ```
     """
 
-    @parameter
     def ge_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.ge(b)
@@ -196,13 +193,12 @@ def greater_equal[
         ```
     """
 
-    @parameter
     def ge_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.ge(b)
@@ -238,13 +234,12 @@ def less[
         ```
     """
 
-    @parameter
     def lt_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.lt(b)
@@ -279,13 +274,12 @@ def less[
         ```
     """
 
-    @parameter
     def lt_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.lt(b)
@@ -321,13 +315,12 @@ def less_equal[
         ```
     """
 
-    @parameter
     def le_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.le(b)
@@ -362,13 +355,12 @@ def less_equal[
         ```
     """
 
-    @parameter
     def le_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.le(b)
@@ -404,13 +396,12 @@ def equal[
         ```
     """
 
-    @parameter
     def eq_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.eq(b)
@@ -445,13 +436,12 @@ def equal[
         ```
     """
 
-    @parameter
     def eq_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.eq(b)
@@ -487,13 +477,12 @@ def not_equal[
         ```
     """
 
-    @parameter
     def ne_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.ne(b)
@@ -528,13 +517,12 @@ def not_equal[
         ```
     """
 
-    @parameter
     def ne_kernel[
         type: DType, simd_w: Int
     ](
         a: SIMD[type, simd_w],
         b: SIMD[type, simd_w],
-    ) -> SIMD[
+    ) capturing -> SIMD[
         DType.bool, simd_w
     ]:
         return a.ne(b)

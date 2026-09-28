@@ -117,7 +117,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
     var ptr: Pointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: Pointer[Atomic[DType.uint64], Self.origin]
+    var _refcount: Pointer[Atomic[UInt64], Self.origin]
     """Pointer to the atomic reference count."""
 
     var ownership: Ownership
@@ -135,8 +135,8 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         Create an empty, managed DataContainer.
         """
         self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         self.ownership = Ownership.Managed
         self.size = 0
 
@@ -152,8 +152,8 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         self.ownership = Ownership.Managed
 
         if size == 0:
@@ -186,14 +186,14 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
             abort("DataContainer: __init__() size must be non-negative")
         self.size = size
         if copy:
-            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-            self._refcount[] = Atomic[DType.uint64](1)
+            self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+            self._refcount[] = Atomic[UInt64](1)
             self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
             unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
             self._refcount = Pointer[
-                Atomic[DType.uint64], Self.origin
+                Atomic[UInt64], Self.origin
             ].unsafe_dangling()
             self.ptr = ptr
             self.ownership = Ownership.External
@@ -204,7 +204,7 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         *,
         ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: Pointer[Atomic[DType.uint64], Self.origin],
+        refcount: Pointer[Atomic[UInt64], Self.origin],
         ownership: Ownership,
     ):
         """Create a DataContainer that shares an existing buffer and refcount.
@@ -234,8 +234,8 @@ struct DataContainer[dtype: DType](Copyable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         if copy.size == 0:
             self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin

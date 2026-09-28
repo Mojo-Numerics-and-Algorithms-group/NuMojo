@@ -369,10 +369,9 @@ def minimum[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return builtin_min(simd1, simd2)
@@ -407,10 +406,9 @@ def maximum[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
         return builtin_max(simd1, simd2)

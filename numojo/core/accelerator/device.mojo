@@ -567,7 +567,6 @@ struct Device(
         return Device(type="gpu", name=backend, id=0)
 
     @staticmethod
-    @parameter
     def available_gpu() raises -> String:
         """Return the name of the best available GPU backend.
 
@@ -596,7 +595,6 @@ struct Device(
             )
 
     @staticmethod
-    @parameter
     def available_devices() -> String:
         """List all available devices on the current system.
 
@@ -625,7 +623,6 @@ struct Device(
         return result
 
     @staticmethod
-    @parameter
     def parse_device_string(text: String) raises -> Device:
         """Parse a torch-style device string into a `Device`.
 
@@ -741,7 +738,6 @@ struct Device(
 # ===----------------------------------------------------------------------=== #
 
 
-@parameter
 def is_accelerator_available[device: Device]() -> Bool:
     """Check at compile time whether the given device's GPU accelerator exists.
 

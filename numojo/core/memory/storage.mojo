@@ -70,7 +70,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
     var ptr: Pointer[Scalar[Self.dtype], Self.origin]
     """Pointer to the data array."""
 
-    var _refcount: Pointer[Atomic[DType.uint64], Self.origin]
+    var _refcount: Pointer[Atomic[UInt64], Self.origin]
     """Pointer to the atomic reference count (null for external containers)."""
 
     var ownership: Ownership
@@ -88,8 +88,8 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
     def __init__(out self):
         """Create an empty managed container with size 0 and refcount 1."""
         self.ptr = Pointer[Scalar[Self.dtype], Self.origin].unsafe_dangling()
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         self.ownership = Ownership.Managed
         self.size = 0
 
@@ -107,8 +107,8 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
             abort("HostStorage: __init__() size must be non-negative")
 
         self.size = size
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         self.ownership = Ownership.Managed
 
         if size == 0:
@@ -142,14 +142,14 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
 
         self.size = size
         if copy:
-            self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-            self._refcount[] = Atomic[DType.uint64](1)
+            self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+            self._refcount[] = Atomic[UInt64](1)
             self.ptr = unsafe_alloc[Scalar[Self.dtype]](size)
             unsafe_memcpy(dest=self.ptr, src=ptr, count=size)
             self.ownership = Ownership.Managed
         else:
             self._refcount = Pointer[
-                Atomic[DType.uint64], Self.origin
+                Atomic[UInt64], Self.origin
             ].unsafe_dangling()
             self.ptr = ptr
             self.ownership = Ownership.External
@@ -160,7 +160,7 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
         *,
         ptr: Pointer[Scalar[Self.dtype], Self.origin],
         size: Int,
-        refcount: Pointer[Atomic[DType.uint64], Self.origin],
+        refcount: Pointer[Atomic[UInt64], Self.origin],
         ownership: Ownership,
     ):
         """Create a HostStorage that shares an existing buffer and refcount.
@@ -192,8 +192,8 @@ struct HostStorage[dtype: DType](Copyable & Sized & Writable):
         """
         self.size = copy.size
         self.ownership = Ownership.Managed
-        self._refcount = unsafe_alloc[Atomic[DType.uint64]](1)
-        self._refcount[] = Atomic[DType.uint64](1)
+        self._refcount = unsafe_alloc[Atomic[UInt64]](1)
+        self._refcount[] = Atomic[UInt64](1)
         if copy.size == 0:
             self.ptr = Pointer[
                 Scalar[Self.dtype], Self.origin
@@ -984,27 +984,22 @@ struct AcceleratorDataContainer[dtype: DType, device: Device = Device.CPU](
     # Device-Specific Access
     # ===----------------------------------------------------------------------===#
 
-    @parameter
     def is_cpu(self) -> Bool:
         """Return True if this container targets a CPU device."""
         return Self.device.type == "cpu"
 
-    @parameter
     def is_gpu(self) -> Bool:
         """Return True if this container targets a GPU device."""
         return Self.device.type == "gpu"
 
-    @parameter
     def is_cuda(self) -> Bool:
         """Return True if this container targets an NVIDIA CUDA device."""
         return Self.device == Device.CUDA
 
-    @parameter
     def is_rocm(self) -> Bool:
         """Return True if this container targets an AMD ROCm device."""
         return Self.device == Device.ROCM
 
-    @parameter
     def is_mps(self) -> Bool:
         """Return True if this container targets an Apple Metal device."""
         return Self.device == Device.MPS

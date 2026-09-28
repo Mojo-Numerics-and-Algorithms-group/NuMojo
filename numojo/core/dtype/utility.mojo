@@ -21,7 +21,6 @@ Exports
 """
 
 
-@parameter
 def is_inttype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is an integer type at compile time.
@@ -63,7 +62,6 @@ def is_inttype(dtype: DType) -> Bool:
     return False
 
 
-@parameter
 def is_floattype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is a floating point type at compile time.
@@ -103,7 +101,6 @@ def is_floattype(dtype: DType) -> Bool:
     return False
 
 
-@parameter
 def is_booltype[dtype: DType]() -> Bool:
     """
     Check if the given dtype is a boolean type at compile time.

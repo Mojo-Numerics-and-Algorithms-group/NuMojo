@@ -65,15 +65,14 @@ def exp[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.exp(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def exp[
@@ -130,15 +129,14 @@ def exp2[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.exp2(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def exp2[
@@ -194,15 +192,14 @@ def expm1[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.expm1(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def expm1[
@@ -262,15 +259,14 @@ def log[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.log(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def log[
@@ -326,15 +322,14 @@ def log2[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.log2(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def log2[
@@ -388,15 +383,14 @@ def log10[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.log10(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def log10[
@@ -452,15 +446,14 @@ def log1p[
         ```
     """
 
-    @parameter
     def _kernel[
         dtype: DType, simd_w: Int
-    ](simd: SIMD[dtype, simd_w]) -> SIMD[
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
         dtype, simd_w
     ] where dtype.is_floating_point():
         return math.log1p(simd)
 
-    return HostExecutor.apply_unary[dtype, _kernel](array)
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
 
 
 def log1p[

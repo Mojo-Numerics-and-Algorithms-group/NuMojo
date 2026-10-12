@@ -1,4 +1,5 @@
 from std.python import Python, PythonObject
+from std.utils.numerics import inf, neg_inf
 from utils_for_test import check, check_is_close, check_values_close
 from std.testing import TestSuite
 from std.testing.testing import assert_true
@@ -165,6 +166,62 @@ def norms() raises:
     )
 
 
+def test_norm() raises:
+    var np = Python.import_module("numpy")
+
+    var v = nm.random.randn(9)
+    var v_np = v.to_numpy()
+    check_values_close(
+        nm.linalg.norm(v), np.linalg.norm(v_np), "`norm` (vector 2-norm) is broken"
+    )
+    check_values_close(
+        nm.linalg.norm(v, Float64(1)),
+        np.linalg.norm(v_np, 1),
+        "`norm` (vector 1-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(v, inf[nm.f64]()),
+        np.linalg.norm(v_np, np.inf),
+        "`norm` (vector inf-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(v, neg_inf[nm.f64]()),
+        np.linalg.norm(v_np, -np.inf),
+        "`norm` (vector -inf-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(v, Float64(3)),
+        np.linalg.norm(v_np, 3),
+        "`norm` (vector p-norm) is broken",
+    )
+
+    var A = nm.random.randn(4, 5)
+    var A_np = A.to_numpy()
+    check_values_close(
+        nm.linalg.norm(A), np.linalg.norm(A_np), "`norm` (Frobenius) is broken"
+    )
+    check_values_close(
+        nm.linalg.norm(A, Float64(1)),
+        np.linalg.norm(A_np, 1),
+        "`norm` (matrix 1-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(A, Float64(-1)),
+        np.linalg.norm(A_np, -1),
+        "`norm` (matrix -1-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(A, inf[nm.f64]()),
+        np.linalg.norm(A_np, np.inf),
+        "`norm` (matrix inf-norm) is broken",
+    )
+    check_values_close(
+        nm.linalg.norm(A, neg_inf[nm.f64]()),
+        np.linalg.norm(A_np, -np.inf),
+        "`norm` (matrix -inf-norm) is broken",
+    )
+
+
 def test_misc() raises:
     var np = Python.import_module("numpy")
     var arr = nm.random.rand(4, 8)
@@ -267,6 +324,68 @@ def test_qr() raises:
     check_qr(5, 3, "qr tall")
     check_qr(3, 6, "qr wide")
     check_qr(4, 4, "qr square")
+
+
+def test_eigh() raises:
+    var np = Python.import_module("numpy")
+
+    def check_eigh(n: Int, msg: String) raises:
+        var M = nm.random.randn(n, n)
+        var S = M @ nm.transpose(M)
+        var w_v = nm.linalg.eigh(S)
+        var w = w_v[0].copy()
+        var v = w_v[1].copy()
+
+        check_is_close(
+            S @ v, (v @ nm.diag(w)).to_numpy(), msg + ": A @ v != v @ diag(w)"
+        )
+        var ident = nm.eye[nm.f64](n, n)
+        check_is_close(
+            nm.transpose(v) @ v,
+            ident.to_numpy(),
+            msg + ": eigenvectors are not orthonormal",
+        )
+        for i in range(n - 1):
+            assert_true(
+                w.item(i) <= w.item(i + 1),
+                msg + ": eigenvalues are not ascending",
+            )
+
+    check_eigh(5, "eigh small")
+    check_eigh(10, "eigh larger")
+
+
+def test_eig() raises:
+    def check_eig(A: nm.NDArray[nm.f64], msg: String) raises:
+        var np = Python.import_module("numpy")
+        var w_v = nm.linalg.eig(A)
+        var w = w_v[0].copy()
+        var v = w_v[1].copy()
+        check_is_close(
+            A @ v, (v @ nm.diag(w)).to_numpy(), msg + ": A @ v != v @ diag(w)"
+        )
+
+    # General real matrix constructed via a similarity transform, so its
+    # eigenvalues are known to be exactly {1, 1.1, 1.2, 1.3} (all real).
+    var D = nm.diag(nm.fromstring[nm.f64]("[1.0, 1.1, 1.2, 1.3]"))
+    var P = nm.random.randn(4, 4)
+    check_eig(P @ D @ nm.linalg.inv(P), "eig (close real eigenvalues)")
+
+    # A symmetric matrix is also a valid (real-eigenvalue) input to `eig`.
+    var M = nm.random.randn(6, 6)
+    check_eig(M @ nm.transpose(M), "eig (symmetric matrix)")
+
+
+def test_eig_complex_raises() raises:
+    # A pure rotation matrix has eigenvalues +-i, which `eig` does not
+    # support; it should raise rather than return a bogus real result.
+    var R = nm.fromstring[nm.f64]("[[0.0, -1.0], [1.0, 0.0]]")
+    var raised = False
+    try:
+        _ = nm.linalg.eig(R)
+    except:
+        raised = True
+    assert_true(raised, "`eig` should raise on complex eigenvalues")
 
 
 def test_cholesky() raises:

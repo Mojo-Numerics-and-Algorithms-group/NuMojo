@@ -18,6 +18,8 @@ Exports
 - `lu_decomposition`: LU factorization.
 - `qr`: QR factorization (Householder reflections).
 - `cholesky`: Cholesky factorization.
+- `eigh`: Eigenvalues/eigenvectors of a real symmetric matrix.
+- `eig`: Eigenvalues/eigenvectors of a general real matrix.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -36,7 +38,9 @@ from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (
     full,
     identity,
+    zeros,
 )
+from numojo.routines.linalg.products import matmul
 
 
 def lu_decomposition[
@@ -406,3 +410,318 @@ def cholesky[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
                 L[Item(i, j)] = (A.item(i, j) - sum_of_products) / L.item(j, j)
 
     return L^
+
+
+def eigh[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+    """
+    Compute the eigenvalues and eigenvectors of a real symmetric matrix.
+
+    Uses the cyclic Jacobi eigenvalue algorithm. `A` is assumed to be
+    symmetric; only the values given are used (no symmetry check is
+    performed).
+
+    Returns a tuple `(w, v)` where `w` is a 1-D array of the eigenvalues
+    in ascending order, and `v` is a 2-D array whose column `v[:, i]` is
+    the normalized eigenvector corresponding to `w[i]`, such that
+    `A @ v[:, i] == w[i] * v[:, i]`.
+
+    Parameters:
+        dtype: Data type of the input and output matrices. Should be a
+            floating-point type.
+
+    Args:
+        A: Symmetric matrix of shape `(n, n)`.
+
+    Returns:
+        A tuple `(w, v)` of eigenvalues and eigenvectors.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional or not square.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        def main() raises:
+            var A = nm.fromstring("[[2, 1], [1, 2]]")
+            var w: nm.NDArray
+            var v: nm.NDArray
+            w, v = nm.linalg.eigh(A)
+            print(w)
+            print(v)
+        ```
+    """
+
+    if A.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="eigh",
+            )
+        )
+    if A.shape[0] != A.shape[1]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The matrix is not square!",
+                location="eigh",
+            )
+        )
+
+    var n = A.shape[0]
+    var a = A.copy() if A.is_c_contiguous() else A.contiguous()
+    var v = identity[dtype](n)
+
+    comptime num_sweeps = 60
+    for _sweep in range(num_sweeps):
+        for p in range(n - 1):
+            for q in range(p + 1, n):
+                var apq = a.item(p, q)
+                if apq == 0:
+                    continue
+
+                var app = a.item(p, p)
+                var aqq = a.item(q, q)
+                var theta = (aqq - app) / (2 * apq)
+                var t: Scalar[dtype]
+                if theta >= 0:
+                    t = 1 / (theta + sqrt(theta * theta + 1))
+                else:
+                    t = -1 / (-theta + sqrt(theta * theta + 1))
+                var c = 1 / sqrt(t * t + 1)
+                var s = t * c
+
+                a[Item(p, p)] = app - t * apq
+                a[Item(q, q)] = aqq + t * apq
+                a[Item(p, q)] = 0
+                a[Item(q, p)] = 0
+
+                for i in range(n):
+                    if i != p and i != q:
+                        var aip = a.item(i, p)
+                        var aiq = a.item(i, q)
+                        var new_aip = c * aip - s * aiq
+                        var new_aiq = s * aip + c * aiq
+                        a[Item(i, p)] = new_aip
+                        a[Item(p, i)] = new_aip
+                        a[Item(i, q)] = new_aiq
+                        a[Item(q, i)] = new_aiq
+
+                for i in range(n):
+                    var vip = v.item(i, p)
+                    var viq = v.item(i, q)
+                    v[Item(i, p)] = c * vip - s * viq
+                    v[Item(i, q)] = s * vip + c * viq
+
+    var w = full[dtype](shape=Shape(n), fill_value=SIMD[dtype, 1](0))
+    for i in range(n):
+        w.store(i, a.item(i, i))
+
+    # Sort eigenvalues ascending (numpy convention), reordering the
+    # corresponding eigenvector columns to match.
+    for i in range(n):
+        var min_idx = i
+        for j in range(i + 1, n):
+            if w.item(j) < w.item(min_idx):
+                min_idx = j
+        if min_idx != i:
+            var tmp = w.item(i)
+            w.store(i, w.item(min_idx))
+            w.store(min_idx, tmp)
+            for r in range(n):
+                var tmpv = v.item(r, i)
+                v[Item(r, i)] = v.item(r, min_idx)
+                v[Item(r, min_idx)] = tmpv
+
+    return w^, v^
+
+
+def _forward_substitution_vec[
+    dtype: DType
+](L: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+    var m = L.shape[0]
+    var x = full[dtype](shape=Shape(m), fill_value=SIMD[dtype, 1](0))
+    for i in range(m):
+        var value = y.item(i)
+        for j in range(i):
+            value -= L.item(i, j) * x.item(j)
+        x.store(i, value / L.item(i, i))
+    return x^
+
+
+def _back_substitution_vec[
+    dtype: DType
+](U: NDArray[dtype], y: NDArray[dtype]) raises -> NDArray[dtype]:
+    var m = U.shape[0]
+    var x = full[dtype](shape=Shape(m), fill_value=SIMD[dtype, 1](0))
+    for i in range(m - 1, -1, -1):
+        var value = y.item(i)
+        for j in range(i + 1, m):
+            value -= U.item(i, j) * x.item(j)
+        x.store(i, value / U.item(i, i))
+    return x^
+
+
+def eig[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+    """
+    Compute the eigenvalues and eigenvectors of a general real square
+    matrix.
+
+    Uses the shifted QR algorithm (Rayleigh quotient shift) to find
+    the eigenvalues, then shifted inverse iteration on the original
+    matrix to recover the corresponding eigenvectors.
+
+    Only matrices with real eigenvalues are supported. If the QR
+    iteration does not converge to an (approximately) upper triangular
+    form, this raises, since that indicates the matrix has complex
+    eigenvalues.
+
+    Unlike `numpy.linalg.eig`, the eigenvalues are not returned in any
+    particular order.
+
+    Parameters:
+        dtype: Data type of the input and output matrices. Should be a
+            floating-point type.
+
+    Args:
+        A: Square matrix of shape `(n, n)`.
+
+    Returns:
+        A tuple `(w, v)` such that `A @ v[:, i] == w[i] * v[:, i]` for
+        each `i`, with `v[:, i]` normalized to unit length.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional or not square.
+        NumojoError: If the matrix appears to have complex eigenvalues.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var A = nm.fromstring("[[2, 0], [0, 3]]")
+        var w: nm.NDArray
+        var v: nm.NDArray
+        w, v = nm.linalg.eig(A)
+        print(w)
+        print(v)
+    ```
+    """
+
+    if A.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="eig",
+            )
+        )
+    if A.shape[0] != A.shape[1]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The matrix is not square!",
+                location="eig",
+            )
+        )
+
+    var n = A.shape[0]
+    var A_c = A.copy() if A.is_c_contiguous() else A.contiguous()
+
+    var frob: Scalar[dtype] = 0
+    for i in range(n):
+        for j in range(n):
+            var v = A_c.item(i, j)
+            frob += v * v
+    frob = sqrt(frob)
+
+    var Ak = A_c.copy()
+
+    comptime max_iter = 1000
+    comptime unshifted_iters = 50
+    var off: Scalar[dtype] = 0
+    for iter in range(max_iter):
+        # A few unshifted iterations first: the basic QR algorithm is
+        # guaranteed to converge (for matrices with real eigenvalues of
+        # distinct magnitude) without risking the oscillation that a
+        # poorly chosen early shift can cause on a general (non-Hessenberg,
+        # non-symmetric) matrix. Once roughly converged, switch to the
+        # Rayleigh-quotient shift to accelerate the final convergence.
+        var sigma: Scalar[dtype] = 0
+        if iter >= unshifted_iters:
+            sigma = Ak.item(n - 1, n - 1)
+
+        var shifted = Ak.copy()
+        for i in range(n):
+            shifted[Item(i, i)] = shifted.item(i, i) - sigma
+
+        var Q_R = qr[dtype](shifted)
+        var Q = Q_R[0].copy()
+        var R = Q_R[1].copy()
+        Ak = matmul(R, Q)
+        for i in range(n):
+            Ak[Item(i, i)] = Ak.item(i, i) + sigma
+
+        off = 0
+        for i in range(1, n):
+            off += abs(Ak.item(i, i - 1))
+        if off < Scalar[dtype](1e-10) * (frob + 1):
+            break
+
+    if off > Scalar[dtype](1e-4) * (frob + 1):
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "`eig` failed to converge to real eigenvalues. The"
+                    " matrix likely has complex eigenvalues, which are"
+                    " not yet supported."
+                ),
+                location="eig",
+            )
+        )
+
+    var w = full[dtype](shape=Shape(n), fill_value=SIMD[dtype, 1](0))
+    for i in range(n):
+        w.store(i, Ak.item(i, i))
+
+    var V = zeros[dtype](Shape(n, n))
+    for k in range(n):
+        var lam = w.item(k)
+        var shift = lam + (abs(lam) + 1) * Scalar[dtype](1e-6)
+
+        var M = A_c.copy()
+        for i in range(n):
+            M[Item(i, i)] = M.item(i, i) - shift
+
+        var pivoted = partial_pivoting(M^)
+        var M_piv = pivoted[0].copy()
+        var P = pivoted[1].copy()
+        var L_U = lu_decomposition[dtype](M_piv)
+        var L = L_U[0].copy()
+        var U = L_U[1].copy()
+
+        var x = full[dtype](shape=Shape(n), fill_value=SIMD[dtype, 1](1))
+        comptime inv_iters = 3
+        for _inv in range(inv_iters):
+            var y = matmul(P, x)
+            var z = _forward_substitution_vec(L, y)
+            var x_new = _back_substitution_vec(U, z)
+
+            var norm_x: Scalar[dtype] = 0
+            for i in range(n):
+                norm_x += x_new.item(i) * x_new.item(i)
+            norm_x = sqrt(norm_x)
+            if norm_x == 0:
+                norm_x = 1
+            for i in range(n):
+                x_new.store(i, x_new.item(i) / norm_x)
+            x = x_new^
+
+        for i in range(n):
+            V[Item(i, k)] = x.item(i)
+
+    return w^, V^

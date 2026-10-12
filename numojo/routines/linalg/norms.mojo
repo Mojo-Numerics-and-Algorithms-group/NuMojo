@@ -8,13 +8,21 @@
 """
 Norms (numojo.routines.linalg.norms).
 =====================================
-Determinant and trace computation for 2-D arrays.
+Determinant, trace, and vector/matrix norm computation.
 
 Exports
 -------
 - `det`: Determinant via LUP decomposition.
 - `trace`: Sum of the diagonal elements.
+- `norm`: Vector or matrix norm.
 """
+
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.math import sqrt
+import std.math.math as stdlib_math
+from std.utils.numerics import inf, neg_inf
 
 # ===----------------------------------------------------------------------=== #
 # NuMojo
@@ -133,3 +141,162 @@ def trace[
         )
 
     return result^
+
+
+def norm[
+    dtype: DType
+](x: NDArray[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Computes the 2-norm (for vectors) or the Frobenius norm (for
+    matrices) of `x`, i.e. `sqrt(sum(x**2))` over all elements.
+
+    This matches `numpy.linalg.norm(x)` (no `ord` given).
+
+    Parameters:
+        dtype: The element type. Must be a floating-point type.
+
+    Args:
+        x: A 1-D or 2-D NDArray.
+
+    Returns:
+        The norm of `x`, as a scalar.
+    """
+
+    if not x.is_c_contiguous():
+        return norm(x.contiguous())
+
+    var acc: Scalar[dtype] = 0
+    for i in range(x.size):
+        var v = x.unsafe_get(i)
+        acc += v * v
+    return sqrt(acc)
+
+
+def _vector_norm[
+    dtype: DType
+](x: NDArray[dtype], ord: Scalar[dtype]) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    if ord == inf[dtype]():
+        var result: Scalar[dtype] = 0
+        for i in range(x.size):
+            var v = abs(x.unsafe_get(i))
+            if v > result:
+                result = v
+        return result
+
+    if ord == neg_inf[dtype]():
+        var result = abs(x.unsafe_get(0))
+        for i in range(1, x.size):
+            var v = abs(x.unsafe_get(i))
+            if v < result:
+                result = v
+        return result
+
+    if ord == 0:
+        var result: Scalar[dtype] = 0
+        for i in range(x.size):
+            if x.unsafe_get(i) != 0:
+                result += 1
+        return result
+
+    var acc: Scalar[dtype] = 0
+    for i in range(x.size):
+        acc += stdlib_math.pow(abs(x.unsafe_get(i)), ord)
+    return stdlib_math.pow(acc, 1 / ord)
+
+
+def _matrix_norm[
+    dtype: DType
+](x: NDArray[dtype], ord: Scalar[dtype]) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    var m = x.shape[0]
+    var n = x.shape[1]
+
+    if ord == 1 or ord == -1:
+        var best: Scalar[dtype] = 0
+        for j in range(n):
+            var col_sum: Scalar[dtype] = 0
+            for i in range(m):
+                col_sum += abs(x.item(i, j))
+            if j == 0:
+                best = col_sum
+            elif (ord == 1 and col_sum > best) or (
+                ord == -1 and col_sum < best
+            ):
+                best = col_sum
+        return best
+
+    if ord == inf[dtype]() or ord == neg_inf[dtype]():
+        var best: Scalar[dtype] = 0
+        for i in range(m):
+            var row_sum: Scalar[dtype] = 0
+            for j in range(n):
+                row_sum += abs(x.item(i, j))
+            if i == 0:
+                best = row_sum
+            elif (ord == inf[dtype]() and row_sum > best) or (
+                ord == neg_inf[dtype]() and row_sum < best
+            ):
+                best = row_sum
+        return best
+
+    raise Error(
+        NumojoError(
+            category="value",
+            message=String(
+                "Unsupported matrix `ord`. Supported values are 1, -1,"
+                " inf, -inf, or no `ord` (Frobenius norm). The 2-norm"
+                " (largest singular value) requires SVD, which is not"
+                " yet supported."
+            ),
+            location="norm",
+        )
+    )
+
+
+def norm[
+    dtype: DType
+](x: NDArray[dtype], ord: Scalar[dtype]) raises -> Scalar[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Computes a vector or matrix norm of `x`, matching a subset of
+    `numpy.linalg.norm(x, ord=ord)`.
+
+    For 1-D `x`, `ord` is the order of the generalized p-norm
+    `sum(|x|**ord)**(1/ord)`, with `ord = inf` and `ord = -inf` special
+    cased to the max and min absolute value, and `ord = 0` counting the
+    number of non-zero elements.
+
+    For 2-D `x`, `ord` must be one of `1` (max absolute column sum),
+    `-1` (min absolute column sum), `inf` (max absolute row sum), or
+    `-inf` (min absolute row sum). The matrix 2-norm (largest singular
+    value) is not yet supported, since it requires SVD.
+
+    Parameters:
+        dtype: The element type. Must be a floating-point type.
+
+    Args:
+        x: A 1-D or 2-D NDArray.
+        ord: The order of the norm.
+
+    Returns:
+        The norm of `x`, as a scalar.
+    """
+
+    if x.ndim == 1:
+        return _vector_norm(x, ord)
+    elif x.ndim == 2:
+        return _matrix_norm(x, ord)
+    else:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "`norm` is only supported for 1-D and 2-D arrays."
+                ),
+                location="norm",
+            )
+        )

@@ -414,7 +414,9 @@ def cholesky[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype]:
 
 def eigh[
     dtype: DType
-](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+](A: NDArray[dtype]) raises -> Tuple[
+    NDArray[dtype], NDArray[dtype]
+] where dtype.is_floating_point():
     """
     Compute the eigenvalues and eigenvectors of a real symmetric matrix.
 
@@ -566,7 +568,9 @@ def _back_substitution_vec[
 
 def eig[
     dtype: DType
-](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+](A: NDArray[dtype]) raises -> Tuple[
+    NDArray[dtype], NDArray[dtype]
+] where dtype.is_floating_point():
     """
     Compute the eigenvalues and eigenvectors of a general real square
     matrix.

@@ -172,7 +172,9 @@ def test_norm() raises:
     var v = nm.random.randn(9)
     var v_np = v.to_numpy()
     check_values_close(
-        nm.linalg.norm(v), np.linalg.norm(v_np), "`norm` (vector 2-norm) is broken"
+        nm.linalg.norm(v),
+        np.linalg.norm(v_np),
+        "`norm` (vector 2-norm) is broken",
     )
     check_values_close(
         nm.linalg.norm(v, Float64(1)),

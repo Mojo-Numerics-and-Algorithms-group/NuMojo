@@ -18,6 +18,7 @@ Exports
 - `solve`: Solve linear system.
 - `inv`: Matrix inverse.
 - `lstsq`: Least-squares solution to a linear system.
+- `pinv`: Moore-Penrose pseudoinverse.
 """
 
 # TODO: Add partial pivot support.
@@ -31,6 +32,7 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.indexing.item import Item
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
 from numojo.routines.creation import (
@@ -38,7 +40,7 @@ from numojo.routines.creation import (
     full,
     zeros,
 )
-from numojo.routines.linalg.decompositions import lu_decomposition, qr
+from numojo.routines.linalg.decompositions import lu_decomposition, qr, svd
 from numojo.routines.linalg.products import matmul
 from numojo.routines.manipulation import transpose
 
@@ -412,6 +414,53 @@ def lstsq[
     if y_was_1d:
         return X2.reshape(Shape(n))
     return X2^
+
+
+def pinv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+    """
+    Compute the Moore-Penrose pseudoinverse of `A`, via its singular
+    value decomposition.
+
+    Matches `numpy.linalg.pinv`. Currently requires `A` to have full
+    rank `min(m, n)`; rank-deficient matrices are not yet supported
+    (`svd`, which this is built on, does not support them either).
+
+    Parameters:
+        dtype: Data type of the input and output matrices. Should be a
+            floating-point type.
+
+    Args:
+        A: Matrix of shape `(m, n)`.
+
+    Returns:
+        The pseudoinverse of `A`, of shape `(n, m)`.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional.
+        NumojoError: If `A` is rank-deficient.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var A = nm.fromstring("[[1, 2], [3, 4], [5, 6]]")
+        var Ainv = nm.linalg.pinv(A)
+        print(Ainv @ A)  # approximately the identity
+    ```
+    """
+
+    var U_s_Vh = svd(A)
+    var U = U_s_Vh[0].copy()
+    var s = U_s_Vh[1].copy()
+    var Vh = U_s_Vh[2].copy()
+    var k = s.shape[0]
+
+    var V = transpose(Vh)
+    for i in range(V.shape[0]):
+        for j in range(k):
+            V[Item(i, j)] = V.item(i, j) / s.item(j)
+
+    return matmul(V, transpose(U))
 
 
 # TODO: remove unnecessary copies going on here later.

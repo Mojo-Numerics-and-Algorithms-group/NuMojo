@@ -18,6 +18,9 @@ Exports
 - `min`, `max`: Minimum and maximum values.
 - `variance`: Variance of array elements.
 - `stddev`: Standard deviation of array elements.
+- `quantile`, `percentile`: Order statistics via linear interpolation.
+- `cov`, `corrcoef`: Covariance and correlation-coefficient matrices.
+- `bincount`, `histogram`: Binning and counting of array elements.
 - `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`: NaN-aware reductions.
 """
 
@@ -33,6 +36,14 @@ from .averages import (
     stddev,
     variance,
 )
+from .correlation import (
+    corrcoef,
+    cov,
+)
+from .histograms import (
+    bincount,
+    histogram,
+)
 from .nanfunctions import (
     nanmax,
     nanmean,
@@ -41,4 +52,8 @@ from .nanfunctions import (
     nanstd,
     nansum,
     nanvar,
+)
+from .percentiles import (
+    percentile,
+    quantile,
 )

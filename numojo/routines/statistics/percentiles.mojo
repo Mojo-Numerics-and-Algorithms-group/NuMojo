@@ -66,9 +66,9 @@ def quantile_1d[
         raise Error(
             NumojoError(
                 category="value",
-                message=String("`q` must be in the range [0, 1], got {}").format(
-                    q
-                ),
+                message=String(
+                    "`q` must be in the range [0, 1], got {}"
+                ).format(q),
                 location="quantile",
             )
         )

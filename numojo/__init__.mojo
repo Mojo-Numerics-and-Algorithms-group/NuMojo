@@ -234,6 +234,12 @@ from numojo.routines.statistics import (
     nanvar,
     nanstd,
     nanmedian,
+    quantile,
+    percentile,
+    cov,
+    corrcoef,
+    bincount,
+    histogram,
 )
 
 from numojo.routines import bitwise

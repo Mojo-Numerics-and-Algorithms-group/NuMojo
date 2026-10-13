@@ -33,6 +33,7 @@ from numojo.core.type_aliases import Shape
 from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
+    svd,
 )
 
 
@@ -160,6 +161,14 @@ def norm[
 
     Returns:
         The norm of `x`, as a scalar.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var x = nm.fromstring("[3.0, 4.0]")
+        print(nm.linalg.norm(x))  # 5.0
+    ```
     """
 
     if not x.is_c_contiguous():
@@ -242,14 +251,18 @@ def _matrix_norm[
                 best = row_sum
         return best
 
+    if ord == 2:
+        # The spectral norm (largest singular value). `svd` requires full
+        # rank, so this is not supported for rank-deficient matrices.
+        var s = svd(x)[1].copy()
+        return s.item(0)
+
     raise Error(
         NumojoError(
             category="value",
             message=String(
                 "Unsupported matrix `ord`. Supported values are 1, -1,"
-                " inf, -inf, or no `ord` (Frobenius norm). The 2-norm"
-                " (largest singular value) requires SVD, which is not"
-                " yet supported."
+                " 2, inf, -inf, or no `ord` (Frobenius norm)."
             ),
             location="norm",
         )
@@ -271,9 +284,9 @@ def norm[
     number of non-zero elements.
 
     For 2-D `x`, `ord` must be one of `1` (max absolute column sum),
-    `-1` (min absolute column sum), `inf` (max absolute row sum), or
-    `-inf` (min absolute row sum). The matrix 2-norm (largest singular
-    value) is not yet supported, since it requires SVD.
+    `-1` (min absolute column sum), `2` (largest singular value, via
+    `svd`), `inf` (max absolute row sum), or `-inf` (min absolute row
+    sum).
 
     Parameters:
         dtype: The element type. Must be a floating-point type.
@@ -284,6 +297,18 @@ def norm[
 
     Returns:
         The norm of `x`, as a scalar.
+
+    Raises:
+        NumojoError: If `x` is not 1-D or 2-D, or if `ord` is an
+            unsupported value for a matrix.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        def main() raises:
+            var x = nm.fromstring("[3.0, -4.0]")
+            print(nm.linalg.norm(x, Float64(1)))  # 7.0
+        ```
     """
 
     if x.ndim == 1:

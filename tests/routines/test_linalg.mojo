@@ -222,6 +222,11 @@ def test_norm() raises:
         np.linalg.norm(A_np, -np.inf),
         "`norm` (matrix -inf-norm) is broken",
     )
+    check_values_close(
+        nm.linalg.norm(A, Float64(2)),
+        np.linalg.norm(A_np, 2),
+        "`norm` (matrix 2-norm / spectral norm) is broken",
+    )
 
 
 def test_misc() raises:
@@ -427,6 +432,73 @@ def test_lstsq() raises:
         nm.linalg.lstsq(A2, b2),
         np.linalg.lstsq(A2.to_numpy(), b2.to_numpy(), rcond=Python.none())[0],
         "`lstsq` is broken for an underdetermined system",
+    )
+
+
+def test_svd() raises:
+    def check_svd(m: Int, n: Int, msg: String) raises:
+        var A = nm.random.randn(m, n)
+        var U_s_Vh = nm.linalg.svd(A)
+        var U = U_s_Vh[0].copy()
+        var s = U_s_Vh[1].copy()
+        var Vh = U_s_Vh[2].copy()
+        var k = min(m, n)
+
+        assert_true(U.shape[0] == m and U.shape[1] == k, msg + ": U shape")
+        assert_true(s.shape[0] == k, msg + ": s shape")
+        assert_true(Vh.shape[0] == k and Vh.shape[1] == n, msg + ": Vh shape")
+
+        check_is_close(
+            U @ nm.diag(s) @ Vh,
+            A.to_numpy(),
+            msg + ": U @ diag(s) @ Vh does not reconstruct A",
+        )
+        check_is_close(
+            nm.transpose(U) @ U,
+            nm.eye[nm.f64](k, k).to_numpy(),
+            msg + ": columns of U are not orthonormal",
+        )
+        check_is_close(
+            Vh @ nm.transpose(Vh),
+            nm.eye[nm.f64](k, k).to_numpy(),
+            msg + ": rows of Vh are not orthonormal",
+        )
+
+    check_svd(6, 4, "svd tall")
+    check_svd(3, 5, "svd wide")
+    check_svd(4, 4, "svd square")
+
+
+def test_pinv() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(6, 4)
+    var Ainv = nm.linalg.pinv(A)
+    check_is_close(Ainv, np.linalg.pinv(A.to_numpy()), "`pinv` is broken")
+    check_is_close(
+        Ainv @ A,
+        nm.eye[nm.f64](4, 4).to_numpy(),
+        "`pinv` does not give a left inverse for a full-column-rank matrix",
+    )
+
+
+def test_matrix_rank() raises:
+    var A = nm.random.randn(6, 4)
+    assert_true(
+        nm.linalg.matrix_rank(A) == 4, "`matrix_rank` is wrong for full rank"
+    )
+
+    var rank_deficient = nm.random.randn(5, 2) @ nm.random.randn(2, 5)
+    assert_true(
+        nm.linalg.matrix_rank(rank_deficient) == 2,
+        "`matrix_rank` is wrong for a rank-deficient matrix",
+    )
+
+
+def test_cond() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(6, 4)
+    check_values_close(
+        nm.linalg.cond(A), np.linalg.cond(A.to_numpy()), "`cond` is broken"
     )
 
 

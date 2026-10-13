@@ -84,6 +84,48 @@ def test_mean_median_var_std() raises:
         )
 
 
+def test_quantile_percentile() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.random.randn(6, 4)
+    var Anp = A.to_numpy()
+
+    for q in [0.0, 0.01, 0.25, 0.5, 0.503, 0.99, 1.0]:
+        assert_true(
+            np.isclose(
+                nm.quantile(A, Float64(q)),
+                np.quantile(Anp, q),
+                atol=PythonObject(0.001),
+            ),
+            String("`quantile` is broken for q={}").format(q),
+        )
+        assert_true(
+            np.isclose(
+                nm.percentile(A, Float64(q * 100)),
+                np.percentile(Anp, q * 100),
+                atol=PythonObject(0.001),
+            ),
+            String("`percentile` is broken for p={}").format(q * 100),
+        )
+
+    for axis in range(2):
+        check_is_close(
+            nm.quantile(A, Float64(0.75), axis=axis),
+            np.quantile(Anp, 0.75, axis=axis),
+            String("`quantile` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.percentile(A, Float64(75), axis=axis),
+            np.percentile(Anp, 75, axis=axis),
+            String("`percentile` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        _ = nm.quantile(A, Float64(1.5))
+
+    with assert_raises():
+        _ = nm.percentile(A, Float64(150))
+
+
 # ===-----------------------------------------------------------------------===#
 # NaN-aware reductions
 # ===-----------------------------------------------------------------------===#

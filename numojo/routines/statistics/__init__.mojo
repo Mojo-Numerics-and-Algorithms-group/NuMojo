@@ -18,6 +18,7 @@ Exports
 - `min`, `max`: Minimum and maximum values.
 - `variance`: Variance of array elements.
 - `stddev`: Standard deviation of array elements.
+- `quantile`, `percentile`: Order statistics via linear interpolation.
 - `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`: NaN-aware reductions.
 """
 
@@ -41,4 +42,8 @@ from .nanfunctions import (
     nanstd,
     nansum,
     nanvar,
+)
+from .percentiles import (
+    percentile,
+    quantile,
 )

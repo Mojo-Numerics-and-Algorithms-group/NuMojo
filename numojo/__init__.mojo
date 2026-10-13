@@ -234,6 +234,8 @@ from numojo.routines.statistics import (
     nanvar,
     nanstd,
     nanmedian,
+    quantile,
+    percentile,
 )
 
 from numojo.routines import bitwise

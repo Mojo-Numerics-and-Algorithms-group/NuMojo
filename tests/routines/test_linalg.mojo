@@ -473,9 +473,7 @@ def test_pinv() raises:
     var np = Python.import_module("numpy")
     var A = nm.random.randn(6, 4)
     var Ainv = nm.linalg.pinv(A)
-    check_is_close(
-        Ainv, np.linalg.pinv(A.to_numpy()), "`pinv` is broken"
-    )
+    check_is_close(Ainv, np.linalg.pinv(A.to_numpy()), "`pinv` is broken")
     check_is_close(
         Ainv @ A,
         nm.eye[nm.f64](4, 4).to_numpy(),

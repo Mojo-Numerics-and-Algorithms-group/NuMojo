@@ -416,7 +416,9 @@ def lstsq[
     return X2^
 
 
-def pinv[dtype: DType](A: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
+def pinv[
+    dtype: DType
+](A: NDArray[dtype]) raises -> NDArray[dtype] where dtype.is_floating_point():
     """
     Compute the Moore-Penrose pseudoinverse of `A`, via its singular
     value decomposition.

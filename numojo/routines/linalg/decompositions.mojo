@@ -738,7 +738,9 @@ def eig[
 
 def _singular_values_and_vectors[
     dtype: DType
-](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+](A: NDArray[dtype]) raises -> Tuple[
+    NDArray[dtype], NDArray[dtype]
+] where dtype.is_floating_point():
     """
     Compute the singular values and right singular vectors of `A` via
     the eigendecomposition of `A.T @ A`.
@@ -859,7 +861,9 @@ def svd[
 
 def matrix_rank[
     dtype: DType
-](A: NDArray[dtype], tol: Scalar[dtype] = 0) raises -> Int where dtype.is_floating_point():
+](
+    A: NDArray[dtype], tol: Scalar[dtype] = 0
+) raises -> Int where dtype.is_floating_point():
     """
     Estimate the rank of `A` by counting the number of singular values
     greater than `tol`.

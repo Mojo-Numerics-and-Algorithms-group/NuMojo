@@ -12,8 +12,8 @@ Linear algebra operations including matrix decompositions, norms, products, and 
 
 Exports
 -------
-- Decompositions: `lu_decomposition`, `qr`, `cholesky`.
-- Norms: `det`, `trace`.
+- Decompositions: `lu_decomposition`, `qr`, `cholesky`, `eig`, `eigh`.
+- Norms: `det`, `trace`, `norm`.
 - Products: `dot`, `matmul`, `cross`, `outer`, `kron`, `tensordot`.
 - Solving: `solve`, `lstsq`, `inv`.
 - Miscellaneous: `diagonal`.
@@ -22,10 +22,11 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
-from .decompositions import cholesky, lu_decomposition, qr
+from .decompositions import cholesky, eig, eigh, lu_decomposition, qr
 from .misc import diagonal
 from .norms import (
     det,
+    norm,
     trace,
 )
 from .products import (

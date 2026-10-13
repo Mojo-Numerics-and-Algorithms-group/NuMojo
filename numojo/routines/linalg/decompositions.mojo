@@ -20,12 +20,16 @@ Exports
 - `cholesky`: Cholesky factorization.
 - `eigh`: Eigenvalues/eigenvectors of a real symmetric matrix.
 - `eig`: Eigenvalues/eigenvectors of a general real matrix.
+- `svd`: Singular value decomposition.
+- `matrix_rank`: Rank via singular values.
+- `cond`: Condition number via singular values.
 """
 
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
 from std.math import sqrt
+from std.utils.numerics import inf
 
 # ===----------------------------------------------------------------------=== #
 # NuMojo
@@ -41,6 +45,7 @@ from numojo.routines.creation import (
     zeros,
 )
 from numojo.routines.linalg.products import matmul
+from numojo.routines.manipulation import transpose
 
 
 def lu_decomposition[
@@ -476,7 +481,7 @@ def eigh[
     var a = A.copy() if A.is_c_contiguous() else A.contiguous()
     var v = identity[dtype](n)
 
-    comptime num_sweeps = 60
+    comptime num_sweeps = 100
     for _sweep in range(num_sweeps):
         for p in range(n - 1):
             for q in range(p + 1, n):
@@ -729,3 +734,235 @@ def eig[
             V[Item(i, k)] = x.item(i)
 
     return w^, V^
+
+
+def _singular_values_and_vectors[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[NDArray[dtype], NDArray[dtype]] where dtype.is_floating_point():
+    """
+    Compute the singular values and right singular vectors of `A` via
+    the eigendecomposition of `A.T @ A`.
+
+    Does not check for rank deficiency. Returns a tuple `(s, V)`, where
+    `s` has shape `(k,)` (`k = min(m, n)`) and holds the singular
+    values in descending order, and `V` has shape `(n, k)` and holds
+    the corresponding right singular vectors as columns.
+    """
+
+    var m = A.shape[0]
+    var n = A.shape[1]
+    var k = min(m, n)
+
+    var AtA = matmul(transpose(A), A)
+    var w_v = eigh(AtA)
+    var w = w_v[0].copy()
+    var V_full = w_v[1].copy()
+
+    var s = full[dtype](shape=Shape(k), fill_value=SIMD[dtype, 1](0))
+    var V = zeros[dtype](Shape(n, k))
+    for i in range(k):
+        var idx = n - 1 - i
+        var eigval = w.item(idx)
+        if eigval < 0:
+            eigval = 0
+        s.store(i, sqrt(eigval))
+        for r in range(n):
+            V[Item(r, i)] = V_full.item(r, idx)
+
+    return s^, V^
+
+
+def svd[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Tuple[
+    NDArray[dtype], NDArray[dtype], NDArray[dtype]
+] where dtype.is_floating_point():
+    """
+    Compute the economy (reduced) singular value decomposition of `A`.
+
+    Computed via the eigendecomposition of `A.T @ A`. Only supports
+    matrices of full rank `min(m, n)`; raises if a singular value is
+    (numerically) zero.
+
+    Matches `numpy.linalg.svd(A, full_matrices=False)`: returns a
+    tuple `(U, s, Vh)` with `U` of shape `(m, k)`, `s` of shape `(k,)`
+    in descending order, and `Vh` of shape `(k, n)`, where
+    `k = min(m, n)`, such that `U @ diag(s) @ Vh` reconstructs `A`,
+    with orthonormal columns of `U` and orthonormal rows of `Vh`.
+
+    Parameters:
+        dtype: Data type of the input and output matrices. Should be a
+            floating-point type.
+
+    Args:
+        A: Matrix of shape `(m, n)`.
+
+    Returns:
+        A tuple `(U, s, Vh)`.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional.
+        NumojoError: If `A` is rank-deficient.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var A = nm.fromstring("[[1, 2], [3, 4], [5, 6]]")
+        var U: nm.NDArray
+        var s: nm.NDArray
+        var Vh: nm.NDArray
+        U, s, Vh = nm.linalg.svd(A)
+        print(U @ nm.diag(s) @ Vh)  # reconstructs A
+    ```
+    """
+
+    if A.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="svd",
+            )
+        )
+
+    var m = A.shape[0]
+    var s_V = _singular_values_and_vectors(A)
+    var s = s_V[0].copy()
+    var V = s_V[1].copy()
+    var k = s.shape[0]
+
+    var cutoff = s.item(0) * Scalar[dtype](1e-6)
+    for i in range(k):
+        if s.item(i) <= cutoff:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "`svd` only supports full-rank matrices, but a"
+                        " (near) zero singular value was found."
+                    ),
+                    location="svd",
+                )
+            )
+
+    var U = matmul(A, V)
+    for j in range(k):
+        var sj = s.item(j)
+        for i in range(m):
+            U[Item(i, j)] = U.item(i, j) / sj
+
+    var Vh = transpose(V)
+
+    return U^, s^, Vh^
+
+
+def matrix_rank[
+    dtype: DType
+](A: NDArray[dtype], tol: Scalar[dtype] = 0) raises -> Int where dtype.is_floating_point():
+    """
+    Estimate the rank of `A` by counting the number of singular values
+    greater than `tol`.
+
+    If `tol <= 0` (the default), a tolerance of
+    `largest_singular_value * 1e-6` is used.
+
+    Parameters:
+        dtype: Data type of the input matrix. Should be a
+            floating-point type.
+
+    Args:
+        A: Matrix of shape `(m, n)`.
+        tol: Singular values at or below this threshold are treated as
+            zero.
+
+    Returns:
+        The estimated rank of `A`.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var A = nm.fromstring("[[1, 2], [2, 4]]")  # rank 1
+        print(nm.linalg.matrix_rank(A))
+    ```
+    """
+
+    if A.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="matrix_rank",
+            )
+        )
+
+    var s_V = _singular_values_and_vectors(A)
+    var s = s_V[0].copy()
+    var k = s.shape[0]
+
+    var cutoff = tol
+    if cutoff <= 0:
+        cutoff = s.item(0) * Scalar[dtype](1e-6)
+
+    var rank = 0
+    for i in range(k):
+        if s.item(i) > cutoff:
+            rank += 1
+
+    return rank
+
+
+def cond[
+    dtype: DType
+](A: NDArray[dtype]) raises -> Scalar[dtype] where dtype.is_floating_point():
+    """
+    Compute the 2-norm condition number of `A`: the ratio of its
+    largest to smallest singular value.
+
+    Matches `numpy.linalg.cond(A)` (the default `p=2`). Other `ord`
+    values are not yet supported.
+
+    Parameters:
+        dtype: Data type of the input matrix. Should be a
+            floating-point type.
+
+    Args:
+        A: Matrix of shape `(m, n)`.
+
+    Returns:
+        The condition number of `A`. `inf` if `A` is rank-deficient.
+
+    Raises:
+        NumojoError: If the array is not 2-dimensional.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var A = nm.fromstring("[[1, 0], [0, 2]]")
+        print(nm.linalg.cond(A))  # 2.0
+    ```
+    """
+
+    if A.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="The array is not 2-dimensional!",
+                location="cond",
+            )
+        )
+
+    var s_V = _singular_values_and_vectors(A)
+    var s = s_V[0].copy()
+    var k = s.shape[0]
+    var s_min = s.item(k - 1)
+
+    if s_min == 0:
+        return inf[dtype]()
+
+    return s.item(0) / s_min

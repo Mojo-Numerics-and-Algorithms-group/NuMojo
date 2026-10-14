@@ -35,16 +35,16 @@ backend = {name = "pixi-build-mojo", version = "0.*", channels = [
 name = "numojo"
 
 [package.host-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 
 [package.build-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 
 [package.run-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 
 [tasks]
 # compile the package and copy it to the tests folder
@@ -85,7 +85,7 @@ release = "clear && pixi run final && pixi run doc_pages"
 
 [dependencies]
 mojo = ">=1.1.0,<2"
-max-core = ">=26.5.0,<27"
+max-core = ">=26.6.0,<27"
 numpy = ">=2.4.2,<3"
 python = ">=3.13,<3.14"
 scipy = ">=1.17.0,<2"

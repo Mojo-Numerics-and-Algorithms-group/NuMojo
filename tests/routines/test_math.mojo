@@ -432,5 +432,107 @@ def test_misc() raises:
     )
 
 
+def test_integrate() raises:
+    var np = Python.import_module("numpy")
+    var sp_integrate = Python.import_module("scipy.integrate")
+
+    var y = nm.random.randn(10)
+    var ynp = y.to_numpy()
+    var x = nm.fromstring("[0.0, 1.0, 2.5, 3.0, 5.0, 5.5, 7.0, 8.0, 8.5, 10.0]")
+    var xnp = x.to_numpy()
+
+    check_values_close(
+        nm.trapezoid(y), np.trapezoid(ynp), "`trapezoid` is broken"
+    )
+    check_values_close(
+        nm.trapezoid(y, x),
+        np.trapezoid(ynp, xnp),
+        "`trapezoid` with x is broken",
+    )
+
+    check(
+        nm.cumtrapz(y),
+        sp_integrate.cumulative_trapezoid(ynp),
+        "`cumtrapz` is broken",
+    )
+    check(
+        nm.cumtrapz(y, initial=Float64(0.0)),
+        sp_integrate.cumulative_trapezoid(ynp, initial=0.0),
+        "`cumtrapz` with initial is broken",
+    )
+    check(
+        nm.cumtrapz(y, x),
+        sp_integrate.cumulative_trapezoid(ynp, xnp),
+        "`cumtrapz` with x is broken",
+    )
+
+
+def test_ediff1d() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.fromstring[nm.i64]("[1, 2, 4, 7, 0]")
+    var anp = a.to_numpy()
+
+    check_is_close(nm.ediff1d(a), np.ediff1d(anp), "`ediff1d` is broken")
+
+    var to_begin = nm.fromstring[nm.i64]("[-99]")
+    var to_end = nm.fromstring[nm.i64]("[88, 99]")
+    check_is_close(
+        nm.ediff1d(a, to_end=to_end.copy(), to_begin=to_begin.copy()),
+        np.ediff1d(
+            anp, to_end=to_end.to_numpy(), to_begin=to_begin.to_numpy()
+        ),
+        "`ediff1d` with to_begin/to_end is broken",
+    )
+
+
+def test_convolve() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.random.randn(7)
+    var v = nm.random.randn(4)
+    var anp = a.to_numpy()
+    var vnp = v.to_numpy()
+
+    check_is_close(
+        nm.convolve(a, v), np.convolve(anp, vnp), "`convolve` full is broken"
+    )
+    check_is_close(
+        nm.convolve(a, v, mode="same"),
+        np.convolve(anp, vnp, mode="same"),
+        "`convolve` same is broken",
+    )
+    check_is_close(
+        nm.convolve(a, v, mode="valid"),
+        np.convolve(anp, vnp, mode="valid"),
+        "`convolve` valid is broken",
+    )
+
+    with assert_raises():
+        _ = nm.convolve(a, v, mode="bogus")
+
+
+def test_interp() raises:
+    var np = Python.import_module("numpy")
+    var xp = nm.fromstring("[1.0, 2.0, 3.0, 4.0]")
+    var fp = nm.fromstring("[3.0, 2.0, 0.0, 5.0]")
+    var x = nm.fromstring("[0.0, 1.5, 2.5, 3.5, 5.0]")
+    var xpnp = xp.to_numpy()
+    var fpnp = fp.to_numpy()
+    var xnp = x.to_numpy()
+
+    check_is_close(
+        nm.interp(x, xp, fp), np.interp(xnp, xpnp, fpnp), "`interp` is broken"
+    )
+    check_values_close(
+        nm.interp(Float64(2.5), xp, fp),
+        np.interp(2.5, xpnp, fpnp),
+        "`interp` scalar is broken",
+    )
+    check_is_close(
+        nm.interp(x, xp, fp, left=Float64(99.0), right=Float64(-1.0)),
+        np.interp(xnp, xpnp, fpnp, left=99.0, right=-1.0),
+        "`interp` left/right is broken",
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

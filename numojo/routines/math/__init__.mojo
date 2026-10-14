@@ -28,7 +28,11 @@ Rounding: `round`, `roundeven`, `trunc`, `ceil`, `floor`.
 
 Absolute value: `abs`.
 
-Differences and aggregation: `diff`, `gradient`, `sum`, `cumsum`, `prod`, `cumprod`.
+Differences and aggregation: `diff`, `gradient`, `ediff1d`, `sum`, `cumsum`, `prod`, `cumprod`.
+
+Integration: `trapezoid`, `cumtrapz`.
+
+Signal processing: `convolve`, `interp`.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -46,6 +50,7 @@ from .arithmetic import (
 )
 from .differences import (
     diff,
+    ediff1d,
     gradient,
 )
 from .exponents import (
@@ -76,6 +81,10 @@ from .hyper import (
     sinh,
     tanh,
 )
+from .integrate import (
+    cumtrapz,
+    trapezoid,
+)
 from .misc import (
     cbrt,
     clip,
@@ -96,6 +105,10 @@ from .rounding import (
     tfloor,
     tround,
     ttrunc,
+)
+from .signal import (
+    convolve,
+    interp,
 )
 from .sums import (
     cumsum,

@@ -35,9 +35,6 @@ def trapezoid[
     Integrate a flattened array using the composite trapezoidal rule,
     with uniformly-spaced samples.
 
-    Matches `numpy.trapezoid` with the default `dx` and
-    no `x` array.
-
     Parameters:
         dtype: The element type.
         returned_dtype: The returned data type, defaulting to float64.
@@ -75,8 +72,6 @@ def trapezoid[
     """
     Integrate a flattened array using the composite trapezoidal rule,
     with non-uniformly-spaced sample positions.
-
-    Matches `numpy.trapezoid` with an explicit `x`.
 
     Parameters:
         dtype: The element type of `y`.
@@ -143,9 +138,6 @@ def cumtrapz[
     Cumulatively integrate a flattened array using the composite
     trapezoidal rule, with uniformly-spaced samples.
 
-    Matches `scipy.integrate.cumulative_trapezoid` with the default
-    `dx` and no `x` array.
-
     Parameters:
         dtype: The element type.
         returned_dtype: The returned data type, defaulting to float64.
@@ -203,9 +195,6 @@ def cumtrapz[
     """
     Cumulatively integrate a flattened array using the composite
     trapezoidal rule, with non-uniformly-spaced sample positions.
-
-    Matches `scipy.integrate.cumulative_trapezoid` with an explicit
-    `x`.
 
     Parameters:
         dtype: The element type of `y`.

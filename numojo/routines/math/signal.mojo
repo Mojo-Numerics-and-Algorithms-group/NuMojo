@@ -133,7 +133,8 @@ def convolve[
 def interp[
     dtype: DType,
     xpdtype: DType,
-    fpdtype: DType, //,
+    fpdtype: DType,
+    //,
     returned_dtype: DType = DType.float64,
 ](
     x: Scalar[dtype],
@@ -185,8 +186,9 @@ def interp[
         raise Error(
             NumojoError(
                 category="shape",
-                message="`xp` and `fp` must be 1-dimensional and the same"
-                " length.",
+                message=(
+                    "`xp` and `fp` must be 1-dimensional and the same length."
+                ),
                 location="interp",
             )
         )
@@ -207,9 +209,7 @@ def interp[
     if xf < xp0:
         return left.value() if left else fp.item(0).cast[returned_dtype]()
     if xf > xpn:
-        return (
-            right.value() if right else fp.item(n - 1).cast[returned_dtype]()
-        )
+        return right.value() if right else fp.item(n - 1).cast[returned_dtype]()
 
     var lo = 0
     var hi = n - 1
@@ -233,7 +233,8 @@ def interp[
 def interp[
     dtype: DType,
     xpdtype: DType,
-    fpdtype: DType, //,
+    fpdtype: DType,
+    //,
     returned_dtype: DType = DType.float64,
 ](
     x: NDArray[dtype],

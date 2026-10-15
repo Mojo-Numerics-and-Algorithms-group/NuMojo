@@ -478,9 +478,7 @@ def test_ediff1d() raises:
     var to_end = nm.fromstring[nm.i64]("[88, 99]")
     check_is_close(
         nm.ediff1d(a, to_end=to_end.copy(), to_begin=to_begin.copy()),
-        np.ediff1d(
-            anp, to_end=to_end.to_numpy(), to_begin=to_begin.to_numpy()
-        ),
+        np.ediff1d(anp, to_end=to_end.to_numpy(), to_begin=to_begin.to_numpy()),
         "`ediff1d` with to_begin/to_end is broken",
     )
 

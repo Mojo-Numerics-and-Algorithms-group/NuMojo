@@ -153,5 +153,27 @@ def test_unique_all_axis() raises:
     check_is_close(result[3], npresult[3], "`unique_all` axis=0 counts fails.")
 
 
+def test_isin() raises:
+    var np = Python.import_module("numpy")
+
+    var e = nm.fromstring[nm.i32]("[1, 2, 3, 4, 5]")
+    var t = nm.fromstring[nm.i32]("[2, 4]")
+    var enp = e.to_numpy()
+    var tnp = t.to_numpy()
+
+    check(nm.isin(e, t), np.isin(enp, tnp), "`isin` fails.")
+    check(
+        nm.isin(e, t, invert=True),
+        np.isin(enp, tnp, invert=PythonObject(True)),
+        "`isin` with invert=True fails.",
+    )
+
+    var B = nm.reshape(
+        nm.fromstring[nm.i32]("[1, 2, 3, 4, 5, 6]"), Shape(2, 3)
+    )
+    var Bnp = B.to_numpy()
+    check(nm.isin(B, t), np.isin(Bnp, tnp), "`isin` 2-D fails.")
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

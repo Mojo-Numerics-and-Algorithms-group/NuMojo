@@ -1,8 +1,10 @@
 from std.python import Python, PythonObject
+from std.testing.testing import assert_true
 from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 import numojo as nm
+from numojo import Shape, Item
 
 
 def test_sort() raises:
@@ -142,6 +144,78 @@ def test_sort_stable() raises:
             np.sort(S.to_numpy(), axis=i, stable=PythonObject(True)),
             String("`sort` 6d stably by axis {} is broken").format(i),
         )
+
+
+def test_partition() raises:
+    var a = nm.fromstring[nm.i32]("[3, 1, 4, 1, 5, 9, 2, 6]")
+    var sorted_a = nm.sort(a)
+
+    for kth in range(a.size):
+        var part = nm.partition(a, kth)
+        assert_true(
+            part.item(kth) == sorted_a.item(kth),
+            "`partition` kth value mismatch",
+        )
+        for i in range(kth):
+            assert_true(
+                part.item(i) <= part.item(kth),
+                "`partition` element before kth exceeds kth value",
+            )
+        for i in range(kth + 1, a.size):
+            assert_true(
+                part.item(i) >= part.item(kth),
+                "`partition` element after kth is below kth value",
+            )
+
+    # Negative kth.
+    var part_neg = nm.partition(a, -2)
+    assert_true(
+        part_neg.item(a.size - 2) == sorted_a.item(a.size - 2),
+        "`partition` with negative kth is broken",
+    )
+
+
+def test_argpartition() raises:
+    var a = nm.fromstring[nm.i32]("[3, 1, 4, 1, 5, 9, 2, 6]")
+    var sorted_a = nm.sort(a)
+    var kth = 3
+
+    var indices = nm.argpartition(a, kth)
+    var reordered = nm.NDArray[nm.i32](Shape(a.size))
+    for i in range(a.size):
+        reordered[Item(i)] = a.item(Int(indices.item(i)))
+
+    assert_true(
+        reordered.item(kth) == sorted_a.item(kth),
+        "`argpartition` kth value mismatch",
+    )
+    for i in range(kth):
+        assert_true(
+            reordered.item(i) <= reordered.item(kth),
+            "`argpartition` element before kth exceeds kth value",
+        )
+    for i in range(kth + 1, a.size):
+        assert_true(
+            reordered.item(i) >= reordered.item(kth),
+            "`argpartition` element after kth is below kth value",
+        )
+
+
+def test_lexsort() raises:
+    var np = Python.import_module("numpy")
+
+    var surnames = nm.fromstring[nm.i32]("[1, 2, 1, 2]")
+    var ages = nm.fromstring[nm.i32]("[30, 25, 20, 25]")
+
+    var keys = List[nm.NDArray[nm.i32]]()
+    keys.append(ages.copy())
+    keys.append(surnames.copy())
+
+    var order = nm.lexsort(keys)
+    var order_np = np.lexsort(
+        Python.tuple(ages.to_numpy(), surnames.to_numpy())
+    )
+    check(order, order_np, "`lexsort` is broken")
 
 
 def main() raises:

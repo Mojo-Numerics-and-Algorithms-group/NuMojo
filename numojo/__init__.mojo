@@ -172,7 +172,9 @@ from numojo.routines.math import (
     fma,
     remainder,
 )
-from numojo.routines.math import gradient, diff
+from numojo.routines.math import gradient, diff, ediff1d
+from numojo.routines.math import trapezoid, cumtrapz
+from numojo.routines.math import convolve, interp
 from numojo.routines.math import exp, exp2, expm1, log, log2, log10, log1p
 from numojo.routines.math import (
     max,

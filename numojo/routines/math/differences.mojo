@@ -18,6 +18,8 @@ Exports
 -------
 - `gradient`: Compute gradients using the trapezoidal rule.
 - `diff`: Compute n-th order finite differences.
+- `ediff1d`: Compute the differences of a flattened array, with
+  optional values prepended/appended.
 """
 
 # TODO: Add Variant[NDArray, Scalar, ...] to include all possibilities
@@ -32,9 +34,12 @@ from max.algorithm import parallelize
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.indexing.item import Item
 from numojo.core.layout.ndshape import NDArrayShape
 from numojo.core.ndarray import NDArray
+from numojo.core.type_aliases import Shape
 from numojo.routines.creation import arange
+from numojo.routines.manipulation import ravel
 
 # ===----------------------------------------------------------------------=== #
 # Gradient computation using the trapezoidal rule.
@@ -129,3 +134,68 @@ def diff[
             result.store(i, current.load(i + 1) - current.load(i))
         current = result^
     return current^
+
+
+# ===----------------------------------------------------------------------=== #
+# Flattened differences
+# ===----------------------------------------------------------------------=== #
+
+
+def ediff1d[
+    dtype: DType
+](
+    ary: NDArray[dtype],
+    to_end: Optional[NDArray[dtype]] = None,
+    to_begin: Optional[NDArray[dtype]] = None,
+) raises -> NDArray[dtype]:
+    """
+    Compute the consecutive differences of a flattened array, with
+    optional values prepended and/or appended.
+
+    Matches `numpy.ediff1d`.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        ary: An array. It is treated as flat regardless of its shape.
+        to_end: Values to append to the end of the differences.
+        to_begin: Values to prepend to the start of the differences.
+
+    Returns:
+        An array of consecutive differences, of length
+        `ary.size - 1 + to_begin.size + to_end.size`.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var a = nm.fromstring("[1.0, 2.0, 4.0, 7.0]")
+        print(nm.ediff1d(a))  # [1.0, 2.0, 3.0]
+    ```
+    """
+
+    var flat = ravel(ary)
+    var n_diff = max(flat.size - 1, 0)
+    var n_begin = to_begin.value().size if to_begin else 0
+    var n_end = to_end.value().size if to_end else 0
+
+    var result = NDArray[dtype](Shape(n_begin + n_diff + n_end))
+
+    var offset = 0
+    if to_begin:
+        var tb = to_begin.value().copy()
+        for i in range(tb.size):
+            result[Item(offset + i)] = tb.item(i)
+        offset += tb.size
+
+    for i in range(n_diff):
+        result[Item(offset + i)] = flat.item(i + 1) - flat.item(i)
+    offset += n_diff
+
+    if to_end:
+        var te = to_end.value().copy()
+        for i in range(te.size):
+            result[Item(offset + i)] = te.item(i)
+
+    return result^

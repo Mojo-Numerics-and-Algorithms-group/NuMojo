@@ -322,7 +322,13 @@ from numojo.routines.manipulation import (
 from numojo.routines import random
 
 from numojo.routines import sorting
-from numojo.routines.sorting import sort, argsort, partition, argpartition, lexsort
+from numojo.routines.sorting import (
+    sort,
+    argsort,
+    partition,
+    argpartition,
+    lexsort,
+)
 
 from numojo.routines import searching
 from numojo.routines.searching import argmax, argmin, count_nonzero

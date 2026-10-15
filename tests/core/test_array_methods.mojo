@@ -164,7 +164,9 @@ def test_swapaxes_method() raises:
 def test_repeat_method() raises:
     var np = Python.import_module("numpy")
     var a = nm.fromstring[nm.i32]("[1, 2, 3]")
-    check(a.repeat(2), np.repeat(a.to_numpy(), 2), "`NDArray.repeat()` is broken")
+    check(
+        a.repeat(2), np.repeat(a.to_numpy(), 2), "`NDArray.repeat()` is broken"
+    )
 
     var b = nm.reshape(nm.fromstring[nm.i32]("[1, 2, 3, 4]"), Shape(2, 2))
     check(

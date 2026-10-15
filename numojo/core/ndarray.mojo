@@ -6438,8 +6438,7 @@ struct NDArray[dtype: DType = DType.float64](
                 NumojoError(
                     category="value",
                     message=(
-                        "Error in `choose`: `choices` must be a non-empty"
-                        " list."
+                        "Error in `choose`: `choices` must be a non-empty list."
                     ),
                     location="choose",
                 )
@@ -6469,8 +6468,7 @@ struct NDArray[dtype: DType = DType.float64](
                     NumojoError(
                         category="index",
                         message=String(
-                            "Error in `choose`: index {} not in bound"
-                            " [0, {})"
+                            "Error in `choose`: index {} not in bound [0, {})"
                         ).format(k, n_choices),
                         location="choose",
                     )
@@ -6513,9 +6511,9 @@ struct NDArray[dtype: DType = DType.float64](
                 var hi = itemsize - 1
                 while lo < hi:
                     var tmp = byte_ptr.unsafe_offset(base + lo)[]
-                    byte_ptr.unsafe_offset(base + lo)[] = byte_ptr.unsafe_offset(
-                        base + hi
-                    )[]
+                    byte_ptr.unsafe_offset(
+                        base + lo
+                    )[] = byte_ptr.unsafe_offset(base + hi)[]
                     byte_ptr.unsafe_offset(base + hi)[] = tmp
                     lo += 1
                     hi -= 1

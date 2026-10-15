@@ -168,9 +168,7 @@ def test_isin() raises:
         "`isin` with invert=True fails.",
     )
 
-    var B = nm.reshape(
-        nm.fromstring[nm.i32]("[1, 2, 3, 4, 5, 6]"), Shape(2, 3)
-    )
+    var B = nm.reshape(nm.fromstring[nm.i32]("[1, 2, 3, 4, 5, 6]"), Shape(2, 3))
     var Bnp = B.to_numpy()
     check(nm.isin(B, t), np.isin(Bnp, tnp), "`isin` 2-D fails.")
 

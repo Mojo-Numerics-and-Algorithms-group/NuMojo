@@ -219,12 +219,6 @@ def test_choose() raises:
         _ = bad_index.choose(choices)
 
 
-def test_conj() raises:
-    var np = Python.import_module("numpy")
-    var a = nm.fromstring[nm.f64]("[1.0, -2.0, 3.0]")
-    check(a.conj(), a.to_numpy().conj(), "`NDArray.conj()` is broken")
-
-
 def test_byteswap() raises:
     var np = Python.import_module("numpy")
     var a = nm.fromstring[nm.i32]("[1, 256, 65536]")

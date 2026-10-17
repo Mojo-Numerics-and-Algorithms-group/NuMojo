@@ -15,6 +15,8 @@ Exports
 - `unique`, `unique_counts`, `unique_index`, `unique_inverse`, `unique_all`:
   Sorted unique elements of an array (optionally along an axis), together
   with counts, first-occurrence indices, and/or reconstruction indices.
+- `isin`: Test whether each element of an array is also present in
+  another array.
 
 Notes
 -----
@@ -166,6 +168,24 @@ def _unique_rows_core[
         inverse[row] = len(unique_rows) - 1
 
     return (unique_rows^, first_row_index^, inverse^, counts^)
+
+
+def _sorted_contains[
+    dtype: DType
+](values: List[Scalar[dtype]], n: Int, v: Scalar[dtype]) -> Bool:
+    """Internal: binary-searches a sorted `List[Scalar[dtype]]` for `v`."""
+    var lo = 0
+    var hi = n - 1
+    while lo <= hi:
+        var mid = (lo + hi) // 2
+        var mid_val = values[mid]
+        if mid_val == v:
+            return True
+        elif mid_val < v:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return False
 
 
 def _normalize_axis(axis: Int, ndim: Int, location: String) raises -> Int:
@@ -739,3 +759,64 @@ def unique_all[
         out_inverse^,
         out_counts^,
     )
+
+
+# ===----------------------------------------------------------------------=== #
+# isin
+# ===----------------------------------------------------------------------=== #
+
+
+def isin[
+    dtype: DType, //
+](
+    element: NDArray[dtype],
+    test_elements: NDArray[dtype],
+    invert: Bool = False,
+) raises -> NDArray[DType.bool]:
+    """
+    Tests whether each element of `element` is also present in
+    `test_elements`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        element: An NDArray whose elements are tested for membership.
+        test_elements: The values against which each element of
+            `element` is tested.
+        invert: If True, the returned array is inverted (True where the
+            value is *not* in `test_elements`). Default is False.
+
+    Returns:
+        A boolean array with the same shape as `element`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.fromstring[nm.i32]("[1, 2, 3, 4, 5]")
+        var b = nm.fromstring[nm.i32]("[2, 4]")
+        print(nm.isin(a, b))  # [False, True, False, True, False]
+        ```
+    """
+    var test_flat: NDArray[dtype]
+    if test_elements.ndim == 1:
+        test_flat = test_elements.contiguous()
+    else:
+        test_flat = ravel(test_elements, order="C")
+
+    var test_core = _unique_core(test_flat)
+    var test_values = test_core[0].copy()
+    var m = len(test_values)
+
+    var elem_flat: NDArray[dtype]
+    if element.ndim == 1:
+        elem_flat = element.contiguous()
+    else:
+        elem_flat = ravel(element, order="C")
+
+    var result = NDArray[DType.bool](element.shape)
+    for i in range(elem_flat.size):
+        var found = _sorted_contains(test_values, m, elem_flat.unsafe_get(i))
+        result.unsafe_set(i, found != invert)
+    return result^

@@ -28,7 +28,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 from std.algorithm import vectorize
 from max.algorithm import parallelize
-from std.sys.info import num_performance_cores
+from std.sys.info import num_performance_cores, size_of
 import std.builtin.bool as builtin_bool
 import std.math as builtin_math
 from std.collections.optional import Optional
@@ -6308,6 +6308,390 @@ struct NDArray[dtype: DType = DType.float64](
             The variance of the array along the axis.
         """
         return statistics.variance[returned_dtype](self, axis=axis, ddof=ddof)
+
+    def swapaxes(self, axis1: Int, axis2: Int) raises -> Self:
+        """Interchanges two axes of the array. See `numojo.swapaxes()` for
+        more details.
+
+        Args:
+            axis1: First axis. Supports negative indices.
+            axis2: Second axis. Supports negative indices.
+
+        Returns:
+            An array with `axis1` and `axis2` interchanged.
+
+        Raises:
+            NumojoError: If either axis is out of bound.
+        """
+        return manipulation.swapaxes(self, axis1, axis2)
+
+    def repeat(self, repeats: Int) raises -> NDArray[Self.dtype]:
+        """Repeats each element of the flattened array `repeats` times.
+        See `numojo.repeat()` for more details.
+
+        Args:
+            repeats: The number of repetitions for each element. Must be
+                non-negative.
+
+        Returns:
+            A 1-d array with each element of the flattened array repeated
+            `repeats` times.
+
+        Raises:
+            NumojoError: If `repeats` is negative.
+        """
+        return manipulation.repeat(self, repeats)
+
+    def repeat(self, repeats: Int, axis: Int) raises -> NDArray[Self.dtype]:
+        """Repeats each slice of the array along `axis` `repeats` times.
+        See `numojo.repeat()` for more details.
+
+        Args:
+            repeats: The number of repetitions for each slice. Must be
+                non-negative.
+            axis: The axis along which to repeat. Supports negative
+                indices.
+
+        Returns:
+            An array with each slice along `axis` repeated `repeats`
+            times.
+
+        Raises:
+            NumojoError: If `repeats` is negative or `axis` is out of
+                bound.
+        """
+        return manipulation.repeat(self, repeats, axis=axis)
+
+    def partition(mut self, kth: Int) raises -> NDArray[Self.dtype]:
+        """Returns a partially sorted copy of the flattened array. See
+        `numojo.partition()` for more details.
+
+        Args:
+            kth: The index (into the flattened, sorted array) to
+                partition around. Supports negative indices.
+
+        Returns:
+            A partially sorted, flattened copy of the array.
+
+        Raises:
+            NumojoError: If `kth` is out of bound.
+        """
+        return sorting.partition(self, kth)
+
+    def argpartition(mut self, kth: Int) raises -> NDArray[DType.int]:
+        """Returns the indices that would partition the flattened array.
+        See `numojo.argpartition()` for more details.
+
+        Args:
+            kth: The index (into the flattened, sorted array) to
+                partition around. Supports negative indices.
+
+        Returns:
+            Indices that would partition the array.
+
+        Raises:
+            NumojoError: If `kth` is out of bound.
+        """
+        return sorting.argpartition(self, kth)
+
+    def choose[
+        cdtype: DType, //
+    ](self, choices: List[NDArray[cdtype]]) raises -> NDArray[cdtype]:
+        """Constructs an array by picking, for each element of the array,
+        the corresponding element of `choices[self[i]]`.
+
+        The array on which this method is called acts as an index array
+        (its values are used as indices into `choices`); regardless of
+        its shape, it is treated as a flattened array.
+
+        Parameters:
+            cdtype: The element type of the entries of `choices`.
+
+        Args:
+            choices: A non-empty list of arrays to choose from, each
+                with the same number of elements as this array.
+
+        Returns:
+            An array with the same shape as this array (flattened),
+            where element `i` is `choices[self[i]][i]`.
+
+        Raises:
+            NumojoError: If `choices` is empty, if any entry of
+                `choices` does not have the same number of elements as
+                this array, or if a value of this array is out of bound
+                for indexing into `choices`.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var index = nm.fromstring[nm.i32]("[0, 1, 0, 1]")
+            var c0 = nm.fromstring[nm.i32]("[10, 20, 30, 40]")
+            var c1 = nm.fromstring[nm.i32]("[1, 2, 3, 4]")
+            var choices = List(c0, c1)
+            print(index.choose(choices))  # [10, 2, 30, 4]
+            ```
+        """
+        var n_choices = len(choices)
+        if n_choices == 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=(
+                        "Error in `choose`: `choices` must be a non-empty list."
+                    ),
+                    location="choose",
+                )
+            )
+
+        var idx = self.contiguous()
+        var choices_c = List[NDArray[cdtype]]()
+        for c in range(n_choices):
+            if choices[c].size != idx.size:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Error in `choose`: `choices[{}]` has {}"
+                            " elements, expected {}."
+                        ).format(c, choices[c].size, idx.size),
+                        location="choose",
+                    )
+                )
+            choices_c.append(choices[c].contiguous())
+
+        var result = NDArray[cdtype](idx.shape)
+        for i in range(idx.size):
+            var k = Int(idx.unsafe_get(i))
+            if (k < 0) or (k >= n_choices):
+                raise Error(
+                    NumojoError(
+                        category="index",
+                        message=String(
+                            "Error in `choose`: index {} not in bound [0, {})"
+                        ).format(k, n_choices),
+                        location="choose",
+                    )
+                )
+            result.unsafe_set(i, choices_c[k].unsafe_get(i))
+        return result^
+
+    def byteswap(mut self, inplace: Bool = False) raises -> Self:
+        """Swaps the byte order of each element of the array.
+
+        Args:
+            inplace: If True, the byte order is swapped in-place (`self`
+                is mutated) and `self` is returned; otherwise `self` is
+                left unchanged and a swapped copy is returned. Default
+                is False.
+
+        Returns:
+            The array with the byte order of every element reversed.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.fromstring[nm.i32]("[1, 256, 65536]")
+            print(a.byteswap())
+            ```
+        """
+        if not inplace:
+            var result = self.copy()
+            _ = result.byteswap(inplace=True)
+            return result^
+
+        comptime itemsize = size_of[Self.dtype]()
+
+        comptime if itemsize > 1:
+            var byte_ptr = self.unsafe_ptr().unsafe_bitcast[UInt8]()
+            for elem in range(self.size):
+                var base = elem * itemsize
+                var lo = 0
+                var hi = itemsize - 1
+                while lo < hi:
+                    var tmp = byte_ptr.unsafe_offset(base + lo)[]
+                    byte_ptr.unsafe_offset(
+                        base + lo
+                    )[] = byte_ptr.unsafe_offset(base + hi)[]
+                    byte_ptr.unsafe_offset(base + hi)[] = tmp
+                    lo += 1
+                    hi -= 1
+
+        return self.copy()
+
+    def getfield[
+        target: DType
+    ](self, offset: Int = 0) raises -> NDArray[target]:
+        """Returns a view-like copy of the array, reinterpreting the bytes
+        of each element starting at byte `offset` as `target`.
+
+        Parameters:
+            target: The dtype through which the bytes of each element are
+                reinterpreted.
+
+        Args:
+            offset: The byte offset, within each element, at which the
+                `target` field starts. Default is 0.
+
+        Returns:
+            An array of dtype `target` with the same shape as this array,
+            where each element is composed of the bytes of the
+            corresponding element of this array, starting at `offset`.
+
+        Raises:
+            NumojoError: If `offset` is negative, or if
+                `offset + size_of[target]()` exceeds the size (in bytes)
+                of each element of this array.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.fromstring[nm.f64]("[1.0, 2.0, 3.0]")
+            print(a.getfield[nm.i64]())  # bit pattern of each float64
+            ```
+        """
+        comptime src_itemsize = size_of[Self.dtype]()
+        comptime tgt_itemsize = size_of[target]()
+        if (offset < 0) or (offset + tgt_itemsize > src_itemsize):
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "Error in `getfield`: offset {} with field size {}"
+                        " does not fit within the element size {}."
+                    ).format(offset, tgt_itemsize, src_itemsize),
+                    location="getfield",
+                )
+            )
+
+        var src = self.contiguous()
+        var result = NDArray[target](src.shape)
+        var src_ptr = src.unsafe_ptr().unsafe_bitcast[UInt8]()
+        var dst_ptr = result.unsafe_ptr().unsafe_bitcast[UInt8]()
+        for i in range(src.size):
+            var src_base = i * src_itemsize + offset
+            var dst_base = i * tgt_itemsize
+            for b in range(tgt_itemsize):
+                dst_ptr.unsafe_offset(dst_base + b)[] = src_ptr.unsafe_offset(
+                    src_base + b
+                )[]
+        return result^
+
+    def setfield[
+        source: DType, //
+    ](mut self, val: NDArray[source], offset: Int = 0) raises:
+        """Writes the bytes of `val`'s elements into this array in-place,
+        starting at byte `offset` within each element.
+
+        Parameters:
+            source: The dtype of `val`.
+
+        Args:
+            val: An array, of the same number of elements as this array,
+                whose per-element bytes are written into this array.
+            offset: The byte offset, within each element of this array,
+                at which to start writing. Default is 0.
+
+        Raises:
+            NumojoError: If `offset` is negative, if
+                `offset + size_of[source]()` exceeds the size (in bytes)
+                of each element of this array, or if `val` does not have
+                the same number of elements as this array.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var a = nm.fromstring[nm.f64]("[1.0, 2.0, 3.0]")
+            var bits = nm.fromstring[nm.i64]("[0, 0, 0]")
+            a.setfield(bits)  # zero out the bit pattern of each float64
+            ```
+        """
+        comptime dst_itemsize = size_of[Self.dtype]()
+        comptime src_itemsize = size_of[source]()
+        if (offset < 0) or (offset + src_itemsize > dst_itemsize):
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message=String(
+                        "Error in `setfield`: offset {} with field size {}"
+                        " does not fit within the element size {}."
+                    ).format(offset, src_itemsize, dst_itemsize),
+                    location="setfield",
+                )
+            )
+        if val.size != self.size:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "Error in `setfield`: `val` has {} elements,"
+                        " expected {}."
+                    ).format(val.size, self.size),
+                    location="setfield",
+                )
+            )
+
+        var src = val.contiguous()
+        if not self.is_c_contiguous():
+            self = self.contiguous()
+        var src_ptr = src.unsafe_ptr().unsafe_bitcast[UInt8]()
+        var dst_ptr = self.unsafe_ptr().unsafe_bitcast[UInt8]()
+        for i in range(self.size):
+            var src_base = i * src_itemsize
+            var dst_base = i * dst_itemsize + offset
+            for b in range(src_itemsize):
+                dst_ptr.unsafe_offset(dst_base + b)[] = src_ptr.unsafe_offset(
+                    src_base + b
+                )[]
+
+    def tobytes(self, order: String = "C") raises -> PythonObject:
+        """Returns the raw data of the array as a Python `bytes` object.
+
+        Args:
+            order: The memory layout to use when serializing the array:
+                `"C"` for row-major, `"F"` for column-major, or `"A"` to
+                use `"F"` if the array is Fortran-contiguous and `"C"`
+                otherwise. Default is `"C"`.
+
+        Returns:
+            A Python `bytes` object holding the raw data of the array.
+        """
+        return self.to_numpy().tobytes(order=PythonObject(order))
+
+    def tofile(
+        self, fid: String, sep: String = "", format: String = "%s"
+    ) raises:
+        """Writes the array to a file as text or binary (default).
+        See `numpy.ndarray.tofile()` for more details.
+
+        Args:
+            fid: The file (by name) to write the array to.
+            sep: The separator between array elements if the file is in
+                text mode. An empty string (the default) writes the file
+                in binary mode.
+            format: The format string used when writing in text mode
+                (ignored in binary mode).
+
+        Raises:
+            NumojoError: If the array is not contiguous.
+        """
+        self.to_numpy().tofile(
+            file=PythonObject(fid),
+            sep=PythonObject(sep),
+            format=PythonObject(format),
+        )
+
+    def dump(self, file: String) raises:
+        """Pickles (serializes) the array to a file.
+        See `numpy.ndarray.dump()` for more details.
+
+        Args:
+            file: The file (by name) to pickle the array to.
+        """
+        self.to_numpy().dump(PythonObject(file))
 
     def squeeze(mut self, axis: Int) raises:
         """Removes (squeezes) a single dimension of size 1 from the array shape.

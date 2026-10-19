@@ -143,10 +143,21 @@ from numojo.routines.io import set_printoptions
 from numojo.routines.io import load_npy, save_npy, load_torch, save_torch
 
 from numojo.routines import linalg
-from numojo.routines.linalg.misc import diagonal
+from numojo.routines.linalg import (
+    cross,
+    diagonal,
+    dot,
+    kron,
+    matmul,
+    outer,
+    tensordot,
+    trace,
+)
 
 from numojo.routines import logic
 from numojo.routines.logic import (
+    allclose,
+    array_equal,
     greater,
     greater_equal,
     less,
@@ -155,7 +166,14 @@ from numojo.routines.logic import (
     not_equal,
     isinf,
     isfinite,
+    isclose,
+    isneginf,
+    isposinf,
     isnan,
+    logical_and,
+    logical_not,
+    logical_or,
+    logical_xor,
     any,
     all,
 )
@@ -245,7 +263,14 @@ from numojo.routines.statistics import (
 )
 
 from numojo.routines import bitwise
-from numojo.routines.bitwise import invert
+from numojo.routines.bitwise import (
+    bitwise_and,
+    bitwise_or,
+    bitwise_xor,
+    invert,
+    left_shift,
+    right_shift,
+)
 
 from numojo.routines import creation
 from numojo.routines.creation import (
@@ -271,6 +296,7 @@ from numojo.routines.creation import (
     vander,
     fromstring,
     array,
+    meshgrid,
 )
 
 from numojo.routines import indexing
@@ -284,11 +310,13 @@ from numojo.routines.indexing import (
     ravel_multi_index,
     flatnonzero,
     fancy_index,
+    put,
 )
 
 
 from numojo.routines import manipulation
 from numojo.routines.manipulation import (
+    copyto,
     ndim,
     shape,
     size,

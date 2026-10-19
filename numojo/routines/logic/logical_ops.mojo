@@ -177,11 +177,12 @@ def logical_not[
         ```
     """
 
-    var source = a.contiguous()
-    var result = NDArray[DType.bool](a.shape)
-    for i in range(result.size):
-        result.unsafe_set(i, source.unsafe_get(i) == Scalar[dtype](0))
-    return result^
+    def kernel[
+        dtype: DType, width: Int
+    ](a: SIMD[dtype, width]) capturing -> SIMD[DType.bool, width]:
+        return ~a.cast[DType.bool]()
+
+    return HostExecutor.apply_unary_predicate[dtype, kernel](a)
 
 
 def logical_xor[

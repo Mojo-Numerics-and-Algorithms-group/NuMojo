@@ -159,6 +159,16 @@ def test_logical_operations() raises:
     check(nm.logical_xor(a, b), np.logical_xor(a_np, b_np), "logical_xor")
     check(nm.logical_not(a), np.logical_not(a_np), "logical_not")
 
+    # Exercise both the full SIMD-width path and scalar tail with signed
+    # integral values. Logical NOT must test equality with zero rather than
+    # applying a bitwise complement.
+    var signed = nm.arange[nm.i32](-19, 22)
+    check(
+        nm.logical_not(signed),
+        np.logical_not(signed.to_numpy()),
+        "logical_not signed SIMD and tail",
+    )
+
 
 def test_truth_all_any() raises:
     var np = Python.import_module("numpy")

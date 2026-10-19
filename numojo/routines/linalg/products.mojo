@@ -137,7 +137,22 @@ def dot[
                     location="dot",
                 )
             )
-        return _0darray(val=sum(array1 * array2))
+        comptime width = simd_width_of[dtype]()
+        var accumulator = SIMD[dtype, width](0)
+        var i = 0
+        while i + width <= array1.size:
+            accumulator += array1.unsafe_load[width=width](
+                i
+            ) * array2.unsafe_load[width=width](i)
+            i += width
+
+        var result = accumulator.reduce_add()
+        while i < array1.size:
+            result += (
+                array1.unsafe_load[width=1](i) * array2.unsafe_load[width=1](i)
+            ).reduce_add()
+            i += 1
+        return _0darray(val=result)
     if array1.ndim <= 2 and array2.ndim <= 2:
         return matmul(array1, array2)
     raise Error(

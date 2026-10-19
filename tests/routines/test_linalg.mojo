@@ -265,6 +265,23 @@ def test_top_level_products_and_trace() raises:
     )
     check_is_close(nm.trace(A), np.trace(A.to_numpy()), "trace")
 
+    # Use a length that exercises full SIMD loads and the scalar tail.
+    var long_a = nm.arange[nm.f64](-18, 19)
+    var long_b = nm.arange[nm.f64](7, 44)
+    check_is_close(
+        nm.dot(long_a, long_b),
+        np.dot(long_a.to_numpy(), long_b.to_numpy()),
+        "dot SIMD accumulator and tail",
+    )
+
+    var int_a = nm.arange[nm.i32](-20, 21)
+    var int_b = nm.arange[nm.i32](3, 44)
+    check_is_close(
+        nm.dot(int_a, int_b),
+        np.dot(int_a.to_numpy(), int_b.to_numpy()),
+        "integer dot SIMD accumulator and tail",
+    )
+
 
 def test_outer() raises:
     var np = Python.import_module("numpy")

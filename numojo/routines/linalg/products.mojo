@@ -143,7 +143,9 @@ def dot[
     raise Error(
         NumojoError(
             category="shape",
-            message=("dot currently supports arrays with at most two dimensions."),
+            message=(
+                "dot currently supports arrays with at most two dimensions."
+            ),
             location="dot",
         )
     )

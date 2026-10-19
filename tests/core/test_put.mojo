@@ -1,5 +1,7 @@
 from std.testing import TestSuite
 from std.testing.testing import assert_equal, assert_true
+from std.python import Python
+from utils_for_test import check_with_dtype
 
 import numojo as nm
 from numojo.prelude import *
@@ -13,6 +15,18 @@ def test_put_array_values_happy_path() raises:
     assert_equal(Int(a.item(1)), 1)
     assert_equal(Int(a.item(2)), 20)
     assert_equal(Int(a.item(3)), 3)
+
+
+def test_top_level_put_matches_numpy() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.arange[nm.i32](0, 6)
+    var indices = nm.array[nm.int]("[0, 2, 5]")
+    var values = nm.array[nm.i32]("[10, 20, 30]")
+    var expected = np.arange(0, 6, dtype=np.int32)
+
+    nm.put(a, indices, values)
+    np.put(expected, indices.to_numpy(), values.to_numpy())
+    check_with_dtype(a, expected, "top-level put must match NumPy")
 
 
 def test_put_scalar_broadcast() raises:

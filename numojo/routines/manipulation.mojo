@@ -24,6 +24,7 @@ Exports
 - `split`, `array_split`: Splitting.
 - `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
 - `delete`, `append`: Removing and adding elements.
+- `copyto`: Copying array values.
 - `ndim`, `shape`, `size`: Array properties.
 """
 
@@ -52,21 +53,30 @@ from numojo.core.type_aliases import Shape
 # ===----------------------------------------------------------------------=== #
 
 
-def copy_to[dtype: DType](mut dst: NDArray[dtype], src: NDArray[dtype]) raises:
+def copyto[dtype: DType](mut dst: NDArray[dtype], src: NDArray[dtype]) raises:
     """
     Copies the array from src to dst.
+
+    Parameters:
+        dtype: The shared element type of both arrays.
 
     Args:
         dst: The destination array.
         src: The source array.
+
+    Raises:
+        NumojoError: If the source and destination sizes differ.
+
+    Examples:
+        `copyto(destination, source)` copies every value into `destination`.
     """
     if dst.size != src.size:
         raise NumojoError(
             category="value",
             message=(
-                t"`copy_to`: size mismatch (dst: {dst.size}, src: {src.size})."
+                t"`copyto`: size mismatch (dst: {dst.size}, src: {src.size})."
             ),
-            location="copy_to()",
+            location="copyto()",
         )
 
     if dst.is_c_contiguous() and src.is_c_contiguous():

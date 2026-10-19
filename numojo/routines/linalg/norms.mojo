@@ -30,6 +30,7 @@ from std.utils.numerics import inf, neg_inf
 from numojo.core.error import NumojoError
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
+from numojo.routines.creation import _0darray
 from numojo.routines.linalg.decompositions import (
     lu_decomposition,
     partial_pivoting,
@@ -106,6 +107,12 @@ def trace[
 
     Returns:
         The trace of the NDArray.
+
+    Raises:
+        NumojoError: If the array is not two-dimensional or an axis is invalid.
+
+    Examples:
+        `trace(a)` returns the sum along the main diagonal of `a`.
     """
     if not array.is_c_contiguous():
         return trace(array.contiguous(), offset, axis1, axis2)
@@ -126,7 +133,7 @@ def trace[
                 location="trace",
             )
         )
-    var result: NDArray[dtype] = NDArray[dtype](Shape(1))
+    var result: Scalar[dtype] = 0
     var rows = array.shape[0]
     var cols = array.shape[1]
     var diag_length = min(rows, cols - offset) if offset >= 0 else min(
@@ -136,12 +143,9 @@ def trace[
     for i in range(diag_length):
         var row = i if offset >= 0 else i - offset
         var col = i + offset if offset >= 0 else i
-        result.unsafe_store[width=1](
-            0,
-            result.unsafe_load[width=1](0) + array.unsafe_get(row * cols + col),
-        )
+        result += array.unsafe_get(row * cols + col)
 
-    return result^
+    return _0darray(val=result)
 
 
 def norm[

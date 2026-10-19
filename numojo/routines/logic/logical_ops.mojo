@@ -152,17 +152,20 @@ def logical_not[
     """
     Element-wise logical NOT operation on an array.
 
+    Parameters:
+        dtype: The element type.
+
     Args:
         a: Input array.
+
+    Returns:
+        An array containing the result of the logical NOT operation.
 
     Raises:
         - NumojoError: If the input array is not of a supported data type.
 
     Constraints:
         - Supports only boolean and integral data types.
-
-    Returns:
-        An array containing the result of the logical NOT operation.
 
     Examples:
         ```mojo
@@ -174,12 +177,11 @@ def logical_not[
         ```
     """
 
-    def kernel[
-        dtype: DType, width: Int
-    ](a: SIMD[dtype, width]) capturing -> SIMD[DType.bool, width]:
-        return SIMD[DType.bool, width](~a)
-
-    return HostExecutor.apply_unary_predicate[dtype, kernel](a)
+    var source = a.contiguous()
+    var result = NDArray[DType.bool](a.shape)
+    for i in range(result.size):
+        result.unsafe_set(i, source.unsafe_get(i) == Scalar[dtype](0))
+    return result^
 
 
 def logical_xor[
@@ -188,7 +190,7 @@ def logical_xor[
     dtype == DType.bool or dtype.is_integral()
 ):
     """
-    Element-wise logical XOR operation between two arrays.
+    Element-wise logical XOR operation between two arrayas.
 
     Args:
         a: First input array.

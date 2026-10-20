@@ -178,36 +178,16 @@ NuMojo 提供多種安裝方式，以配合不同的開發需求。請選擇最�
 
 ```toml
 [workspace]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
-[package]
-name = "your_project_name"
-version = "0.1.0"
-
-[package.build]
-backend = {name = "pixi-build-mojo", version = "0.*"}
-
-[package.build.config.pkg]
-name = "your_package_name"
-
-[package.host-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-
-[package.build-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
-[package.run-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
 [dependencies]
-mojo = ">=1.1.0,<2"
-max-core = ">=26.6.0,<27"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
 ```
 
 接著執行：
@@ -216,10 +196,9 @@ numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo",
 pixi install
 ```
 
-**分支選擇：**
+`numojo`會透過執行階段相依性自動安裝相容版本的`mojo`與`max-core`。Pixi仍需要MAX及conda-forge頻道來解析這些傳遞相依性。
 
-- **`main` 分支**：提供最新的穩定版本。NuMojo v0.11.0 需要 Mojo 1.1.0 與 MAX 26.6.0。若需使用更早期的 NuMojo 版本，請改用方法二。
-- **`pre-x.y` 分支**：下一版本的積極開發分支。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
+如需使用開發快照，請將`tag = "v0.11.0"`改為`branch = "main"`或適當的`pre-x.y`分支。
 
 安裝完成後，該套件會自動出現在你的 Pixi 環境中，VSCode LSP 也會提供智能程式碼提示。
 
@@ -231,7 +210,12 @@ pixi install
 
 ```toml
 [workspace]
-channels = ["https://repo.prefix.dev/modular-community"]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
 numojo = "=0.11.0"

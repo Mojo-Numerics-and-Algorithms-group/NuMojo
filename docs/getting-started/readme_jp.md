@@ -158,36 +158,16 @@ GitHubリポジトリから直接NuMojoをインストールすることで、�
 
 ```toml
 [workspace]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
-[package]
-name = "your_project_name"
-version = "0.1.0"
-
-[package.build]
-backend = {name = "pixi-build-mojo", version = "0.*"}
-
-[package.build.config.pkg]
-name = "your_package_name"
-
-[package.host-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-
-[package.build-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
-[package.run-dependencies]
-mojo = "==1.1.0"
-max-core = "==26.6.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
 [dependencies]
-mojo = ">=1.1.0,<2"
-max-core = ">=26.6.0,<27"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
 ```
 
 次に、以下を実行します：
@@ -195,9 +175,9 @@ numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo",
 pixi install
 ```
 
-**ブランチの選択：**
-- **`main`ブランチ**：最新の安定版を提供します。NuMojo v0.11.0にはMojo 1.1.0とMAX 26.6.0が必要です。それ以前のNuMojoバージョンを使用する場合は、方法2をご利用ください。
-- **`pre-x.y`ブランチ**：次のリリースに向けた開発中のブランチです。このブランチは頻繁に更新され、機能や構文に破壊的変更が生じる場合があることにご注意ください。
+`numojo`の実行時依存関係により、互換性のある`mojo`と`max-core`も自動的にインストールされます。これらの推移的依存関係を解決するため、MAXとconda-forgeのチャンネルは引き続き必要です。
+
+開発版を利用する場合は、`tag = "v0.11.0"`を`branch = "main"`または適切な`pre-x.y`ブランチに置き換えてください。
 
 パッケージはPixi環境内で自動的に利用可能になり、VSCode LSPがインテリジェントなコードヒントを提供します。
 
@@ -209,7 +189,12 @@ pixi install
 
 ```toml
 [workspace]
-channels = ["https://repo.prefix.dev/modular-community"]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
 numojo = "=0.11.0"

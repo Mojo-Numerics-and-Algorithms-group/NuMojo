@@ -24,12 +24,12 @@ NuMojo is currently in its early development stages. At this point, our focus is
 - Complex number operations with full arithmetic support
 
 🔄 **In Progress:**
-- View-based operations (awaiting Mojo language support for parameterized traits)
-- GPU acceleration (awaiting Mojo language GPU support)
+- Expanding view-safety coverage for strided and Fortran-order arrays
+- GPU acceleration through the experimental `AcceleratorNDArray`
 
 🔄 **Planned:**
 - Fixed-dimension arrays (awaiting trait parameterization)
-- More advanced indexing features (boolean masking, fancy indexing)
+- Broader accelerator routine coverage
 
 ### Implement Basic Numeric Functions
 
@@ -53,10 +53,10 @@ We are currently working on implementing basic numeric functions into NuMojo. Th
 - **Products/Sums:** Element-wise and axis-based operations
 
 **Linear Algebra:**
-- **Matrix Operations:** `matmul` (`@` operator), `inv`
-- **Decompositions:** `lu_decomposition`
-- **Solving:** `solve`
-- **Norms:** `det` (determinant), `trace`
+- **Matrix Operations:** `matmul` (`@` operator), `dot`, `outer`, `kron`, `tensordot`, `inv`, `pinv`
+- **Decompositions:** `lu_decomposition`, `cholesky`, `qr`, `eig`, `eigh`, `svd`
+- **Solving:** `solve`, `lstsq`
+- **Norms and properties:** `det`, `trace`, `norm`, `matrix_rank`, `cond`
 
 **Logic Functions:**
 - **Comparison:** Element-wise comparisons (`equal`, `not_equal`, `less`, etc.)
@@ -64,29 +64,32 @@ We are currently working on implementing basic numeric functions into NuMojo. Th
 - **Truth Testing:** Boolean array operations
 
 **Array Manipulation:**
-- **Reshaping:** `reshape`, `transpose`, `squeeze`
-- **Joining/Splitting:** `concatenate`, `stack`, `split`
-- **Indexing:** Advanced slicing and indexing routines
+- **Reshaping:** `reshape`, `transpose`, `swapaxes`, `moveaxis`, `expand_dims`, `atleast_1d/2d/3d`
+- **Joining/Splitting:** `concatenate`, stack helpers, `split`, `array_split`, `append`, `delete`
+- **Indexing:** Advanced slicing, boolean masking, fancy indexing, `take`, `put`, `where`
+- **Rearranging:** `flip`, `fliplr`, `flipud`, `roll`, `repeat`, `pad`
 
 **Statistics:**
-- **Averages:** `mean`, `median`, variance calculations
-- Basic statistical functions
+- **Averages and dispersion:** `mean`, `median`, `mode`, `variance`, `stddev`
+- **NaN-aware reductions:** `nansum`, `nanmean`, `nanmin`, `nanmax`, `nanvar`, `nanstd`, `nanmedian`
+- **Order statistics:** `quantile`, `percentile`
+- **Correlation and histograms:** `cov`, `corrcoef`, `bincount`, `histogram`
 
 **Input/Output:**
-- **File Operations:** Text file reading/writing
+- **File Operations:** Text files, NumPy `.npy`, and single-tensor PyTorch `.pt` files
 - **Formatting:** Array display and string conversion
 
 **Sorting/Searching:**
-- `sort`, `argsort` with axis support
-- Search functions for finding elements
+- `sort`, `argsort`, `partition`, `argpartition`, and `lexsort`
+- `argmin`, `argmax`, `count_nonzero`, and `isin`
 
 **Random Sampling:**
-- Random number generation for arrays
-- Various probability distributions
+- Reproducible seeding and random number generation for arrays
+- Common distributions plus choice, shuffle, and permutation
 
 🔄 **In Progress:**
-- More statistical functions (standard deviation, correlation, etc.)
-- More comprehensive I/O support
+- More complete NumPy parity and edge-case compatibility
+- Broader dtype and axis support across existing routines
 
 ## Architecture
 
@@ -94,14 +97,14 @@ For a concise overview of the directory layout and how core, routines, and opera
 
 ## Next Steps and Future Development
 
-### Immediate Priorities (v0.8+)
-1. **Enhanced I/O Support:** Better file format support (CSV, HDF5, JSON)
+### Immediate Priorities (v0.11+)
+1. **Enhanced I/O Support:** Broader `.npy`/`.pt` compatibility and additional formats
 2. **Performance Optimization:** Further SIMD optimization and memory efficiency improvements
 3. **Testing Coverage:** Comprehensive test suite expansion for all implemented functions
 
 ### Medium-term Goals (v1.0)
 1. **GPU Support:** Implement GPU acceleration when Mojo language support becomes available
-2. **Advanced Linear Algebra:** Singular value decomposition (SVD), Cholesky decomposition
+2. **Advanced Linear Algebra:** Improve numerical robustness and support additional dtypes
 
 ### Long-term Vision (v1.5+)
 1. **Machine Learning Foundation:** While avoiding ML algorithms in core, provide efficient primitives

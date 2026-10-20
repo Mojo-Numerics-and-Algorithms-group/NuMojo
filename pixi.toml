@@ -11,7 +11,6 @@ authors = [
 channels = [
   "https://conda.modular.com/max",
   "conda-forge",
-  "https://conda.modular.com/max-nightly/",
   "https://repo.prefix.dev/modular-community",
 ]
 description = "NuMojo is a library for numerical computing written in Mojo 🔥"
@@ -20,11 +19,11 @@ name = "NuMojo"
 platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 readme = "README.MD"
-version = "0.10.0"
+version = "0.11.0"
 
 [package]
 name = "numojo"
-version = "0.10.0"
+version = "0.11.0"
 
 [package.build]
 backend = {name = "pixi-build-mojo", version = "0.*", channels = [

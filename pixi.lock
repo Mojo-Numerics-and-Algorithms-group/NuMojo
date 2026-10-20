@@ -16,7 +16,6 @@ environments:
     channels:
     - url: https://conda.modular.com/max/
     - url: https://conda.anaconda.org/conda-forge/
-    - url: https://conda.modular.com/max-nightly/
     - url: https://repo.prefix.dev/modular-community/
     packages:
       linux-64:

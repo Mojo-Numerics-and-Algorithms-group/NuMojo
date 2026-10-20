@@ -14,7 +14,7 @@
     <br />
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
-[![Mojo](https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg)](https://www.modular.com/mojo)
+[![Mojo](https://img.shields.io/badge/mojo-1.1.0-orange.svg)](https://www.modular.com/mojo)
 
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>查看範例» </strong></a> &nbsp; &nbsp;
@@ -191,22 +191,22 @@ backend = {name = "pixi-build-mojo", version = "0.*"}
 name = "your_package_name"
 
 [package.host-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 
 [package.build-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [package.run-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
+mojo = "==1.1.0"
+max-core = "==26.6.0"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 
 [dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
+mojo = ">=1.1.0,<2"
+max-core = ">=26.6.0,<27"
 numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
 ```
 
@@ -218,7 +218,7 @@ pixi install
 
 **分支選擇：**
 
-- **`main` 分支**：提供最新的穩定版本。目前為 NuMojo v0.10.0，相容於 Mojo >=1.0.0, <1.1.0。若需使用更早期的 NuMojo 版本，請改用方法二。
+- **`main` 分支**：提供最新的穩定版本。NuMojo v0.11.0 需要 Mojo 1.1.0 與 MAX 26.6.0。若需使用更早期的 NuMojo 版本，請改用方法二。
 - **`pre-x.y` 分支**：下一版本的積極開發分支。請注意，此分支更新頻繁，功能與語法可能出現不相容的變動。
 
 安裝完成後，該套件會自動出現在你的 Pixi 環境中，VSCode LSP 也會提供智能程式碼提示。
@@ -234,7 +234,7 @@ pixi install
 channels = ["https://repo.prefix.dev/modular-community"]
 
 [dependencies]
-numojo = "=0.10.0"
+numojo = "=0.11.0"
 ```
 
 接著執行：
@@ -247,6 +247,7 @@ pixi install
 
 | NuMojo 版本 | 所需 Mojo 版本 |
 | ----------- | --------------- |
+| v0.11.0     | ==1.1.0         |
 | v0.10.0     | ==1.0.0         |
 | v0.9.0      | ==26.2          |
 | v0.8.0      | ==25.7          |
@@ -256,7 +257,7 @@ pixi install
 
 ### 方法三：構建獨立文件包
 
-此方法會構建一個可攜式的 `numojo.mojopkg` 文件包，適合跨多個項目使用，或用於離線開發、封閉式構建。
+此方法會構建一個可攜式的 `numojo.mojoc` 套件，適合跨多個項目使用，或用於離線開發、封閉式構建。
 
 1. 克隆本倉庫：
 
@@ -271,7 +272,7 @@ pixi install
    pixi run package
    ```
 
-3. 將 `numojo.mojopkg` 複製到你的項目目錄，或將其所在目錄加入編譯器的引用路徑。
+3. 將 `numojo.mojoc` 複製到你的項目目錄，或將其所在目錄加入編譯器的引用路徑。
 
 ### 方法四：直接引用原始碼
 

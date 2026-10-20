@@ -13,7 +13,7 @@
     NuMojo 是为 Mojo 🔥 设计的数值计算库，类似 Python 中的 NumPy。
     <br />
     <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
-    <a href="https://www.modular.com/mojo"><img src="https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg" alt="Mojo"></a>
+    <a href="https://www.modular.com/mojo"><img src="https://img.shields.io/badge/mojo-1.1.0-orange.svg" alt="Mojo"></a>
     <br />
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>查看示例» </strong></a> &nbsp; &nbsp;
@@ -176,36 +176,16 @@ NuMojo 提供多种安装方式，以适配不同的开发需求。请根据你�
 
 ```toml
 [workspace]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
-[package]
-name = "your_project_name"
-version = "0.1.0"
-
-[package.build]
-backend = {name = "pixi-build-mojo", version = "0.*"}
-
-[package.build.config.pkg]
-name = "your_package_name"
-
-[package.host-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-
-[package.build-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
-[package.run-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
 [dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
 ```
 
 然后运行：
@@ -213,9 +193,9 @@ numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo",
 pixi install
 ```
 
-**分支选择：**
-- **`main` 分支**：提供最新的稳定版本。目前为 NuMojo v0.10.0，兼容 Mojo >=1.0.0, <1.1.0。如需使用更早期的 NuMojo 版本，请使用方法二。
-- **`pre-x.y` 分支**：面向下一个版本的活跃开发分支。请注意，该分支更新频繁，功能和语法可能发生破坏性变更。
+`numojo`会通过运行时依赖自动安装兼容版本的`mojo`和`max-core`。Pixi仍需要MAX和conda-forge频道来解析这些传递依赖。
+
+如需使用开发快照，请将`tag = "v0.11.0"`替换为`branch = "main"`或相应的`pre-x.y`分支。
 
 该软件包会自动出现在你的 Pixi 环境中，VSCode LSP 也会提供智能代码提示。
 
@@ -227,10 +207,15 @@ pixi install
 
 ```toml
 [workspace]
-channels = ["https://repo.prefix.dev/modular-community"]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-numojo = "=0.10.0"
+numojo = "=0.11.0"
 ```
 
 然后运行：
@@ -242,6 +227,7 @@ pixi install
 
 | NuMojo 版本 | 所需 Mojo 版本 |
 | -------------- | --------------------- |
+| v0.11.0        | ==1.1.0               |
 | v0.10.0        | ==1.0.0               |
 | v0.9.0         | ==26.2                |
 | v0.8.0         | ==25.7                |
@@ -251,7 +237,7 @@ pixi install
 
 ### 方法三：构建独立文件包
 
-这种方法会构建一个可移植的 `numojo.mojopkg` 文件，可在多个项目中复用，非常适合离线开发或封闭式构建。
+这种方法会构建一个可移植的 `numojo.mojoc` 软件包，可在多个项目中复用，非常适合离线开发或封闭式构建。
 
 1. 克隆本仓库：
    ```bash
@@ -264,7 +250,7 @@ pixi install
    pixi run package
    ```
 
-3. 将 `numojo.mojopkg` 复制到你的项目目录，或将其所在目录添加到你的 include 路径中。
+3. 将 `numojo.mojoc` 复制到你的项目目录，或将其所在目录添加到你的 include 路径中。
 
 ### 方法四：直接集成源码
 

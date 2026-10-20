@@ -3,7 +3,7 @@
 ![logo](../../assets/numojo_logo_360x360.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
-[![Mojo](https://img.shields.io/badge/mojo-%3E%3D1.0.0-orange.svg)](https://www.modular.com/mojo)
+[![Mojo](https://img.shields.io/badge/mojo-1.1.0-orange.svg)](https://www.modular.com/mojo)
 
 NuMojo는 Python의 NumPy와 유사한 Mojo 🔥 수치 계산 라이브러리입니다.
 
@@ -158,36 +158,16 @@ GitHub 저장소에서 직접 NuMojo를 설치하여 안정적인 릴리스와 �
 
 ```toml
 [workspace]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
-[package]
-name = "your_project_name"
-version = "0.1.0"
-
-[package.build]
-backend = {name = "pixi-build-mojo", version = "0.*"}
-
-[package.build.config.pkg]
-name = "your_package_name"
-
-[package.host-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-
-[package.build-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
-[package.run-dependencies]
-mojo = "==1.0.0"
-max-core = "==26.5.0"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
-
 [dependencies]
-mojo = ">=1.0.0, <1.1.0"
-max-core = ">=26.5.0,<27"
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", branch = "main"}
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
 ```
 
 그런 다음 다음을 실행합니다.
@@ -195,9 +175,9 @@ numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo",
 pixi install
 ```
 
-**브랜치 선택:**
-- **`main` 브랜치**: 최신 안정 릴리스를 제공합니다. 현재 NuMojo v0.10.0이며 Mojo >=1.0.0, <1.1.0과 호환됩니다. 이전 버전의 NuMojo가 필요하다면 방법 2를 사용하세요.
-- **`pre-x.y` 브랜치**: 다음 릴리스를 위한 활발한 개발 브랜치입니다. 이 브랜치는 자주 업데이트되며 기능과 문법에 호환성을 깨는 변경사항이 있을 수 있습니다.
+`numojo`의 런타임 의존성을 통해 호환되는`mojo`와`max-core`가 자동으로 설치됩니다. 이러한 전이 의존성을 해결하려면 MAX 및 conda-forge 채널이 필요합니다.
+
+개발 스냅샷을 사용하려면`tag = "v0.11.0"`을`branch = "main"`또는 적절한`pre-x.y`브랜치로 바꾸세요.
 
 패키지는 Pixi 환경에 자동으로 반영되며, VSCode LSP가 지능형 코드 힌트를 제공합니다.
 
@@ -209,10 +189,15 @@ pixi install
 
 ```toml
 [workspace]
-channels = ["https://repo.prefix.dev/modular-community"]
+channels = [
+  "https://conda.modular.com/max",
+  "conda-forge",
+  "https://repo.prefix.dev/modular-community",
+]
+platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-numojo = "=0.10.0"
+numojo = "=0.11.0"
 ```
 
 그런 다음 다음을 실행합니다.
@@ -224,6 +209,7 @@ pixi install
 
 | NuMojo 버전 | 필요한 Mojo 버전 |
 | ----------- | ----------------- |
+| v0.11.0     | ==1.1.0            |
 | v0.10.0     | ==1.0.0            |
 | v0.9.0      | ==26.2             |
 | v0.8.0      | ==25.7             |
@@ -233,7 +219,7 @@ pixi install
 
 ### 방법 3: 독립형 패키지 빌드
 
-이 방법은 여러 프로젝트에서 사용할 수 있는 이식 가능한 `numojo.mojopkg` 파일을 생성합니다. 오프라인 개발이나 밀폐된(hermetic) 빌드에 적합합니다.
+이 방법은 여러 프로젝트에서 사용할 수 있는 이식 가능한 `numojo.mojoc` 패키지를 생성합니다. 오프라인 개발이나 밀폐된(hermetic) 빌드에 적합합니다.
 
 1. 저장소를 클론합니다.
    ```bash
@@ -246,7 +232,7 @@ pixi install
    pixi run package
    ```
 
-3. `numojo.mojopkg`를 프로젝트 디렉터리로 복사하거나, 그 상위 디렉터리를 include 경로에 추가합니다.
+3. `numojo.mojoc`를 프로젝트 디렉터리로 복사하거나, 그 상위 디렉터리를 include 경로에 추가합니다.
 
 ### 방법 4: 소스 코드 직접 통합
 

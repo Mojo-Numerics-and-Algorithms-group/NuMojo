@@ -48,7 +48,7 @@ def sum_reduce_kernel[
 ](
     partial_sums: Pointer[Scalar[dtype], MutAnyOrigin],
     a: Pointer[Scalar[dtype], MutAnyOrigin],
-    size: Int,
+    size: Int64,
 ):
     """GPU kernel: each block reduces its chunk of `a` to one partial sum.
 
@@ -59,25 +59,27 @@ def sum_reduce_kernel[
         block_size, Scalar[dtype], address_space=AddressSpace.SHARED
     ]()
 
-    var tid = Int(thread_idx.x)
-    var bid = Int(block_idx.x)
-    var idx = bid * block_size + tid
+    var tid = Int64(thread_idx.x)
+    var bid = Int64(block_idx.x)
+    var idx = bid * Int64(block_size) + tid
 
     if idx < size:
-        smem[unsafe_offset=tid] = a[unsafe_offset=idx]
+        smem[unsafe_offset=Int(tid)] = a[unsafe_offset=Int(idx)]
     else:
-        smem[unsafe_offset=tid] = Scalar[dtype](0)
+        smem[unsafe_offset=Int(tid)] = Scalar[dtype](0)
     barrier()
 
-    var stride = block_size >> 1
+    var stride = Int64(block_size) >> 1
     while stride > 0:
         if tid < stride:
-            smem[unsafe_offset=tid] += smem[unsafe_offset=tid + stride]
+            smem[unsafe_offset=Int(tid)] += smem[
+                unsafe_offset=Int(tid + stride)
+            ]
         barrier()
         stride >>= 1
 
     if tid == 0:
-        partial_sums[unsafe_offset=bid] = smem[unsafe_offset=0]
+        partial_sums[unsafe_offset=Int(bid)] = smem[unsafe_offset=0]
 
 
 def launch_sum_reduce[
@@ -106,7 +108,7 @@ def launch_sum_reduce[
     context.enqueue_function[sum_reduce_kernel[dtype, threads_per_block]](
         partial_sums.unsafe_ptr(),
         a,
-        size,
+        Int64(size),
         grid_dim=num_blocks,
         block_dim=block_dim_size,
     )

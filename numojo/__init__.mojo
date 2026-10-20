@@ -189,6 +189,16 @@ from numojo.routines.math import (
     floor_div,
     fma,
     remainder,
+    negative,
+    positive,
+    sign,
+    square,
+    power,
+    pow,
+    fmax,
+    fmin,
+    fmod,
+    rint,
 )
 from numojo.routines.math import gradient, diff, ediff1d
 from numojo.routines.math import trapezoid, cumtrapz

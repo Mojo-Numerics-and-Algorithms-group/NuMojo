@@ -33,6 +33,9 @@ Differences and aggregation: `diff`, `gradient`, `ediff1d`, `sum`, `cumsum`, `pr
 Integration: `trapezoid`, `cumtrapz`.
 
 Signal processing: `convolve`, `interp`.
+
+Element-wise: `sign`, `square`, `power`/`pow`, `negative`, `positive`, `fmax`,
+`fmin`, `fmod`, `rint`.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -52,6 +55,18 @@ from .differences import (
     diff,
     ediff1d,
     gradient,
+)
+from .elementwise import (
+    fmax,
+    fmin,
+    fmod,
+    negative,
+    positive,
+    power,
+    power as pow,
+    rint,
+    sign,
+    square,
 )
 from .exponents import (
     exp,

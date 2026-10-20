@@ -1,10 +1,22 @@
 from std.testing.testing import assert_true, assert_almost_equal, assert_equal
-from utils_for_test import check, check_is_close
+from utils_for_test import check, check_is_close, check_with_dtype
 from std.python import Python, PythonObject
 from std.testing import TestSuite
 
 import numojo as nm
 from numojo import *
+
+
+def test_copyto() raises:
+    var np = Python.import_module("numpy")
+    var dst = nm.zeros[nm.i32](Shape(2, 3))
+    var src = nm.arange[nm.i32](0, 6).reshape(Shape(2, 3))
+    var dst_np = np.zeros(Python.tuple(2, 3), dtype=np.int32)
+    var src_np = np.arange(0, 6, dtype=np.int32).reshape(2, 3)
+
+    nm.copyto(dst, src)
+    np.copyto(dst_np, src_np)
+    check_with_dtype(dst, dst_np, "copyto must match NumPy")
 
 
 def test_arr_manipulation() raises:

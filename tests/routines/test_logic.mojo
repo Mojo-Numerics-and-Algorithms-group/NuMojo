@@ -5,8 +5,6 @@ from utils_for_test import check
 
 import numojo as nm
 from numojo.prelude import *
-from numojo.routines.logic.comparison import allclose, isclose, array_equal
-from numojo.routines.logic.contents import isposinf, isneginf
 
 
 def test_comparison_array_array() raises:
@@ -71,7 +69,7 @@ def test_allclose_and_isclose_and_array_equal() raises:
     var a = nm.array[nm.f64]("[1.0, 2.0, 3.0, 4.0]")
     var b = nm.array[nm.f64]("[1.0, 2.000001, 2.999999, 4.0]")
 
-    var a_allclose = allclose(a, b, rtol=1e-5, atol=1e-8)
+    var a_allclose = nm.allclose(a, b, rtol=1e-5, atol=1e-8)
     var np_allclose = np.allclose(
         a.to_numpy(),
         b.to_numpy(),
@@ -82,7 +80,7 @@ def test_allclose_and_isclose_and_array_equal() raises:
         print("Error: allclose results differ")
 
     check(
-        isclose(a, b, rtol=1e-5, atol=1e-8),
+        nm.isclose(a, b, rtol=1e-5, atol=1e-8),
         np.isclose(
             a.to_numpy(),
             b.to_numpy(),
@@ -96,8 +94,8 @@ def test_allclose_and_isclose_and_array_equal() raises:
     var same2 = nm.arange[nm.i32](0, 10)
     var diff = nm.arange[nm.i32](1, 11)
 
-    assert_true(array_equal(same1, same2), "array_equal true")
-    assert_true(not array_equal(same1, diff), "array_equal false")
+    assert_true(nm.array_equal(same1, same2), "array_equal true")
+    assert_true(not nm.array_equal(same1, diff), "array_equal false")
 
 
 def test_contents_isinf_isfinite_isnan() raises:
@@ -119,8 +117,8 @@ def test_contents_isinf_isfinite_isnan() raises:
     check(nm.isinf(a), np.isinf(p_arr), "isinf")
     check(nm.isfinite(a), np.isfinite(p_arr), "isfinite")
     check(nm.isnan(a), np.isnan(p_arr), "isnan")
-    check(isposinf(a), np.isposinf(p_arr), "isposinf")
-    check(isneginf(a), np.isneginf(p_arr), "isneginf")
+    check(nm.isposinf(a), np.isposinf(p_arr), "isposinf")
+    check(nm.isneginf(a), np.isneginf(p_arr), "isneginf")
 
     # The scalar overloads must agree with the array results checked above,
     # element by element, and so with NumPy.
@@ -138,11 +136,38 @@ def test_contents_isinf_isfinite_isnan() raises:
             Bool(nm.isnan(x)), Bool(np.isnan(p_arr[i])), "isnan(scalar)"
         )
         assert_equal(
-            Bool(isposinf(x)), Bool(np.isposinf(p_arr[i])), "isposinf(scalar)"
+            Bool(nm.isposinf(x)),
+            Bool(np.isposinf(p_arr[i])),
+            "isposinf(scalar)",
         )
         assert_equal(
-            Bool(isneginf(x)), Bool(np.isneginf(p_arr[i])), "isneginf(scalar)"
+            Bool(nm.isneginf(x)),
+            Bool(np.isneginf(p_arr[i])),
+            "isneginf(scalar)",
         )
+
+
+def test_logical_operations() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.array[nm.i32]("[[0, 1, 2], [0, 3, 4]]")
+    var b = nm.array[nm.i32]("[[0, 0, 2], [5, 0, 4]]")
+    var a_np = a.to_numpy()
+    var b_np = b.to_numpy()
+
+    check(nm.logical_and(a, b), np.logical_and(a_np, b_np), "logical_and")
+    check(nm.logical_or(a, b), np.logical_or(a_np, b_np), "logical_or")
+    check(nm.logical_xor(a, b), np.logical_xor(a_np, b_np), "logical_xor")
+    check(nm.logical_not(a), np.logical_not(a_np), "logical_not")
+
+    # Exercise both the full SIMD-width path and scalar tail with signed
+    # integral values. Logical NOT must test equality with zero rather than
+    # applying a bitwise complement.
+    var signed = nm.arange[nm.i32](-19, 22)
+    check(
+        nm.logical_not(signed),
+        np.logical_not(signed.to_numpy()),
+        "logical_not signed SIMD and tail",
+    )
 
 
 def test_truth_all_any() raises:

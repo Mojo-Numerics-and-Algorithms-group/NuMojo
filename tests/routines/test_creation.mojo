@@ -13,6 +13,17 @@ from utils_for_test import check, check_is_close
 from std.testing import TestSuite
 
 
+def test_meshgrid() raises:
+    var np = Python.import_module("numpy")
+    var x = nm.arange[nm.f64](0, 3)
+    var y = nm.arange[nm.f64](0, 2)
+    var actual = nm.meshgrid(x, y)
+    var expected = np.meshgrid(x.to_numpy(), y.to_numpy())
+
+    check(actual[0], expected[0], "meshgrid x must match NumPy")
+    check(actual[1], expected[1], "meshgrid y must match NumPy")
+
+
 def test_arange() raises:
     var np = Python.import_module("numpy")
     check(

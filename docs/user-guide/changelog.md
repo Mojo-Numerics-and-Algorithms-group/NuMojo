@@ -2,11 +2,36 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
+## Unreleased (v0.11.0)
+
+### ⭐️ New in v0.11.0
+
+- Added a broad set of NumPy-compatible array-manipulation routines: `fliplr`, `flipud`, `expand_dims`, `atleast_1d/2d/3d`, `swapaxes`, `moveaxis`, `roll`, `repeat`, `pad`, `split`, `array_split`, `delete`, and `append`. [PR #402] [PR #404] [PR #405] [PR #407]
+- Added set, sorting, and searching APIs including the `unique` family, `isin`, `partition`, `argpartition`, `lexsort`, `count_nonzero`, and `ptp`, with corresponding `NDArray` convenience methods. [PR #400] [PR #405] [PR #419]
+- Added native Mojo readers and writers for NumPy `.npy` files and single-tensor PyTorch `.pt` files. [PR #406]
+- Expanded linear algebra with `outer`, `kron`, `tensordot`, Cholesky and QR decompositions, least-squares solving, eigenvalue routines, `norm`, SVD, pseudoinverse, matrix rank, and condition number. [PR #408] [PR #409] [PR #414] [PR #415]
+- Added reproducible random seeding and NumPy-style distributions and sampling routines, including normal, uniform, exponential, binomial, Poisson, gamma, beta, chi-square, choice, shuffle, and permutation. [PR #410]
+- Expanded statistics with NaN-aware reductions, quantiles, percentiles, covariance, correlation coefficients, `bincount`, and histograms. [PR #411] [PR #416]
+- Added numerical differences, integration, convolution, and interpolation routines: `ediff1d`, `trapezoid`, `cumtrapz`, `convolve`, and `interp`. [PR #418]
+- Added integer bitwise operations and shifts: `bitwise_and`, `bitwise_or`, `bitwise_xor`, `invert`, `left_shift`, and `right_shift`. [PR #420]
+- Added element-wise `sign`, `square`, `negative`, `positive`, `power`/`pow`, `fmax`, `fmin`, `fmod`, and `rint`. [PR #421]
+
+### 🦋 Changed in v0.11.0
+
+- Updated the release baseline to Mojo 1.1.0 and MAX 26.6.0. [PR #412] [PR #417]
+- Added repository-wide standards and import-organization scripts and wired them into the contributor workflow. [PR #393]
+
+### 🛠️ Fixed in v0.11.0
+
+- Fixed `dot` for strided and Fortran-order 1-D views, corrected SIMD accumulation, and fixed `logical_not` execution. [PR #420]
+- Fixed signed-zero behavior in `fmin`, `fmax`, and `fmod` to match NumPy. [PR #421]
+- Updated accelerator kernel sizes and indices to `Int64` so GPU kernels compile with Mojo 1.1's `DevicePassable` requirements.
+
 ## 20260827 (v0.10.0)
 
 ### ⭐️ New in v0.10.0
 
-- Added `AcceleratorNDArray` building blocks and basic arithmetic ops, plus a GPU `sum` kernel, moving NuMojo towards device-agnostic arrays. [PR #359] [PR #369] [PR #372] - Note that this is an experimental struct aimed at building a device agnostic array, this will be renamed to `NDArray` in future once all the API's have been settled. 
+- Added `AcceleratorNDArray` building blocks and basic arithmetic ops, plus a GPU `sum` kernel, moving NuMojo towards device-agnostic arrays. [PR #359] [PR #369] [PR #372] - Note that this is an experimental struct aimed at building a device agnostic array, this will be renamed to `NDArray` in future once all the API's have been settled.
 - Added broadcasting for `NDArray`. [PR #366]
 - Added fancy indexing and a `where` function, plus `flat nonzero` and `unravel_index`. [PR #374] [PR #376]
 - Added `take`, `nonzero`, `put`, N-D `diagonal`, `searchsorted`, `ravel_multi_index`, `randbool`, and `column_stack`/`concatenate`/`hstack`/`vstack`/`row_stack`. [PR #364] [PR #365] [PR #373] [PR #377] [PR #361] [PR #352]
@@ -23,7 +48,7 @@ This is a list of RELEASED changes for the NuMojo Package.
 
 ### 🛠️ Fixed in v0.10.0
 
-- Fixed unsafe pointer access across `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`. [PR #379] [PR #380] - This removes any trace of `MutAnyOrigin` that can trigger the ASAP destruction mode and cause pointer free issues. All the pointer access through `unsafe_ptr` carry correct origin to prevent such memory issues. 
+- Fixed unsafe pointer access across `NDArray`, `NDArrayShape`, `NDArrayStrides`, and `Item`. [PR #379] [PR #380] - This removes any trace of `MutAnyOrigin` that can trigger the ASAP destruction mode and cause pointer free issues. All the pointer access through `unsafe_ptr` carry correct origin to prevent such memory issues.
 - Fixed an incorrect broadcast load in the 2D `matmul` kernel. [PR #382]
 - Fixed offset calculation in `NDArray` traversal, and layout-unsafe boolean-mask getter/setter paths. [PR #354] [PR #368]
 - Fixed `nonzero`/`compress` and allowed zero-length `NDArrayShape` dimensions. [PR #375]

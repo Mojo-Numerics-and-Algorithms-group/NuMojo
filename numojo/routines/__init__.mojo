@@ -44,7 +44,14 @@ from . import (
     sorting,
     statistics,
 )
-from .bitwise import invert
+from .bitwise import (
+    bitwise_and,
+    bitwise_or,
+    bitwise_xor,
+    invert,
+    left_shift,
+    right_shift,
+)
 from .creation import (
     arange,
     array,
@@ -60,6 +67,7 @@ from .creation import (
     identity,
     linspace,
     logspace,
+    meshgrid,
     ones,
     ones_like,
     tri,
@@ -82,6 +90,7 @@ from .indexing import (
     fancy_index,
     flatnonzero,
     nonzero,
+    put,
     ravel_multi_index,
     take,
     take_along_axis,
@@ -122,6 +131,7 @@ from .manipulation import (
     broadcast_to,
     column_stack,
     concatenate,
+    copyto,
     delete,
     expand_dims,
     flip,

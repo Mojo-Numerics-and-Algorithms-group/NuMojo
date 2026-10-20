@@ -258,7 +258,7 @@ def test_ndarray_linalg_view() raises:
 
     check_array_close(
         nm.linalg.dot(v1, v2),
-        v1np * v2np,
+        np.dot(v1np, v2np),
         "`dot` on F-order 1D NDArrays is broken",
     )
 

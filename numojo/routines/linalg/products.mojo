@@ -42,7 +42,7 @@ from numojo.core.error import NumojoError
 from numojo.core.layout import NDArrayShape
 from numojo.core.ndarray import NDArray
 from numojo.core.type_aliases import Shape
-from numojo.routines.creation import zeros
+from numojo.routines.creation import _0darray, zeros
 from numojo.routines.manipulation import reshape, transpose
 from numojo.routines.math.sums import sum
 
@@ -53,7 +53,7 @@ def cross[
     """
     Compute the cross product of two arrays.
 
-    Parameters
+    Parameters:
         dtype: The element type.
 
     Args:
@@ -97,7 +97,6 @@ def cross[
         )
 
 
-# TODO: implement other cases for dot function
 def dot[
     dtype: DType = DType.float64
 ](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
@@ -111,11 +110,17 @@ def dot[
         array1: A array.
         array2: A array.
 
-    Constraints:
-        `array1` and `array2` must be 1 dimensional.
-
     Returns:
         The dot product of two arrays.
+
+    Raises:
+        NumojoError: If the inputs are not equal-length one-dimensional arrays.
+
+    Constraints:
+        Each input must have at most two dimensions.
+
+    Examples:
+        `dot(a, b)` computes the inner product of vectors `a` and `b`.
     """
 
     if not array1.is_c_contiguous():
@@ -123,34 +128,42 @@ def dot[
     if not array2.is_c_contiguous():
         return dot(array1, array2.contiguous())
 
-    comptime width = simd_width_of[dtype]()
     if array1.ndim == array2.ndim == 1:
-        var result: NDArray[dtype] = NDArray[dtype](NDArrayShape(array1.size))
-
-        def vectorized_dot[
-            simd_width: Int
-        ](idx: Int) {mut result, imm array1, imm array2} -> None:
-            result.unsafe_store[width=simd_width](
-                idx,
-                array1.unsafe_load[width=simd_width](idx)
-                * array2.unsafe_load[width=simd_width](idx),
-            )
-
-        vectorize[width](array1.size, vectorized_dot)
-        return result^
-    else:
-        raise Error(
-            NumojoError(
-                category="shape",
-                message=(
-                    "resultross product is not supported for arrays of shape "
+        if array1.size != array2.size:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message="dot requires vectors with the same length.",
+                    location="dot",
                 )
-                + array1.shape.__str__()
-                + " and "
-                + array2.shape.__str__(),
-                location="dot",
             )
+        comptime width = simd_width_of[dtype]()
+        var accumulator = SIMD[dtype, width](0)
+        var i = 0
+        while i + width <= array1.size:
+            accumulator += array1.unsafe_load[width=width](
+                i
+            ) * array2.unsafe_load[width=width](i)
+            i += width
+
+        var result = accumulator.reduce_add()
+        while i < array1.size:
+            result += (
+                array1.unsafe_load[width=1](i) * array2.unsafe_load[width=1](i)
+            ).reduce_add()
+            i += 1
+        return _0darray(val=result)
+    if array1.ndim <= 2 and array2.ndim <= 2:
+        return matmul(array1, array2)
+    raise Error(
+        NumojoError(
+            category="shape",
+            message=(
+                "dot currently supports arrays with at most two dimensions."
+            ),
+            location="dot",
         )
+    )
 
 
 # https://docs.modular.com/mojo/notebooks/Matmul

@@ -10,7 +10,7 @@ pixi install
 
 ## Build the package
 
-Creates `numojo.mojopkg` and copies it into `tests/`.
+Creates `numojo.mojoc` and copies it into `tests/`.
 
 ```bash
 pixi run package

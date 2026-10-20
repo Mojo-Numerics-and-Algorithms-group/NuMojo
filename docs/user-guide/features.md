@@ -7,18 +7,24 @@ Available functions and objects by topics (also see imports within `__init__` fi
   - arange, linspace, logspace, geomspace
   - *_like helpers
 - Array manipulation routines (`numojo.routines.manipulation`)
+  - reshape, ravel, transpose, swapaxes, moveaxis, roll
+  - concatenate/stack helpers, split/array_split, append, delete
+  - repeat, pad, flip helpers, expand_dims, atleast_1d/2d/3d
 - Bitwise operations (`numojo.routines.bitwise`)
+  - bitwise_and, bitwise_or, bitwise_xor, invert, left_shift, right_shift
 - Constants (`numojo.routines.constants`)
 - Indexing routines (`numojo.routines.indexing`)
 - Functional utilities (`numojo.routines.functional`)
 - Input and output (`numojo.routines.io`)
   - Text files (`numojo.routines.io.files`)
+  - NumPy `.npy` files (`load_npy`, `save_npy`)
+  - Single-tensor PyTorch `.pt` files (`load_torch`, `save_torch`)
   - Formatting (`numojo.routines.io.formatting`)
 - Linear algebra (`numojo.routines.linalg`)
-  - Decompositions (`numojo.routines.linalg.decompositions`)
-  - Products (`numojo.routines.linalg.products`)
-  - Norms (`numojo.routines.linalg.norms`)
-  - Solving (`numojo.routines.linalg.solving`)
+  - Decompositions: cholesky, eig/eigh, lu_decomposition, qr, svd
+  - Products: cross, dot, kron, matmul, outer, tensordot
+  - Norms and matrix properties: cond, det, matrix_rank, norm, trace
+  - Solving: inv, lstsq, pinv, solve
   - Misc (`numojo.routines.linalg.misc`)
 - Logic functions (`numojo.routines.logic`)
   - Comparison (`numojo.routines.logic.comparison`)
@@ -28,6 +34,7 @@ Available functions and objects by topics (also see imports within `__init__` fi
 - Mathematical functions (`numojo.routines.math`)
   - Arithmetic (`numojo.routines.math.arithmetic`)
   - Differences (`numojo.routines.math.differences`)
+  - Element-wise operations (`numojo.routines.math.elementwise`)
   - Exponents and logarithms (`numojo.routines.math.exponents`)
   - Extrema (`numojo.routines.math.extrema`)
   - Floating point (`numojo.routines.math.floating`)
@@ -35,11 +42,21 @@ Available functions and objects by topics (also see imports within `__init__` fi
   - Miscellaneous (`numojo.routines.math.misc`)
   - Products (`numojo.routines.math.products`)
   - Rounding (`numojo.routines.math.rounding`)
+  - Integration (`numojo.routines.math.integrate`)
+  - Convolution and interpolation (`numojo.routines.math.signal`)
   - Sums (`numojo.routines.math.sums`)
   - Trigonometric (`numojo.routines.math.trig`)
 - Random sampling (`numojo.routines.random`)
+  - reproducible seeding, common distributions, choice, shuffle, permutation
 - Sorting and searching (`numojo.routines.sorting`, `numojo.routines.searching`)
+  - sort, argsort, partition, argpartition, lexsort, argmin/argmax, count_nonzero
+- Set operations (`numojo.routines.setops`)
+  - unique family and isin
 - Statistics (`numojo.routines.statistics`)
   - Averages (`numojo.routines.statistics.averages`)
+  - NaN-aware reductions (`numojo.routines.statistics.nanfunctions`)
+  - Quantiles and percentiles (`numojo.routines.statistics.percentiles`)
+  - Covariance and correlation (`numojo.routines.statistics.correlation`)
+  - Bincount and histograms (`numojo.routines.statistics.histograms`)
 
 For planned work and missing items, see `roadmap.md`.

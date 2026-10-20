@@ -43,12 +43,12 @@ def neg_kernel[
 ](
     result: Pointer[Scalar[dtype], MutAnyOrigin],
     a: Pointer[Scalar[dtype], MutAnyOrigin],
-    size: Int,
+    size: Int64,
 ):
     """GPU kernel: `result[i] = -a[i]` for contiguous buffers."""
-    var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
+    var i = Int64(thread_idx.x) + Int64(block_idx.x) * Int64(block_dim.x)
     if i < size:
-        result[unsafe_offset=i] = -a[unsafe_offset=i]
+        result[unsafe_offset=Int(i)] = -a[unsafe_offset=Int(i)]
 
 
 def launch_neg[
@@ -67,7 +67,7 @@ def launch_neg[
     context.enqueue_function[neg_kernel[dtype]](
         result,
         a,
-        size,
+        Int64(size),
         grid_dim=grid_dim,
         block_dim=block_dim,
     )

@@ -19,17 +19,13 @@ Exports
 """
 
 # ===----------------------------------------------------------------------=== #
-# Stdlib
+# External
 # ===----------------------------------------------------------------------=== #
 from max.gpu import (
     block_dim,
     block_idx,
     thread_idx,
 )
-
-# ===----------------------------------------------------------------------=== #
-# External
-# ===----------------------------------------------------------------------=== #
 from max.gpu.host import DeviceContext
 
 
@@ -59,13 +55,13 @@ def binary_op_kernel[
     result: Pointer[Scalar[dtype], MutAnyOrigin],
     a: Pointer[Scalar[dtype], MutAnyOrigin],
     b: Pointer[Scalar[dtype], MutAnyOrigin],
-    size: Int,
+    size: Int64,
 ):
     """GPU kernel: `result[i] = op(a[i], b[i])` for contiguous buffers."""
-    var i = Int(thread_idx.x) + Int(block_idx.x) * Int(block_dim.x)
+    var i = Int64(thread_idx.x) + Int64(block_idx.x) * Int64(block_dim.x)
     if i < size:
-        result[unsafe_offset=i] = _binary_op[dtype, op_code](
-            a[unsafe_offset=i], b[unsafe_offset=i]
+        result[unsafe_offset=Int(i)] = _binary_op[dtype, op_code](
+            a[unsafe_offset=Int(i)], b[unsafe_offset=Int(i)]
         )
 
 
@@ -98,7 +94,7 @@ def launch_binary_op[
         result,
         a,
         b,
-        size,
+        Int64(size),
         grid_dim=grid_dim,
         block_dim=block_dim,
     )

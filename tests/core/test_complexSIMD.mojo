@@ -1,4 +1,5 @@
-from std.testing import assert_equal, assert_almost_equal
+from std.python import Python
+from std.testing import assert_almost_equal, assert_equal, assert_true
 from std.testing import TestSuite
 
 from numojo import *
@@ -75,6 +76,26 @@ def test_complex_div() raises:
     var quot = c1 / c2
     assert_almost_equal(quot.re, 0.44, " division failed")
     assert_almost_equal(quot.im, 0.08, " division failed")
+
+
+def test_complex_pow_matches_numpy() raises:
+    """Complex and real powers use NumPy's principal-branch semantics."""
+    var np = Python.import_module("numpy")
+    var builtins = Python.import_module("builtins")
+    var base = ComplexSIMD[cf64](1.5, -2.0)
+    var exponent = ComplexSIMD[cf64](0.75, 0.5)
+
+    var complex_result = base**exponent
+    var complex_expected = np.power(
+        builtins.complex(1.5, -2.0), builtins.complex(0.75, 0.5)
+    )
+    assert_true(np.isclose(complex_result.re, complex_expected.real))
+    assert_true(np.isclose(complex_result.im, complex_expected.imag))
+
+    var real_result = base ** Scalar[DType.float64](2.5)
+    var real_expected = np.power(builtins.complex(1.5, -2.0), 2.5)
+    assert_true(np.isclose(real_result.re, real_expected.real))
+    assert_true(np.isclose(real_result.im, real_expected.imag))
 
 
 def main() raises:

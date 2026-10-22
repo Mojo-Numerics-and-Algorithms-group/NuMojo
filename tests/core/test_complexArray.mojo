@@ -1,6 +1,8 @@
-from std.testing import assert_equal, assert_almost_equal
+from std.python import Python
+from std.testing import assert_almost_equal, assert_equal, assert_raises
 from numojo import *
 from std.testing import TestSuite
+from utils_for_test import check_complex_is_close
 
 # TODO: Added getter and setter tests
 
@@ -139,6 +141,122 @@ def test_complex_array_div() raises:
 
     assert_almost_equal(quot.item(0).re, 0.44, "div failed")
     assert_almost_equal(quot.item(0).im, 0.08, "div failed")
+
+
+def test_complex_array_real_operand_arithmetic_matches_numpy() raises:
+    """Real operands affect complex values according to NumPy semantics."""
+    var np = Python.import_module("numpy")
+    var a = ComplexNDArray[cf64](Shape(3))
+    a.itemset(0, ComplexSIMD[cf64](1.0, 2.0))
+    a.itemset(1, ComplexSIMD[cf64](-3.0, 4.0))
+    a.itemset(2, ComplexSIMD[cf64](5.0, -6.0))
+    var a_np = a.to_numpy()
+    var real = arange[f64](2.0, 5.0)
+    var real_np = real.to_numpy()
+
+    check_complex_is_close(a + 2.0, a_np + 2.0, "array + scalar")
+    check_complex_is_close(2.0 + a, 2.0 + a_np, "scalar + array")
+    check_complex_is_close(a - 2.0, a_np - 2.0, "array - scalar")
+    check_complex_is_close(2.0 - a, 2.0 - a_np, "scalar - array")
+    check_complex_is_close(a + real, a_np + real_np, "complex + real array")
+    check_complex_is_close(real - a, real_np - a_np, "real array - complex")
+    check_complex_is_close(a * real, a_np * real_np, "complex * real array")
+    check_complex_is_close(a / 2.0, a_np / 2.0, "array / scalar")
+    check_complex_is_close(2.0 / a, 2.0 / a_np, "scalar / array")
+    check_complex_is_close(real / a, real_np / a_np, "real array / complex")
+
+    var inplace_add = a.copy()
+    inplace_add += 2.0
+    check_complex_is_close(inplace_add, a_np + 2.0, "array += scalar")
+    var inplace_sub = a.copy()
+    inplace_sub -= real
+    check_complex_is_close(inplace_sub, a_np - real_np, "array -= real array")
+    var inplace_mul = a.copy()
+    inplace_mul *= real
+    check_complex_is_close(inplace_mul, a_np * real_np, "array *= real array")
+    var inplace_div = a.copy()
+    inplace_div /= 2.0
+    check_complex_is_close(inplace_div, a_np / 2.0, "array /= scalar")
+
+
+def test_complex_array_complex_arithmetic_matches_numpy() raises:
+    """Complex scalar, array, and in-place operators match NumPy."""
+    var np = Python.import_module("numpy")
+    var builtins = Python.import_module("builtins")
+    var a = ComplexNDArray[cf64](Shape(3))
+    a.itemset(0, ComplexSIMD[cf64](1.0, 2.0))
+    a.itemset(1, ComplexSIMD[cf64](-3.0, 4.0))
+    a.itemset(2, ComplexSIMD[cf64](5.0, -6.0))
+    var b = ComplexNDArray[cf64](Shape(3))
+    b.itemset(0, ComplexSIMD[cf64](2.0, -1.0))
+    b.itemset(1, ComplexSIMD[cf64](1.0, 3.0))
+    b.itemset(2, ComplexSIMD[cf64](-4.0, 2.0))
+    var scalar = ComplexSIMD[cf64](2.0, -3.0)
+    var scalar_np = builtins.complex(2.0, -3.0)
+    var a_np = a.to_numpy()
+    var b_np = b.to_numpy()
+
+    check_complex_is_close(a * scalar, a_np * scalar_np, "array * complex")
+    check_complex_is_close(scalar * a, scalar_np * a_np, "complex * array")
+    check_complex_is_close(a * b, a_np * b_np, "array * array")
+    check_complex_is_close(a / scalar, a_np / scalar_np, "array / complex")
+    check_complex_is_close(scalar / a, scalar_np / a_np, "complex / array")
+    check_complex_is_close(a / b, a_np / b_np, "array / array")
+
+    var inplace_mul = a.copy()
+    inplace_mul *= scalar
+    check_complex_is_close(inplace_mul, a_np * scalar_np, "array *= complex")
+    var inplace_mul_array = a.copy()
+    inplace_mul_array *= b
+    check_complex_is_close(inplace_mul_array, a_np * b_np, "array *= array")
+    var inplace_div = a.copy()
+    inplace_div /= scalar
+    check_complex_is_close(inplace_div, a_np / scalar_np, "array /= complex")
+    var inplace_div_array = a.copy()
+    inplace_div_array /= b
+    check_complex_is_close(inplace_div_array, a_np / b_np, "array /= array")
+
+
+def test_complex_array_rejects_mismatched_layouts() raises:
+    """Real and imaginary parts must describe the same logical layout."""
+    var re = NDArray[f64](Shape(2, 3), order="C")
+    var im = NDArray[f64](Shape(2, 3), order="F")
+    with assert_raises():
+        _ = ComplexNDArray[cf64](re^, im^)
+
+
+def test_complex_array_view_arithmetic_matches_numpy() raises:
+    """Arithmetic preserves logical values for non-contiguous complex views."""
+    var np = Python.import_module("numpy")
+    var matrix = ComplexNDArray[cf64](Shape(2, 3))
+    for i in range(matrix.size):
+        matrix.itemset(
+            i,
+            ComplexSIMD[cf64](Float64(i + 1), Float64(2 * i - 3)),
+        )
+    var view = matrix.T([1, 0])
+    var view_np = matrix.to_numpy().T
+
+    check_complex_is_close(view + 2.0, view_np + 2.0, "view + scalar")
+    check_complex_is_close(view - 2.0, view_np - 2.0, "view - scalar")
+    check_complex_is_close(view.conj(), np.conj(view_np), "conjugated view")
+
+
+def test_complex_array_real_broadcast_matches_numpy() raises:
+    """Real-array operands broadcast without changing imaginary components."""
+    var left = ComplexNDArray[cf64](Shape(2, 1))
+    left.itemset(0, ComplexSIMD[cf64](1.0, 2.0))
+    left.itemset(1, ComplexSIMD[cf64](3.0, 4.0))
+    var right = arange[f64](1.0, 4.0).reshape(Shape(1, 3))
+    var left_np = left.to_numpy()
+    var right_np = right.to_numpy()
+
+    check_complex_is_close(
+        left + right, left_np + right_np, "complex + broadcast real"
+    )
+    check_complex_is_close(
+        right - left, right_np - left_np, "broadcast real - complex"
+    )
 
 
 def _make_complex_2x3() raises -> ComplexNDArray[cf32]:

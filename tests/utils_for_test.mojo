@@ -1,6 +1,7 @@
 from std.python import Python, PythonObject
 from std.testing.testing import assert_true
 import numojo as nm
+from numojo import ComplexDType
 
 
 def check[
@@ -24,6 +25,24 @@ def check_is_close[
     var np = Python.import_module("numpy")
     assert_true(
         np.all(np.isclose(array.to_numpy(), np_sol, atol=PythonObject(0.1))), st
+    )
+
+
+def check_complex_is_close[
+    cdtype: ComplexDType
+](array: nm.ComplexNDArray[cdtype], np_sol: PythonObject, st: String) raises:
+    """Check a complex array against a NumPy result."""
+    var np = Python.import_module("numpy")
+    assert_true(
+        np.all(
+            np.isclose(
+                array.to_numpy(),
+                np_sol,
+                rtol=PythonObject(0.00001),
+                atol=PythonObject(0.00001),
+            )
+        ),
+        st,
     )
 
 

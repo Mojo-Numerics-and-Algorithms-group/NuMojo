@@ -22,11 +22,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
-from std.sys.info import (
-    has_amd_gpu_accelerator,
-    has_apple_gpu_accelerator,
-    has_nvidia_gpu_accelerator,
-)
+from std.sys.info import default_accelerator
 
 # ===----------------------------------------------------------------------=== #
 # External
@@ -345,7 +341,7 @@ struct Device(
                 )
             )
 
-        if name == "cuda" and not has_nvidia_gpu_accelerator():
+        if name == "cuda" and not default_accelerator().is_nvidia_gpu():
             raise Error(
                 NumojoError(
                     category="value",
@@ -356,7 +352,7 @@ struct Device(
                     location="Device.__init__",
                 )
             )
-        if name == "rocm" and not has_amd_gpu_accelerator():
+        if name == "rocm" and not default_accelerator().is_amd_gpu():
             raise Error(
                 NumojoError(
                     category="value",
@@ -367,7 +363,7 @@ struct Device(
                     location="Device.__init__",
                 )
             )
-        if name == "mps" and not has_apple_gpu_accelerator():
+        if name == "mps" and not default_accelerator().is_apple_gpu():
             raise Error(
                 NumojoError(
                     category="value",
@@ -540,11 +536,11 @@ struct Device(
             return True
         if self.type == "gpu":
             if self.name == "cuda":
-                return has_nvidia_gpu_accelerator()
+                return default_accelerator().is_nvidia_gpu()
             elif self.name == "rocm":
-                return has_amd_gpu_accelerator()
+                return default_accelerator().is_amd_gpu()
             elif self.name == "mps":
-                return has_apple_gpu_accelerator()
+                return default_accelerator().is_apple_gpu()
         return False
 
     # ===------------------------------------------------------------------=== #
@@ -579,13 +575,13 @@ struct Device(
             NumojoError if no GPU accelerator is detected.
         """
 
-        comptime if has_nvidia_gpu_accelerator():
+        comptime if default_accelerator().is_nvidia_gpu():
             return "cuda"
 
-        comptime if has_amd_gpu_accelerator():
+        comptime if default_accelerator().is_amd_gpu():
             return "rocm"
 
-        comptime if has_apple_gpu_accelerator():
+        comptime if default_accelerator().is_apple_gpu():
             return "mps"
         else:
             raise NumojoError(
@@ -604,19 +600,20 @@ struct Device(
         var result: String = "\n"
         result += "  • " + String(Device.CPU) + " (Default CPU device)\n"
 
-        comptime if has_nvidia_gpu_accelerator():
+        comptime if default_accelerator().is_nvidia_gpu():
             result += "  • " + String(Device.CUDA) + " (NVIDIA CUDA GPU)\n"
 
-        comptime if has_amd_gpu_accelerator():
+        comptime if default_accelerator().is_amd_gpu():
             result += "  • " + String(Device.ROCM) + " (AMD ROCm GPU)\n"
 
-        comptime if has_apple_gpu_accelerator():
+        comptime if default_accelerator().is_apple_gpu():
             result += "  • " + String(Device.MPS) + " (Apple Metal GPU)\n"
 
+        # TODO: Check for single funcs to detect GPU.
         comptime if not (
-            has_nvidia_gpu_accelerator()
-            or has_amd_gpu_accelerator()
-            or has_apple_gpu_accelerator()
+            default_accelerator().is_nvidia_gpu()
+            or default_accelerator().is_amd_gpu()
+            or default_accelerator().is_apple_gpu()
         ):
             result += "  (No GPU accelerators detected)"
 
@@ -756,10 +753,10 @@ def is_accelerator_available[device: Device]() -> Bool:
         return False
 
     comptime if device.name == "cuda":
-        return has_nvidia_gpu_accelerator()
+        return default_accelerator().is_nvidia_gpu()
     elif device.name == "rocm":
-        return has_amd_gpu_accelerator()
+        return default_accelerator().is_amd_gpu()
     elif device.name == "mps":
-        return has_apple_gpu_accelerator()
+        return default_accelerator().is_apple_gpu()
     else:
         return False

@@ -9,7 +9,7 @@ from std.testing.testing import (
 )
 from std.python import Python, PythonObject
 import std.random as builtin_random
-from utils_for_test import check, check_is_close
+from utils_for_test import check, check_complex_is_close, check_is_close
 from std.testing import TestSuite
 
 
@@ -323,6 +323,106 @@ def test_vander() raises:
     var x_nm_int = nm.vander[nm.i32](nm_arr_int)
     var x_np_int = np.vander(np_arr_int)
     check(x_nm_int, x_np_int, "Vander is broken (int32)")
+
+
+def test_complex_common_creation_matches_numpy() raises:
+    var np = Python.import_module("numpy")
+
+    var ones = nm.ones[nm.cf64](Shape(2, 3))
+    check_complex_is_close(
+        ones,
+        np.ones(Python.tuple(2, 3), dtype=np.complex128),
+        "Complex ones is broken",
+    )
+    check_complex_is_close(
+        nm.ones_like(ones),
+        np.ones_like(ones.to_numpy()),
+        "Complex ones_like is broken",
+    )
+    check_complex_is_close(
+        nm.eye[nm.cf64](3, 4),
+        np.eye(3, 4, dtype=np.complex128),
+        "Complex eye is broken",
+    )
+    check_complex_is_close(
+        nm.identity[nm.cf64](3),
+        np.identity(3, dtype=np.complex128),
+        "Complex identity is broken",
+    )
+    check_complex_is_close(
+        nm.tri[nm.cf64](3, 4, k=1),
+        np.tri(3, 4, k=1, dtype=np.complex128),
+        "Complex tri is broken",
+    )
+
+
+def test_complex_vander_matches_numpy() raises:
+    var np = Python.import_module("numpy")
+    var x = ComplexNDArray[cf64](Shape(3))
+    x.itemset(0, ComplexSIMD[cf64](1.0, 2.0))
+    x.itemset(1, ComplexSIMD[cf64](-2.0, 0.5))
+    x.itemset(2, ComplexSIMD[cf64](3.0, -1.0))
+    var x_np = x.to_numpy()
+
+    check_complex_is_close(
+        nm.vander(x), np.vander(x_np), "Complex vander is broken"
+    )
+    check_complex_is_close(
+        nm.vander(x, N=4, increasing=True),
+        np.vander(x_np, N=4, increasing=PythonObject(True)),
+        "Increasing complex vander is broken",
+    )
+
+
+def test_complex_logspace_geomspace_match_numpy() raises:
+    var np = Python.import_module("numpy")
+    var builtins = Python.import_module("builtins")
+    var start = ComplexSIMD[cf64](0.0, 1.0)
+    var stop = ComplexSIMD[cf64](2.0, -0.5)
+    var base = ComplexSIMD[cf64](2.0, 0.5)
+    check_complex_is_close(
+        nm.logspace[cf64](start, stop, 5, base=base),
+        np.logspace(
+            builtins.complex(0.0, 1.0),
+            builtins.complex(2.0, -0.5),
+            5,
+            base=builtins.complex(2.0, 0.5),
+        ),
+        "Complex logspace is broken",
+    )
+    check_complex_is_close(
+        nm.logspace[cf64, True](start, stop, 5, endpoint=False, base=base),
+        np.logspace(
+            builtins.complex(0.0, 1.0),
+            builtins.complex(2.0, -0.5),
+            5,
+            endpoint=PythonObject(False),
+            base=builtins.complex(2.0, 0.5),
+        ),
+        "Parallel complex logspace without endpoint is broken",
+    )
+
+    var geo_start = ComplexSIMD[cf64](1.0, 1.0)
+    var geo_stop = ComplexSIMD[cf64](8.0, -2.0)
+    check_complex_is_close(
+        nm.geomspace[cf64](geo_start, geo_stop, 5),
+        np.geomspace(
+            builtins.complex(1.0, 1.0),
+            builtins.complex(8.0, -2.0),
+            5,
+        ),
+        "Complex geomspace is broken",
+    )
+    check_complex_is_close(
+        nm.geomspace[cf64](geo_start, geo_stop, 5, endpoint=False),
+        np.geomspace(
+            builtins.complex(1.0, 1.0),
+            builtins.complex(8.0, -2.0),
+            5,
+            endpoint=PythonObject(False),
+        ),
+        "Complex geomspace without endpoint is broken",
+    )
 
 
 def test_arr_manipulation() raises:

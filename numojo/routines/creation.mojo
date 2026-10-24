@@ -706,8 +706,8 @@ def logspace[
     stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-    base: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](10.0, 10.0),
-) raises -> ComplexNDArray[cdtype] where cdtype.is_floating_point():
+    base: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](10.0, 0.0),
+) raises -> ComplexNDArray[cdtype] where cdtype.dtype.is_floating_point():
     """
     Generate logarithmically spaced complex numbers over a specified interval.
 
@@ -722,10 +722,20 @@ def logspace[
         stop: Base^stop is the final complex value of the sequence.
         num: Number of samples to generate.
         endpoint: Whether to include base^stop in the result (default True).
-        base: The complex base of the logarithm (default 10+10j).
+        base: The complex base of the logarithm (default 10+0j).
 
     Returns:
         A ComplexNDArray of `cdtype` with `num` logarithmically spaced elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var start = nm.ComplexSIMD[nm.cf64](0.0, 0.0)
+        var stop = nm.ComplexSIMD[nm.cf64](2.0, 0.0)
+        var values = nm.logspace[nm.cf64](start, stop, 3)
+        # [1+0j, 10+0j, 100+0j]
+        ```
     """
     if parallel:
         return _logspace_parallel[cdtype](
@@ -753,7 +763,7 @@ def _logspace_serial[
     num: Int,
     base: ComplexSIMD[cdtype],
     endpoint: Bool = True,
-) raises -> ComplexNDArray[cdtype]:
+) raises -> ComplexNDArray[cdtype] where cdtype.dtype.is_floating_point():
     """
     Generate a logarithmic spaced ComplexNDArray of `num` elements between `start` and `stop` using naive for loop.
 
@@ -783,23 +793,25 @@ def _logspace_serial[
             num - 1
         )
         for i in range(num):
+            var exponent = ComplexSIMD[cdtype](
+                start.re + step_re * Scalar[dtype](i),
+                start.im + step_im * Scalar[dtype](i),
+            )
             result.store[1](
                 i,
-                ComplexSIMD[cdtype](
-                    base.re ** (start.re + step_re * Scalar[dtype](i)),
-                    base.im ** (start.im + step_im * Scalar[dtype](i)),
-                ),
+                base**exponent,
             )
     else:
         var step_re: Scalar[dtype] = (stop.re - start.re) / Scalar[dtype](num)
         var step_im: Scalar[dtype] = (stop.im - start.im) / Scalar[dtype](num)
         for i in range(num):
+            var exponent = ComplexSIMD[cdtype](
+                start.re + step_re * Scalar[dtype](i),
+                start.im + step_im * Scalar[dtype](i),
+            )
             result.store[1](
                 i,
-                ComplexSIMD[cdtype](
-                    base.re ** (start.re + step_re * Scalar[dtype](i)),
-                    base.im ** (start.im + step_im * Scalar[dtype](i)),
-                ),
+                base**exponent,
             )
     return result^
 
@@ -812,7 +824,7 @@ def _logspace_parallel[
     num: Int,
     base: ComplexSIMD[cdtype],
     endpoint: Bool = True,
-) raises -> ComplexNDArray[cdtype]:
+) raises -> ComplexNDArray[cdtype] where cdtype.dtype.is_floating_point():
     """
     Generate a logarithmic spaced ComplexNDArray of `num` elements between `start` and `stop` using parallelization.
 
@@ -846,12 +858,13 @@ def _logspace_parallel[
             idx: Int,
         ) {mut result, base, start, step_re, step_im} -> None:
             try:
+                var exponent = ComplexSIMD[cdtype](
+                    start.re + step_re * Scalar[dtype](idx),
+                    start.im + step_im * Scalar[dtype](idx),
+                )
                 result.store[1](
                     idx,
-                    ComplexSIMD[cdtype](
-                        base.re ** (start.re + step_re * Scalar[dtype](idx)),
-                        base.im ** (start.im + step_im * Scalar[dtype](idx)),
-                    ),
+                    base**exponent,
                 )
             except:
                 print("Error in parallelized_logspace")
@@ -866,12 +879,13 @@ def _logspace_parallel[
             idx: Int,
         ) {mut result, base, start, step_re, step_im} -> None:
             try:
+                var exponent = ComplexSIMD[cdtype](
+                    start.re + step_re * Scalar[dtype](idx),
+                    start.im + step_im * Scalar[dtype](idx),
+                )
                 result.store[1](
                     idx,
-                    ComplexSIMD[cdtype](
-                        base.re ** (start.re + step_re * Scalar[dtype](idx)),
-                        base.im ** (start.im + step_im * Scalar[dtype](idx)),
-                    ),
+                    base**exponent,
                 )
             except:
                 print("Error in parallelized_logspace")
@@ -916,6 +930,16 @@ def geomspace[
 
     Notes:
         This is similar to logspace, but with endpoints specified directly.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var start = nm.ComplexSIMD[nm.cf64](1.0, 0.0)
+        var stop = nm.ComplexSIMD[nm.cf64](16.0, 0.0)
+        var values = nm.geomspace[nm.cf64](start, stop, 5)
+        # [1+0j, 2+0j, 4+0j, 8+0j, 16+0j]
+        ```
     """
     var a: Scalar[dtype] = start
 
@@ -945,7 +969,7 @@ def geomspace[
     stop: ComplexSIMD[cdtype],
     num: Int,
     endpoint: Bool = True,
-) raises -> ComplexNDArray[cdtype] where cdtype.is_floating_point():
+) raises -> ComplexNDArray[cdtype] where cdtype.dtype.is_floating_point():
     """
     Generate complex numbers spaced evenly on a log scale (geometric progression).
 
@@ -973,12 +997,9 @@ def geomspace[
         )
         var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num - 1)
-        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
+        var r: ComplexSIMD[cdtype] = base**power
         for i in range(num):
-            result.store[1](
-                i,
-                ComplexSIMD[cdtype](a.re * r.re**i, a.im * r.im**i),
-            )
+            result.store[1](i, a * r**i)
         return result^
 
     else:
@@ -987,12 +1008,9 @@ def geomspace[
         )
         var base: ComplexSIMD[cdtype] = stop / start
         var power: Scalar[dtype] = 1 / Scalar[dtype](num)
-        var r: ComplexSIMD[cdtype] = base.elem_pow(power)
+        var r: ComplexSIMD[cdtype] = base**power
         for i in range(num):
-            result.store[1](
-                i,
-                ComplexSIMD[cdtype](a.re * r.re**i, a.im * r.im**i),
-            )
+            result.store[1](i, a * r**i)
         return result^
 
 
@@ -1197,9 +1215,18 @@ def eye[
 
     Returns:
         A ComplexNDArray of `cdtype` with size N x M and ones on the diagonals.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var result = nm.eye[nm.cf64](2, 3)
+        # [[1+0j, 0+0j, 0+0j],
+        #  [0+0j, 1+0j, 0+0j]]
+        ```
     """
     var result: ComplexNDArray[cdtype] = zeros[cdtype](NDArrayShape(N, M))
-    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 1)
+    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 0)
     for i in range(min(N, M)):
         result.store[1](i, i, val=one)
     return result^
@@ -1249,9 +1276,18 @@ def identity[
 
     Returns:
         A ComplexNDArray of `cdtype` with size N x N and ones on the diagonals.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var result = nm.identity[nm.cf64](2)
+        # [[1+0j, 0+0j],
+        #  [0+0j, 1+0j]]
+        ```
     """
     var result: ComplexNDArray[cdtype] = zeros[cdtype](NDArrayShape(N, N))
-    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 1)
+    var one: ComplexSIMD[cdtype] = ComplexSIMD[cdtype](1, 0)
     for i in range(N):
         result.store[1](i, i, val=one)
     return result^
@@ -1352,8 +1388,17 @@ def ones[
 
     Returns:
         A ComplexNDArray of `cdtype` with given `shape` filled with ones.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var result = nm.ones[nm.cf64](nm.Shape(2, 2))
+        # [[1+0j, 1+0j],
+        #  [1+0j, 1+0j]]
+        ```
     """
-    return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](1, 1))
+    return full[cdtype](shape=shape, fill_value=ComplexSIMD[cdtype](1, 0))
 
 
 def ones[
@@ -1406,8 +1451,18 @@ def ones_like[
 
     Returns:
         A ComplexNDArray of `cdtype` with the same shape as `array` filled with ones.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var source = nm.zeros[nm.cf64](nm.Shape(2, 2))
+        var result = nm.ones_like(source)
+        # [[1+0j, 1+0j],
+        #  [1+0j, 1+0j]]
+        ```
     """
-    return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](1, 1))
+    return full[cdtype](shape=array.shape, fill_value=ComplexSIMD[cdtype](1, 0))
 
 
 def zeros[
@@ -2010,10 +2065,19 @@ def tri[
 
     Returns:
         A 2-D ComplexNDArray of shape (N, M) with ones on and below the k-th diagonal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var result = nm.tri[nm.cf64](2, 3)
+        # [[1+0j, 0+0j, 0+0j],
+        #  [1+0j, 1+0j, 0+0j]]
+        ```
     """
     return ComplexNDArray[cdtype](
         re=tri[cdtype.dtype](N, M, k),
-        im=tri[cdtype.dtype](N, M, k),
+        im=zeros[cdtype.dtype](NDArrayShape(N, M)),
     )
 
 
@@ -2223,11 +2287,43 @@ def vander[
 
     Returns:
         A Complex Vandermonde matrix.
+
+    Raises:
+        NumojoError: If `x` is not one-dimensional.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var x = nm.ComplexNDArray[nm.cf64](nm.Shape(2))
+        x.itemset(0, nm.ComplexSIMD[nm.cf64](1.0, 1.0))
+        x.itemset(1, nm.ComplexSIMD[nm.cf64](2.0, 0.0))
+        var result = nm.vander(x, N=2)
+        # [[1+1j, 1+0j],
+        #  [2+0j, 1+0j]]
+        ```
     """
-    return ComplexNDArray[cdtype](
-        re=vander[cdtype.dtype](x._re, N, increasing),
-        im=vander[cdtype.dtype](x._im, N, increasing),
-    )
+    if x.ndim != 1:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="x must be a 1-D array.",
+                location="vander",
+            )
+        )
+
+    var n_rows = x.size
+    var n_cols = N.value() if N else n_rows
+    var result = ones[cdtype](NDArrayShape(n_rows, n_cols))
+    for i in range(n_rows):
+        var x_i = x.item(i)
+        if increasing:
+            for j in range(n_cols):
+                result.store[1](i, j, val=x_i**j)
+        else:
+            for j in range(n_cols - 1, -1, -1):
+                result.store[1](i, n_cols - 1 - j, val=x_i**j)
+    return result^
 
 
 # ===----------------------------------------------------------------------=== #

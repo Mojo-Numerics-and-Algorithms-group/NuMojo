@@ -392,6 +392,50 @@ def test_array_split() raises:
         )
 
 
+def test_directional_split() raises:
+    var np = Python.import_module("numpy")
+
+    var one_d = nm.arange[nm.i32](0, 8)
+    var hparts = nm.hsplit(one_d, 2)
+    var hparts_np = np.hsplit(one_d.to_numpy(), 2)
+    for i in range(2):
+        check_is_close(
+            hparts[i],
+            hparts_np[i],
+            String("`hsplit` 1-D part {} fails.").format(i),
+        )
+
+    var two_d = nm.arange[nm.i32](0, 16).reshape(Shape(4, 4))
+    var indices: List[Int] = [1, 3]
+    var hparts_2d = nm.hsplit(two_d, indices)
+    var hparts_2d_np = np.hsplit(two_d.to_numpy(), Python.list(1, 3))
+    for i in range(3):
+        check_is_close(
+            hparts_2d[i],
+            hparts_2d_np[i],
+            String("`hsplit` 2-D index part {} fails.").format(i),
+        )
+
+    var vparts = nm.vsplit(two_d, 2)
+    var vparts_np = np.vsplit(two_d.to_numpy(), 2)
+    for i in range(2):
+        check_is_close(
+            vparts[i],
+            vparts_np[i],
+            String("`vsplit` part {} fails.").format(i),
+        )
+
+    var three_d = nm.arange[nm.i32](0, 24).reshape(Shape(2, 3, 4))
+    var dparts = nm.dsplit(three_d, indices)
+    var dparts_np = np.dsplit(three_d.to_numpy(), Python.list(1, 3))
+    for i in range(3):
+        check_is_close(
+            dparts[i],
+            dparts_np[i],
+            String("`dsplit` part {} fails.").format(i),
+        )
+
+
 def test_concatenate() raises:
     var np = Python.import_module("numpy")
 
@@ -433,6 +477,45 @@ def test_concatenate() raises:
             cnp,
             String("`concatenate` 3-D along axis={} fails.").format(ax),
         )
+
+
+def test_stack() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.arange[nm.i32](0, 6).reshape(Shape(2, 3))
+    var b = nm.arange[nm.i32](6, 12).reshape(Shape(2, 3))
+
+    for axis in range(3):
+        check_is_close(
+            nm.stack(a, b, axis=axis),
+            np.stack(Python.list(a.to_numpy(), b.to_numpy()), axis=axis),
+            String("`stack` axis {} fails.").format(axis),
+        )
+
+    check_is_close(
+        nm.stack(a, b, axis=-1),
+        np.stack(Python.list(a.to_numpy(), b.to_numpy()), axis=-1),
+        "`stack` negative axis fails.",
+    )
+
+
+def test_dstack() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 3)
+    var b = nm.arange[nm.i32](3, 6)
+    check_is_close(
+        nm.dstack(a, b),
+        np.dstack(Python.list(a.to_numpy(), b.to_numpy())),
+        "`dstack` 1-D arrays fails.",
+    )
+
+    var a2 = nm.arange[nm.i32](0, 6).reshape(Shape(2, 3))
+    var b2 = nm.arange[nm.i32](6, 12).reshape(Shape(2, 3))
+    check_is_close(
+        nm.dstack(a2, b2),
+        np.dstack(Python.list(a2.to_numpy(), b2.to_numpy())),
+        "`dstack` 2-D arrays fails.",
+    )
 
 
 def test_column_stack() raises:

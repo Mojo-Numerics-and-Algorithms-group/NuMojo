@@ -21,8 +21,9 @@ Exports
   Layout changes.
 - `broadcast_to`: Broadcasting.
 - `repeat`, `pad`: Repeating and padding.
-- `split`, `array_split`: Splitting.
-- `concatenate`, `hstack`, `vstack`, `row_stack`, `column_stack`: Joining.
+- `split`, `array_split`, `dsplit`, `hsplit`, `vsplit`: Splitting.
+- `concatenate`, `stack`, `dstack`, `hstack`, `vstack`, `row_stack`,
+  `column_stack`: Joining.
 - `delete`, `append`: Removing and adding elements.
 - `copyto`: Copying array values.
 - `ndim`, `shape`, `size`: Array properties.
@@ -788,7 +789,7 @@ def moveaxis[
     """
     var src: List[Int] = [source]
     var dest: List[Int] = [destination]
-    return moveaxis(A, src^, dest^)
+    return moveaxis(A, src, dest)
 
 
 def broadcast_to[
@@ -1964,6 +1965,242 @@ def array_split[
     return split(A, indices, axis)
 
 
+def dsplit[
+    dtype: DType
+](A: NDArray[dtype], sections: Int) raises -> List[NDArray[dtype]]:
+    """Splits an array into equal sections along the third axis.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least three dimensions.
+        sections: The number of equal sections.
+
+    Returns:
+        A list of arrays split along axis 2.
+
+    Raises:
+        NumojoError: If `A` has fewer than three dimensions or cannot be
+            divided equally.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 12).reshape(nm.Shape(2, 2, 3))
+        var parts = nm.dsplit(a, 3)
+        print(parts[0].shape)  # [2, 2, 1]
+        ```
+    """
+    if A.ndim < 3:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="dsplit only works on arrays of 3 or more dimensions",
+                location="dsplit",
+            )
+        )
+    return split(A, sections, axis=2)
+
+
+def dsplit[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int]) raises -> List[NDArray[dtype]]:
+    """Splits an array along the third axis at specified indices.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least three dimensions.
+        indices: The boundary indices at which to split.
+
+    Returns:
+        A list of arrays split along axis 2.
+
+    Raises:
+        NumojoError: If `A` has fewer than three dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 12).reshape(nm.Shape(2, 2, 3))
+        var indices: List[Int] = [1, 2]
+        var parts = nm.dsplit(a, indices)
+        print(parts[0].shape)  # [2, 2, 1]
+        ```
+    """
+    if A.ndim < 3:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="dsplit only works on arrays of 3 or more dimensions",
+                location="dsplit",
+            )
+        )
+    return split(A, indices, axis=2)
+
+
+def hsplit[
+    dtype: DType
+](A: NDArray[dtype], sections: Int) raises -> List[NDArray[dtype]]:
+    """Splits an array horizontally into equal sections.
+
+    One-dimensional arrays are split along axis 0; higher-dimensional
+    arrays are split along axis 1.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least one dimension.
+        sections: The number of equal sections.
+
+    Returns:
+        A list of horizontally split arrays.
+
+    Raises:
+        NumojoError: If `A` is zero-dimensional or cannot be divided equally.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 8).reshape(nm.Shape(2, 4))
+        var parts = nm.hsplit(a, 2)
+        print(parts[0].shape)  # [2, 2]
+        ```
+    """
+    if A.ndim == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="hsplit only works on arrays of 1 or more dimensions",
+                location="hsplit",
+            )
+        )
+    return split(A, sections, axis=0 if A.ndim == 1 else 1)
+
+
+def hsplit[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int]) raises -> List[NDArray[dtype]]:
+    """Splits an array horizontally at specified indices.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least one dimension.
+        indices: The boundary indices at which to split.
+
+    Returns:
+        A list of horizontally split arrays.
+
+    Raises:
+        NumojoError: If `A` is zero-dimensional.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 8).reshape(nm.Shape(2, 4))
+        var indices: List[Int] = [1, 3]
+        var parts = nm.hsplit(a, indices)
+        print(parts[0].shape)  # [2, 1]
+        ```
+    """
+    if A.ndim == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="hsplit only works on arrays of 1 or more dimensions",
+                location="hsplit",
+            )
+        )
+    return split(A, indices, axis=0 if A.ndim == 1 else 1)
+
+
+def vsplit[
+    dtype: DType
+](A: NDArray[dtype], sections: Int) raises -> List[NDArray[dtype]]:
+    """Splits an array vertically into equal sections along axis 0.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least two dimensions.
+        sections: The number of equal sections.
+
+    Returns:
+        A list of vertically split arrays.
+
+    Raises:
+        NumojoError: If `A` has fewer than two dimensions or cannot be
+            divided equally.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 8).reshape(nm.Shape(4, 2))
+        var parts = nm.vsplit(a, 2)
+        print(parts[0].shape)  # [2, 2]
+        ```
+    """
+    if A.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="vsplit only works on arrays of 2 or more dimensions",
+                location="vsplit",
+            )
+        )
+    return split(A, sections, axis=0)
+
+
+def vsplit[
+    dtype: DType
+](A: NDArray[dtype], indices: List[Int]) raises -> List[NDArray[dtype]]:
+    """Splits an array vertically along axis 0 at specified indices.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        A: The array to split. It must have at least two dimensions.
+        indices: The boundary indices at which to split.
+
+    Returns:
+        A list of vertically split arrays.
+
+    Raises:
+        NumojoError: If `A` has fewer than two dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 8).reshape(nm.Shape(4, 2))
+        var indices: List[Int] = [1, 3]
+        var parts = nm.vsplit(a, indices)
+        print(parts[0].shape)  # [1, 2]
+        ```
+    """
+    if A.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="vsplit only works on arrays of 2 or more dimensions",
+                location="vsplit",
+            )
+        )
+    return split(A, indices, axis=0)
+
+
 # ===----------------------------------------------------------------------=== #
 # Joining arrays
 # ===----------------------------------------------------------------------=== #
@@ -2120,6 +2357,94 @@ def concatenate[
     for i in range(len(arrays)):
         arr_list.append(arrays[i].copy())
     return _concatenate_list(arr_list, axis)
+
+
+def stack[
+    dtype: DType
+](*arrays: NDArray[dtype], axis: Int = 0) raises -> NDArray[dtype]:
+    """Joins arrays along a new axis.
+
+    Parameters:
+        dtype: The shared data type of the arrays.
+
+    Args:
+        arrays: Arrays with identical shapes.
+        axis: The position of the new axis. Defaults to 0.
+
+    Returns:
+        The stacked array with one additional dimension.
+
+    Raises:
+        NumojoError: If no arrays are provided, their shapes differ, or
+            `axis` is out of range.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3)
+        var b = nm.arange[nm.i32](3, 6)
+        var result = nm.stack(a, b, axis=0)
+        print(result.shape)  # [2, 3]
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to stack.",
+                location="stack",
+            )
+        )
+
+    var expanded = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        expanded.append(expand_dims(arrays[i], axis))
+    return _concatenate_list(expanded, axis)
+
+
+def dstack[dtype: DType](*arrays: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Stacks arrays in sequence depth-wise along the third axis.
+
+    Inputs are promoted to at least three dimensions before joining, as in
+    `numpy.dstack`.
+
+    Parameters:
+        dtype: The shared data type of the arrays.
+
+    Args:
+        arrays: The arrays to stack depth-wise.
+
+    Returns:
+        The arrays joined along axis 2.
+
+    Raises:
+        NumojoError: If no arrays are provided or the promoted shapes are
+            incompatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3)
+        var b = nm.arange[nm.i32](3, 6)
+        var result = nm.dstack(a, b)
+        print(result.shape)  # [1, 3, 2]
+        ```
+    """
+    if len(arrays) == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="Need at least one array to dstack.",
+                location="dstack",
+            )
+        )
+
+    var transformed = List[NDArray[dtype]]()
+    for i in range(len(arrays)):
+        transformed.append(atleast_3d(arrays[i]))
+    return _concatenate_list(transformed, axis=2)
 
 
 def column_stack[

@@ -301,8 +301,8 @@ def test_setitem_scalar_2d_mask_on_3d_f_order() raises:
 def test_setitem_ndarray_2d_mask_on_3d_f_order_per_index() raises:
     """K-D NDArray setter with per-index val must write through F-order."""
     var a = nm.arange[nm.i32](0, 24).reshape(Shape(2, 3, 4), order="F")
-    # Snapshot one untouched value to verify F-strides are respected.
-    var v_120 = Int(a.item(1, 2, 0))
+    # # Snapshot one untouched value to verify F-strides are respected.
+    # var v_120 = Int(a.item(1, 2, 0))
     # Override v_120 only if it's not in a selected slice; (1, 2, *) IS selected
     # so use a different untouched probe.
     var v_010 = Int(a.item(0, 1, 0))

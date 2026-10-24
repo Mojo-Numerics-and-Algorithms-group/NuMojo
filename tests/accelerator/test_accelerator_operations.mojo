@@ -10,7 +10,6 @@ from std.testing import TestSuite
 from std.sys.info import default_accelerator
 
 
-
 def test_add_cpu_uniform() raises:
     var a = full[DType.float32, Device.CPU](Shape(8), 3.0)
     var b = full[DType.float32, Device.CPU](Shape(8), 4.0)

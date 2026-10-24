@@ -7,11 +7,8 @@ from numojo.core.accelerator_ndarray import AcceleratorNDArray, full, zeros
 from numojo.core.layout.ndshape import NDArrayShape as Shape
 from std.testing.testing import assert_true, assert_equal
 from std.testing import TestSuite
-from std.sys.info import (
-    has_amd_gpu_accelerator,
-    has_apple_gpu_accelerator,
-    has_nvidia_gpu_accelerator,
-)
+from std.sys.info import default_accelerator
+
 
 
 def test_add_cpu_uniform() raises:
@@ -125,11 +122,11 @@ def _run_gpu_elementwise_op_test[device: Device]() raises:
 
 
 def test_elementwise_ops_gpu_match_cpu_when_available() raises:
-    comptime if has_nvidia_gpu_accelerator():
+    comptime if default_accelerator().is_nvidia_gpu():
         _run_gpu_elementwise_op_test[Device.CUDA]()
-    elif has_amd_gpu_accelerator():
+    elif default_accelerator().is_amd_gpu():
         _run_gpu_elementwise_op_test[Device.ROCM]()
-    elif has_apple_gpu_accelerator():
+    elif default_accelerator().is_apple_gpu():
         _run_gpu_elementwise_op_test[Device.MPS]()
     else:
         assert_true(True, "no gpu available; gpu binary op tests skipped")
@@ -154,11 +151,11 @@ def _run_gpu_sum_test[device: Device]() raises:
 
 
 def test_sum_gpu_matches_cpu_when_available() raises:
-    comptime if has_nvidia_gpu_accelerator():
+    comptime if default_accelerator().is_nvidia_gpu():
         _run_gpu_sum_test[Device.CUDA]()
-    elif has_amd_gpu_accelerator():
+    elif default_accelerator().is_amd_gpu():
         _run_gpu_sum_test[Device.ROCM]()
-    elif has_apple_gpu_accelerator():
+    elif default_accelerator().is_apple_gpu():
         _run_gpu_sum_test[Device.MPS]()
     else:
         assert_true(True, "no gpu available; gpu sum test skipped")
@@ -166,9 +163,9 @@ def test_sum_gpu_matches_cpu_when_available() raises:
 
 def main() raises:
     if (
-        has_nvidia_gpu_accelerator()
-        or has_amd_gpu_accelerator()
-        or has_apple_gpu_accelerator()
+        default_accelerator().is_nvidia_gpu()
+        or default_accelerator().is_amd_gpu()
+        or default_accelerator().is_apple_gpu()
     ):
         TestSuite.discover_tests[__functions_in_module()]().run()
     else:

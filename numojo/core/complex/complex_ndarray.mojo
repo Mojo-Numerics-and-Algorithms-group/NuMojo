@@ -162,6 +162,18 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Args:
             re: Real part of the complex array.
             im: Imaginary part of the complex array.
+
+        Raises:
+            NumojoError: If `re` and `im` have different shapes or strides.
+
+        Examples:
+            ```mojo
+            import numojo as nm
+
+            var re = nm.ones[nm.f64](nm.Shape(2, 2))
+            var im = nm.zeros[nm.f64](nm.Shape(2, 2))
+            var values = nm.ComplexNDArray[nm.cf64](re^, im^)
+            ```
         """
         if re.shape != im.shape:
             raise Error(
@@ -173,6 +185,19 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                         " arguments are created with the same shape before"
                         " constructing ComplexNDArray."
                     ).format(re.shape, im.shape),
+                    location="ComplexNDArray.__init__(re, im)",
+                )
+            )
+        if re.strides != im.strides:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "Real and imaginary array parts must have identical"
+                        " strides; got re={} vs im={}. Convert both parts to"
+                        " the same memory layout before constructing a"
+                        " ComplexNDArray."
+                    ).format(re.strides, im.strides),
                     location="ComplexNDArray.__init__(re, im)",
                 )
             )
@@ -2669,14 +2694,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray + Scalar`.
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
-        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        var imag = +self._im
         return Self(real^, imag^)
 
     def __add__(self, other: Self) raises -> Self:
         """
         Enables `ComplexNDArray + ComplexNDArray`.
         """
-        print("add complex arrays")
         var real: NDArray[Self.dtype] = math.add[Self.dtype](
             self._re, other._re
         )
@@ -2690,7 +2714,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray + NDArray`.
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
-        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        var zeros = creation.zeros_like[Self.dtype](other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, zeros)
         return Self(real^, imag^)
 
     def __radd__(mut self, other: ComplexSIMD[Self.cdtype]) raises -> Self:
@@ -2706,7 +2731,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `Scalar + ComplexNDArray`.
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
-        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        var imag = +self._im
         return Self(real^, imag^)
 
     def __radd__(mut self, other: NDArray[Self.dtype]) raises -> Self:
@@ -2714,7 +2739,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `NDArray + ComplexNDArray`.
         """
         var real: NDArray[Self.dtype] = math.add[Self.dtype](self._re, other)
-        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, other)
+        var zeros = creation.zeros_like[Self.dtype](other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, zeros)
         return Self(real^, imag^)
 
     def __iadd__(mut self, other: ComplexSIMD[Self.cdtype]) raises:
@@ -2729,7 +2755,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray += Scalar`.
         """
         self._re += other
-        self._im += other
 
     def __iadd__(mut self, other: Self) raises:
         """
@@ -2743,7 +2768,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray += NDArray`.
         """
         self._re += other
-        self._im += other
 
     def __sub__(self, other: ComplexSIMD[Self.cdtype]) raises -> Self:
         """
@@ -2760,9 +2784,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](
             self._re, other.cast[Self.dtype]()
         )
-        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](
-            self._im, other.cast[Self.dtype]()
-        )
+        var imag = +self._im
         return Self(real^, imag^)
 
     def __sub__(self, other: Self) raises -> Self:
@@ -2782,7 +2804,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray - NDArray`.
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](self._re, other)
-        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](self._im, other)
+        var zeros = creation.zeros_like[Self.dtype](other)
+        var imag: NDArray[Self.dtype] = math.add[Self.dtype](self._im, zeros)
         return Self(real^, imag^)
 
     def __rsub__(mut self, other: ComplexSIMD[Self.cdtype]) raises -> Self:
@@ -2798,7 +2821,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `Scalar - ComplexNDArray`.
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
-        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
+        var imag = -self._im
         return Self(real^, imag^)
 
     def __rsub__(mut self, other: NDArray[Self.dtype]) raises -> Self:
@@ -2806,7 +2829,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `NDArray - ComplexNDArray`.
         """
         var real: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._re)
-        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](other, self._im)
+        var zeros = creation.zeros_like[Self.dtype](other)
+        var imag: NDArray[Self.dtype] = math.sub[Self.dtype](zeros, self._im)
         return Self(real^, imag^)
 
     def __isub__(mut self, other: ComplexSIMD[Self.cdtype]) raises:
@@ -2821,7 +2845,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray -= Scalar`.
         """
         self._re -= other
-        self._im -= other
 
     def __isub__(mut self, other: Self) raises:
         """
@@ -2835,7 +2858,6 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         Enables `ComplexNDArray -= NDArray`.
         """
         self._re -= other
-        self._im -= other
 
     def __matmul__(self, other: Self) raises -> Self:
         var re_re: NDArray[Self.dtype] = linalg.matmul[Self.dtype](
@@ -2860,13 +2882,13 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
             self._re, other.re
         )
         var im_im: NDArray[Self.dtype] = math.mul[Self.dtype](
-            self._im, other.re
+            self._im, other.im
         )
         var re_im: NDArray[Self.dtype] = math.mul[Self.dtype](
             self._re, other.im
         )
         var im_re: NDArray[Self.dtype] = math.mul[Self.dtype](
-            self._im, other.im
+            self._im, other.re
         )
         return Self(re_re - im_im, re_im + im_re)
 
@@ -2908,9 +2930,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexSIMD * ComplexNDArray`.
         """
-        var real: NDArray[Self.dtype] = math.mul[Self.dtype](self._re, other.re)
-        var imag: NDArray[Self.dtype] = math.mul[Self.dtype](self._im, other.re)
-        return Self(real^, imag^)
+        return self * other
 
     def __rmul__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
@@ -2932,8 +2952,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexNDArray *= ComplexSIMD`.
         """
-        self._re *= other.re
-        self._im *= other.im
+        var result = self * other
+        self = result^
 
     def __imul__(mut self, other: Scalar[Self.dtype]) raises:
         """
@@ -2946,8 +2966,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexNDArray *= ComplexNDArray`.
         """
-        self._re *= other._re
-        self._im *= other._im
+        var result = self * other
+        self = result^
 
     def __imul__(mut self, other: NDArray[Self.dtype]) raises:
         """
@@ -2960,13 +2980,14 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexNDArray / ComplexSIMD`.
         """
-        var other_square = other * other.conj()
-        var result = self * other.conj() * (1.0 / other_square.re)
-        return result^
+        var denominator = other.re * other.re + other.im * other.im
+        var real = (self._re * other.re + self._im * other.im) / denominator
+        var imag = (self._im * other.re - self._re * other.im) / denominator
+        return Self(real^, imag^)
 
     def __truediv__(self, other: Scalar[Self.dtype]) raises -> Self:
         """
-        Enables `ComplexNDArray / ComplexSIMD`.
+        Enables `ComplexNDArray / Scalar`.
         """
         var real: NDArray[Self.dtype] = math.div[Self.dtype](self._re, other)
         var imag: NDArray[Self.dtype] = math.div[Self.dtype](self._im, other)
@@ -2976,10 +2997,9 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexNDArray / ComplexNDArray`.
         """
-        var denom = other * other.conj()
-        var numer = self * other.conj()
-        var real = numer._re / denom._re
-        var imag = numer._im / denom._re
+        var denom = other._re * other._re + other._im * other._im
+        var real = (self._re * other._re + self._im * other._im) / denom
+        var imag = (self._im * other._re - self._re * other._im) / denom
         return Self(real^, imag^)
 
     def __truediv__(self, other: NDArray[Self.dtype]) raises -> Self:
@@ -2994,38 +3014,35 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexSIMD / ComplexNDArray`.
         """
-        var denom = other * other.conj()
-        var numer = self * other.conj()
-        var real = numer._re / denom.re
-        var imag = numer._im / denom.re
+        var denom = self._re * self._re + self._im * self._im
+        var real = (self._re * other.re + self._im * other.im) / denom
+        var imag = (self._re * other.im - self._im * other.re) / denom
         return Self(real^, imag^)
 
     def __rtruediv__(mut self, other: Scalar[Self.dtype]) raises -> Self:
         """
         Enables `Scalar / ComplexNDArray`.
         """
-        var denom = self * self.conj()
-        var numer = self.conj() * other
-        var real = numer._re / denom._re
-        var imag = numer._im / denom._re
+        var denom = self._re * self._re + self._im * self._im
+        var real = self._re * other / denom
+        var imag = -self._im * other / denom
         return Self(real^, imag^)
 
     def __rtruediv__(mut self, other: NDArray[Self.dtype]) raises -> Self:
         """
         Enables `NDArray / ComplexNDArray`.
         """
-        var denom = self * self.conj()
-        var numer = self.conj() * other
-        var real = numer._re / denom._re
-        var imag = numer._im / denom._re
+        var denom = self._re * self._re + self._im * self._im
+        var real = self._re * other / denom
+        var imag = -self._im * other / denom
         return Self(real^, imag^)
 
     def __itruediv__(mut self, other: ComplexSIMD[Self.cdtype]) raises:
         """
         Enables `ComplexNDArray /= ComplexSIMD`.
         """
-        self._re /= other.re
-        self._im /= other.im
+        var result = self / other
+        self = result^
 
     def __itruediv__(mut self, other: Scalar[Self.dtype]) raises:
         """
@@ -3038,8 +3055,8 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Enables `ComplexNDArray /= ComplexNDArray`.
         """
-        self._re /= other._re
-        self._im /= other._im
+        var result = self / other
+        self = result^
 
     def __itruediv__(mut self, other: NDArray[Self.dtype]) raises:
         """
@@ -3544,7 +3561,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         """
         Return the complex conjugate of the ComplexNDArray.
         """
-        return Self(self._re.copy(), -self._im.copy())
+        return Self(+self._re, -self._im)
 
     def to_ndarray(
         self, type: String = "re"

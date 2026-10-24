@@ -28,7 +28,7 @@ Notes:
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
-from std.math import cos, sin, sqrt
+from std.math import atan2, cos, exp, log, sin, sqrt
 
 # ===----------------------------------------------------------------------=== #
 # NuMojo
@@ -914,6 +914,44 @@ struct ComplexSIMD[cdtype: ComplexDType = ComplexDType.float64, width: Int = 1](
             ComplexSIMD instance where each lane is (re^exponent, im^exponent).
         """
         return Self(self.re**exponent, self.im**exponent)
+
+    def __pow__(
+        self, exponent: Self
+    ) -> Self where Self.dtype.is_floating_point():
+        """
+        Raise this complex value to a complex power using the principal branch.
+
+        Args:
+            exponent: Complex exponent.
+
+        Returns:
+            `self ** exponent`, evaluated as `exp(exponent * log(self))`.
+        """
+        var log_re = log(sqrt(self.re * self.re + self.im * self.im))
+        var log_im = atan2(self.im, self.re)
+        var exponent_re = exponent.re * log_re - exponent.im * log_im
+        var exponent_im = exponent.re * log_im + exponent.im * log_re
+        var magnitude = exp(exponent_re)
+        return Self(magnitude * cos(exponent_im), magnitude * sin(exponent_im))
+
+    def __pow__(
+        self, exponent: Scalar[Self.dtype]
+    ) -> Self where Self.dtype.is_floating_point():
+        """
+        Raise this complex value to a real power using the principal branch.
+
+        Args:
+            exponent: Real exponent.
+
+        Returns:
+            `self ** exponent` as a complex value.
+        """
+        var exponent_simd = Self._broadcast(exponent)
+        var magnitude = (
+            sqrt(self.re * self.re + self.im * self.im) ** exponent_simd
+        )
+        var angle = atan2(self.im, self.re) * exponent_simd
+        return Self(magnitude * cos(angle), magnitude * sin(angle))
 
     def __pow__(self, n: Int) -> Self:
         """

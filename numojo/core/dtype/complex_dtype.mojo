@@ -27,7 +27,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
-from std.hashlib.hasher import Hasher
+from std.hash.hasher import Hasher
 from std.os import abort
 from std.sys.info import size_of
 

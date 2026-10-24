@@ -1088,7 +1088,7 @@ def save_torch[dtype: DType](path: String, A: NDArray[dtype]) raises:
         stride.append(Int(Ac.strides[i]))
 
     var pickle_bytes = _build_rebuild_tensor_pickle(
-        storage_kind, "0", Ac.size, shape^, stride^
+        storage_kind, "0", Ac.size, shape, stride
     )
 
     var raw = List[UInt8](capacity=Ac.size * size_of[Scalar[dtype]]())
@@ -1117,7 +1117,7 @@ def save_torch[dtype: DType](path: String, A: NDArray[dtype]) raises:
         raw^,
     ]
 
-    var zip_bytes = _zip_write_stored(names^, payloads^)
+    var zip_bytes = _zip_write_stored(names, payloads)
     var f = open(path, "w")
     f.write_bytes(Span(zip_bytes))
     f.close()

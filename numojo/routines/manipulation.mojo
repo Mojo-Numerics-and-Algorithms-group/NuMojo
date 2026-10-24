@@ -789,7 +789,7 @@ def moveaxis[
     """
     var src: List[Int] = [source]
     var dest: List[Int] = [destination]
-    return moveaxis(A, src^, dest^)
+    return moveaxis(A, src, dest)
 
 
 def broadcast_to[

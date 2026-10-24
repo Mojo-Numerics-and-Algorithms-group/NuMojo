@@ -28,7 +28,7 @@ def test_constructors() raises:
     )
 
     var values: List[Int] = [3, 4, 5]
-    var arr4 = NDArray[f32](NDArrayShape(values^))
+    var arr4 = NDArray[f32](NDArrayShape(values))
     assert_true(
         arr4.shape[0] == 3, "NDArray constructor with List: shape element 0"
     )

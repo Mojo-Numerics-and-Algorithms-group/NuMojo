@@ -5,11 +5,7 @@ from numojo.core.accelerator.device import (
 )
 from std.testing.testing import assert_true, assert_equal
 from std.testing import TestSuite
-from std.sys.info import (
-    has_amd_gpu_accelerator,
-    has_apple_gpu_accelerator,
-    has_nvidia_gpu_accelerator,
-)
+from std.sys.info import default_accelerator
 
 
 def test_default_init() raises:
@@ -310,7 +306,7 @@ def test_device_spec_gpu_identity() raises:
 
 
 def test_gpu_device_handle_when_available() raises:
-    comptime if has_nvidia_gpu_accelerator():
+    comptime if default_accelerator().is_nvidia_gpu():
         var handle = DeviceHandle[Device.CUDA]()
         assert_true(handle.is_gpu(), "cuda handle is_gpu")
         assert_equal(
@@ -318,10 +314,10 @@ def test_gpu_device_handle_when_available() raises:
             "DeviceHandle(cuda:0, context=True)",
             "cuda handle string",
         )
-    elif has_amd_gpu_accelerator():
+    elif default_accelerator().is_amd_gpu():
         var handle = DeviceHandle[Device.ROCM]()
         assert_true(handle.is_gpu(), "rocm handle is_gpu")
-    elif has_apple_gpu_accelerator():
+    elif default_accelerator().is_apple_gpu():
         var handle = DeviceHandle[Device.MPS]()
         assert_true(handle.is_gpu(), "mps handle is_gpu")
     else:

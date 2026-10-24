@@ -1948,7 +1948,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var slice_list: List[Slice] = List[Slice]()
         for i in range(slices.__len__()):
             slice_list.append(slices[i])
-        self[slice_list^] = val
+        self[slice_list] = val
 
     def __setitem__(
         mut self, slices: List[Slice], val: ComplexNDArray[Self.cdtype]
@@ -2112,7 +2112,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
                 var size_at_dim: Int = self.shape[i]
                 slice_list.append(Slice(0, size_at_dim, 1))
 
-        self[slice_list^] = val
+        self[slice_list] = val
 
     def __setitem__(mut self, index: NDArray[DType.int], val: Self) raises:
         """
@@ -2530,7 +2530,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_lt = comparison.less[Self.dtype](self._im, other._im)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+            re_lt, logical_ops.logical_and(re_eq, im_lt)
         )
         return result^
 
@@ -2542,7 +2542,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_lt = comparison.less[Self.dtype](self._im, other.im)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+            re_lt, logical_ops.logical_and(re_eq, im_lt)
         )
         return result^
 
@@ -2552,7 +2552,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_lt = comparison.less[Self.dtype](self._im, 0)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_lt^)
+            re_lt, logical_ops.logical_and(re_eq, im_lt)
         )
         return result^
 
@@ -2562,7 +2562,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_le = comparison.less_equal[Self.dtype](self._im, other._im)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+            re_lt, logical_ops.logical_and(re_eq, im_le)
         )
         return result^
 
@@ -2574,7 +2574,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_le = comparison.less_equal[Self.dtype](self._im, other.im)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+            re_lt, logical_ops.logical_and(re_eq, im_le)
         )
         return result^
 
@@ -2584,7 +2584,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_le = comparison.less_equal[Self.dtype](self._im, 0)
         var result = logical_ops.logical_or(
-            re_lt^, logical_ops.logical_and(re_eq^, im_le^)
+            re_lt, logical_ops.logical_and(re_eq, im_le)
         )
         return result^
 
@@ -2594,7 +2594,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_gt = comparison.greater[Self.dtype](self._im, other._im)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+            re_gt, logical_ops.logical_and(re_eq, im_gt)
         )
         return result^
 
@@ -2606,7 +2606,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_gt = comparison.greater[Self.dtype](self._im, other.im)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+            re_gt, logical_ops.logical_and(re_eq, im_gt)
         )
         return result^
 
@@ -2616,7 +2616,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_gt = comparison.greater[Self.dtype](self._im, 0)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_gt^)
+            re_gt, logical_ops.logical_and(re_eq, im_gt)
         )
         return result^
 
@@ -2626,7 +2626,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other._re)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, other._im)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+            re_gt, logical_ops.logical_and(re_eq, im_ge)
         )
         return result^
 
@@ -2638,7 +2638,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other.re)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, other.im)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+            re_gt, logical_ops.logical_and(re_eq, im_ge)
         )
         return result^
 
@@ -2648,7 +2648,7 @@ struct ComplexNDArray[cdtype: ComplexDType = ComplexDType.float64](
         var re_eq = comparison.equal[Self.dtype](self._re, other)
         var im_ge = comparison.greater_equal[Self.dtype](self._im, 0)
         var result = logical_ops.logical_or(
-            re_gt^, logical_ops.logical_and(re_eq^, im_ge^)
+            re_gt, logical_ops.logical_and(re_eq, im_ge)
         )
         return result^
 

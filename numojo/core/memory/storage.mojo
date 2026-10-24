@@ -613,7 +613,7 @@ struct DeviceStorage[dtype: DType, device: Device](Copyable, Movable):
     def share(self) raises -> DeviceStorage[Self.dtype, Self.device]:
         """Create a shallow handle sharing this device buffer."""
         var shared_buffer = self.buffer.copy()
-        return DeviceStorage[Self.dtype, Self.device](shared_buffer^, self.size)
+        return DeviceStorage[Self.dtype, Self.device](shared_buffer, self.size)
 
 
 # ===----------------------------------------------------------------------=== #

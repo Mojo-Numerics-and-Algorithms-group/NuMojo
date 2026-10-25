@@ -10,13 +10,17 @@ Products (numojo.routines.linalg.products).
 ===========================================
 Array and vector product operations.
 
-Functions for computing products of vectors and arrays (dot product, matrix
-multiplication, cross product).
+Functions for computing products of vectors, matrices, and arrays.
 
 Exports
 -------
 - `dot`: Dot product of vectors.
+- `inner`: Inner product over the last dimensions.
+- `vdot`: Dot product of flattened arrays.
+- `vecdot`: Batched vector dot product.
 - `matmul`: Matrix multiplication.
+- `matvec`: Batched matrix-vector product.
+- `vecmat`: Batched vector-matrix product.
 - `cross`: Cross product.
 - `outer`: Outer product of two flattened arrays.
 - `kron`: Kronecker product.
@@ -45,6 +49,194 @@ from numojo.core.type_aliases import Shape
 from numojo.routines.creation import _0darray, zeros
 from numojo.routines.manipulation import reshape, transpose
 from numojo.routines.math.sums import sum
+
+
+def _shape_product(shape: NDArrayShape) raises -> Int:
+    """Computes a shape's element count, including the 0-D empty product."""
+    var result = 1
+    for i in range(shape.ndim):
+        result *= shape[i]
+    return result
+
+
+def _shape_from_dimensions(dimensions: List[Int]) raises -> NDArrayShape:
+    """Constructs a shape while supporting an empty dimension list.
+
+    Args:
+        dimensions: The shape dimensions.
+
+    Returns:
+        A 0-D shape for an empty list, otherwise the listed dimensions.
+    """
+    if len(dimensions) == 0:
+        return NDArrayShape()
+    return NDArrayShape(dimensions)
+
+
+def _leading_shape(shape: NDArrayShape, core_ndim: Int) raises -> NDArrayShape:
+    """Returns the dimensions preceding an operation's core dimensions.
+
+    Args:
+        shape: The complete input shape.
+        core_ndim: The number of trailing core dimensions to exclude.
+
+    Returns:
+        The leading batch dimensions.
+    """
+    var dimensions = List[Int]()
+    for i in range(shape.ndim - core_ndim):
+        dimensions.append(shape[i])
+    return _shape_from_dimensions(dimensions)
+
+
+def _shape_without_axis(shape: NDArrayShape, axis: Int) raises -> NDArrayShape:
+    """Returns a shape with one normalized axis removed.
+
+    Args:
+        shape: The complete input shape.
+        axis: The normalized axis to remove.
+
+    Returns:
+        The shape containing every dimension except `axis`.
+    """
+    var dimensions = List[Int]()
+    for i in range(shape.ndim):
+        if i != axis:
+            dimensions.append(shape[i])
+    return _shape_from_dimensions(dimensions)
+
+
+def _row_major_strides(shape: NDArrayShape) raises -> List[Int]:
+    """Computes row-major strides for a shape.
+
+    Args:
+        shape: The shape whose strides are required.
+
+    Returns:
+        Row-major strides, one for each dimension.
+    """
+    var strides = List[Int](capacity=shape.ndim)
+    for _ in range(shape.ndim):
+        strides.append(0)
+    var stride = 1
+    for i in range(shape.ndim - 1, -1, -1):
+        strides[i] = stride
+        stride *= shape[i]
+    return strides^
+
+
+def _broadcast_flat_offset(
+    output_flat: Int,
+    output_shape: NDArrayShape,
+    output_strides: List[Int],
+    input_shape: NDArrayShape,
+    input_strides: List[Int],
+) raises -> Int:
+    """Maps a broadcast batch index to an input batch index.
+
+    Args:
+        output_flat: The flat index in the broadcast batch shape.
+        output_shape: The broadcast batch shape.
+        output_strides: Row-major strides for `output_shape`.
+        input_shape: The input's unbroadcast batch shape.
+        input_strides: Row-major strides for `input_shape`.
+
+    Returns:
+        The corresponding flat index in the input batch dimensions.
+    """
+    var offset = 0
+    var leading = output_shape.ndim - input_shape.ndim
+    for input_axis in range(input_shape.ndim):
+        if input_shape[input_axis] != 1:
+            var output_axis = input_axis + leading
+            var coordinate = (
+                output_flat // output_strides[output_axis]
+            ) % output_shape[output_axis]
+            offset += coordinate * input_strides[input_axis]
+    return offset
+
+
+def _zeros_for_shape[
+    dtype: DType
+](shape: NDArrayShape) raises -> NDArray[dtype]:
+    """Creates zeros while preserving the one-element invariant for 0-D arrays.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        shape: The requested result shape.
+
+    Returns:
+        A zero-filled array with the requested shape.
+    """
+    if shape.ndim == 0:
+        return _0darray[dtype](0)
+    return zeros[dtype](shape)
+
+
+def _normalize_vector_axis(
+    axis: Int, ndim: Int, location: String
+) raises -> Int:
+    """Normalizes an axis used as a vector core dimension.
+
+    Args:
+        axis: The possibly negative axis.
+        ndim: The number of dimensions in the input.
+        location: The public function name used in an error.
+
+    Returns:
+        The non-negative normalized axis.
+
+    Raises:
+        NumojoError: If the input is 0-D or the axis is out of bounds.
+    """
+    if ndim == 0:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "Vector products require arrays with at least one"
+                    " dimension."
+                ),
+                location=location,
+            )
+        )
+    var normalized = axis + ndim if axis < 0 else axis
+    if normalized < 0 or normalized >= ndim:
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String("Axis {} is out of bounds for rank {}.").format(
+                    axis, ndim
+                ),
+                location=location,
+            )
+        )
+    return normalized
+
+
+def _move_axis_to_end[
+    dtype: DType
+](array: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """Moves one normalized axis to the last dimension.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: The input array.
+        axis: The normalized axis to move.
+
+    Returns:
+        A view with `axis` in the final position.
+    """
+    var axes = List[Int]()
+    for i in range(array.ndim):
+        if i != axis:
+            axes.append(i)
+    axes.append(axis)
+    return transpose(array, axes)
 
 
 def cross[
@@ -164,6 +356,439 @@ def dot[
             location="dot",
         )
     )
+
+
+def inner[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Computes the inner product over the inputs' last dimensions.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: The first input array.
+        array2: The second input array.
+
+    Returns:
+        The inner product. For non-scalar inputs, the result shape is
+        `array1.shape[:-1] + array2.shape[:-1]`.
+
+    Raises:
+        NumojoError: If non-scalar inputs have different final dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(2, 3))
+        var b = nm.arange[nm.f64](3)
+        print(nm.inner(a, b))
+        ```
+    """
+    var output_dimensions = List[Int]()
+    if array1.ndim == 0 or array2.ndim == 0:
+        if array1.ndim != 0:
+            for i in range(array1.ndim):
+                output_dimensions.append(array1.shape[i])
+        elif array2.ndim != 0:
+            for i in range(array2.ndim):
+                output_dimensions.append(array2.shape[i])
+
+        var scalar_result = _zeros_for_shape[dtype](
+            _shape_from_dimensions(output_dimensions)
+        )
+        if scalar_result.size == 0:
+            return scalar_result^
+        if not array1.is_c_contiguous():
+            return inner(array1.contiguous(), array2)
+        if not array2.is_c_contiguous():
+            return inner(array1, array2.contiguous())
+
+        if array1.ndim == 0:
+            var scalar = array1.unsafe_get(0)
+            for i in range(scalar_result.size):
+                scalar_result.unsafe_set(i, scalar * array2.unsafe_get(i))
+        else:
+            var scalar = array2.unsafe_get(0)
+            for i in range(scalar_result.size):
+                scalar_result.unsafe_set(i, array1.unsafe_get(i) * scalar)
+        return scalar_result^
+
+    var contract_size = array1.shape[array1.ndim - 1]
+    if contract_size != array2.shape[array2.ndim - 1]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "inner requires equal final dimensions, but received {}"
+                    " and {}."
+                ).format(contract_size, array2.shape[array2.ndim - 1]),
+                location="inner",
+            )
+        )
+
+    for i in range(array1.ndim - 1):
+        output_dimensions.append(array1.shape[i])
+    for i in range(array2.ndim - 1):
+        output_dimensions.append(array2.shape[i])
+    var result = _zeros_for_shape[dtype](
+        _shape_from_dimensions(output_dimensions)
+    )
+    if result.size == 0 or contract_size == 0:
+        return result^
+
+    if not array1.is_c_contiguous():
+        return inner(array1.contiguous(), array2)
+    if not array2.is_c_contiguous():
+        return inner(array1, array2.contiguous())
+
+    var array1_vectors = array1.size // contract_size
+    var array2_vectors = array2.size // contract_size
+    for i in range(array1_vectors):
+        for j in range(array2_vectors):
+            var total = Scalar[dtype](0)
+            for k in range(contract_size):
+                total += array1.unsafe_get(
+                    i * contract_size + k
+                ) * array2.unsafe_get(j * contract_size + k)
+            result.unsafe_set(i * array2_vectors + j, total)
+    return result^
+
+
+def vdot[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Computes the dot product of two flattened arrays.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: The first input array.
+        array2: The second input array.
+
+    Returns:
+        A 0-D array containing the flattened vector dot product.
+
+    Raises:
+        NumojoError: If the inputs contain different numbers of elements.
+
+    Notes:
+        This overload accepts real-valued `NDArray` inputs. Complex conjugation
+        will be provided by future `ComplexNDArray` overloads.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(2, 3))
+        print(nm.vdot(a, a))
+        ```
+    """
+    if array1.size != array2.size:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "vdot requires equal element counts, but received {}"
+                    " and {}."
+                ).format(array1.size, array2.size),
+                location="vdot",
+            )
+        )
+    if array1.size == 0:
+        return _0darray[dtype](0)
+    if not array1.is_c_contiguous():
+        return vdot(array1.contiguous(), array2)
+    if not array2.is_c_contiguous():
+        return vdot(array1, array2.contiguous())
+
+    var total = Scalar[dtype](0)
+    for i in range(array1.size):
+        total += array1.unsafe_get(i) * array2.unsafe_get(i)
+    return _0darray[dtype](total)
+
+
+def vecdot[
+    dtype: DType
+](
+    array1: NDArray[dtype],
+    array2: NDArray[dtype],
+    axis: Int = -1,
+) raises -> NDArray[dtype]:
+    """Computes broadcast vector dot products along an axis.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: The first input array.
+        array2: The second input array.
+        axis: The vector axis in both inputs. Negative axes are supported.
+
+    Returns:
+        The vector dot products with the contracted axis removed.
+
+    Raises:
+        NumojoError: If an input is 0-D, an axis is invalid, the vector lengths
+            differ, or the remaining dimensions cannot be broadcast together.
+
+    Notes:
+        This overload accepts real-valued `NDArray` inputs. Complex conjugation
+        will be provided by future `ComplexNDArray` overloads.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(2, 3))
+        print(nm.vecdot(a, a))
+        ```
+    """
+    var axis1 = _normalize_vector_axis(axis, array1.ndim, "vecdot")
+    var axis2 = _normalize_vector_axis(axis, array2.ndim, "vecdot")
+    var contract_size = array1.shape[axis1]
+    if contract_size != array2.shape[axis2]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "vecdot requires equal vector lengths, but received {}"
+                    " and {}."
+                ).format(contract_size, array2.shape[axis2]),
+                location="vecdot",
+            )
+        )
+
+    var batch1 = _shape_without_axis(array1.shape, axis1)
+    var batch2 = _shape_without_axis(array2.shape, axis2)
+    var output_shape = batch1.broadcast(batch2)
+    var result = _zeros_for_shape[dtype](output_shape)
+    var batch_count = _shape_product(output_shape)
+    if batch_count == 0 or contract_size == 0:
+        return result^
+
+    var moved1 = _move_axis_to_end(array1, axis1).contiguous()
+    var moved2 = _move_axis_to_end(array2, axis2).contiguous()
+    var output_strides = _row_major_strides(output_shape)
+    var batch1_strides = _row_major_strides(batch1)
+    var batch2_strides = _row_major_strides(batch2)
+
+    for batch in range(batch_count):
+        var batch_offset1 = _broadcast_flat_offset(
+            batch, output_shape, output_strides, batch1, batch1_strides
+        )
+        var batch_offset2 = _broadcast_flat_offset(
+            batch, output_shape, output_strides, batch2, batch2_strides
+        )
+        var total = Scalar[dtype](0)
+        for k in range(contract_size):
+            total += moved1.unsafe_get(
+                batch_offset1 * contract_size + k
+            ) * moved2.unsafe_get(batch_offset2 * contract_size + k)
+        result.unsafe_set(batch, total)
+    return result^
+
+
+def matvec[
+    dtype: DType
+](matrix: NDArray[dtype], vector: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Computes broadcast matrix-vector products.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        matrix: Matrices stored in the final two dimensions.
+        vector: Vectors stored in the final dimension.
+
+    Returns:
+        Matrix-vector products with broadcast leading dimensions.
+
+    Raises:
+        NumojoError: If the inputs lack their required core dimensions, their
+            contraction dimensions differ, or their batches cannot broadcast.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(2, 3))
+        var v = nm.arange[nm.f64](3)
+        print(nm.matvec(a, v))
+        ```
+    """
+    if matrix.ndim < 2 or vector.ndim < 1:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="matvec requires a matrix and a vector.",
+                location="matvec",
+            )
+        )
+    var rows = matrix.shape[matrix.ndim - 2]
+    var contract_size = matrix.shape[matrix.ndim - 1]
+    if contract_size != vector.shape[vector.ndim - 1]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "matvec requires equal contraction dimensions, but received"
+                    " {} and {}."
+                ).format(contract_size, vector.shape[vector.ndim - 1]),
+                location="matvec",
+            )
+        )
+
+    var matrix_batch = _leading_shape(matrix.shape, 2)
+    var vector_batch = _leading_shape(vector.shape, 1)
+    var batch_shape = matrix_batch.broadcast(vector_batch)
+    var output_dimensions = List[Int]()
+    for i in range(batch_shape.ndim):
+        output_dimensions.append(batch_shape[i])
+    output_dimensions.append(rows)
+    var result = _zeros_for_shape[dtype](NDArrayShape(output_dimensions))
+    var batch_count = _shape_product(batch_shape)
+    if result.size == 0 or contract_size == 0:
+        return result^
+
+    if not matrix.is_c_contiguous():
+        return matvec(matrix.contiguous(), vector)
+    if not vector.is_c_contiguous():
+        return matvec(matrix, vector.contiguous())
+    var batch_strides = _row_major_strides(batch_shape)
+    var matrix_batch_strides = _row_major_strides(matrix_batch)
+    var vector_batch_strides = _row_major_strides(vector_batch)
+
+    for batch in range(batch_count):
+        var matrix_batch_offset = _broadcast_flat_offset(
+            batch,
+            batch_shape,
+            batch_strides,
+            matrix_batch,
+            matrix_batch_strides,
+        )
+        var vector_batch_offset = _broadcast_flat_offset(
+            batch,
+            batch_shape,
+            batch_strides,
+            vector_batch,
+            vector_batch_strides,
+        )
+        for row in range(rows):
+            var total = Scalar[dtype](0)
+            for k in range(contract_size):
+                total += matrix.unsafe_get(
+                    matrix_batch_offset * rows * contract_size
+                    + row * contract_size
+                    + k
+                ) * vector.unsafe_get(vector_batch_offset * contract_size + k)
+            result.unsafe_set(batch * rows + row, total)
+    return result^
+
+
+def vecmat[
+    dtype: DType
+](vector: NDArray[dtype], matrix: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Computes broadcast vector-matrix products.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        vector: Vectors stored in the final dimension.
+        matrix: Matrices stored in the final two dimensions.
+
+    Returns:
+        Vector-matrix products with broadcast leading dimensions.
+
+    Raises:
+        NumojoError: If the inputs lack their required core dimensions, their
+            contraction dimensions differ, or their batches cannot broadcast.
+
+    Notes:
+        This overload accepts real-valued `NDArray` inputs. Complex conjugation
+        will be provided by a future `ComplexNDArray` overload.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var v = nm.arange[nm.f64](3)
+        var a = nm.arange[nm.f64](6).reshape(nm.Shape(3, 2))
+        print(nm.vecmat(v, a))
+        ```
+    """
+    if vector.ndim < 1 or matrix.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="vecmat requires a vector and a matrix.",
+                location="vecmat",
+            )
+        )
+    var contract_size = vector.shape[vector.ndim - 1]
+    if contract_size != matrix.shape[matrix.ndim - 2]:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "vecmat requires equal contraction dimensions, but received"
+                    " {} and {}."
+                ).format(contract_size, matrix.shape[matrix.ndim - 2]),
+                location="vecmat",
+            )
+        )
+    var columns = matrix.shape[matrix.ndim - 1]
+
+    var vector_batch = _leading_shape(vector.shape, 1)
+    var matrix_batch = _leading_shape(matrix.shape, 2)
+    var batch_shape = vector_batch.broadcast(matrix_batch)
+    var output_dimensions = List[Int]()
+    for i in range(batch_shape.ndim):
+        output_dimensions.append(batch_shape[i])
+    output_dimensions.append(columns)
+    var result = _zeros_for_shape[dtype](NDArrayShape(output_dimensions))
+    var batch_count = _shape_product(batch_shape)
+    if result.size == 0 or contract_size == 0:
+        return result^
+
+    if not vector.is_c_contiguous():
+        return vecmat(vector.contiguous(), matrix)
+    if not matrix.is_c_contiguous():
+        return vecmat(vector, matrix.contiguous())
+    var batch_strides = _row_major_strides(batch_shape)
+    var vector_batch_strides = _row_major_strides(vector_batch)
+    var matrix_batch_strides = _row_major_strides(matrix_batch)
+
+    for batch in range(batch_count):
+        var vector_batch_offset = _broadcast_flat_offset(
+            batch,
+            batch_shape,
+            batch_strides,
+            vector_batch,
+            vector_batch_strides,
+        )
+        var matrix_batch_offset = _broadcast_flat_offset(
+            batch,
+            batch_shape,
+            batch_strides,
+            matrix_batch,
+            matrix_batch_strides,
+        )
+        for column in range(columns):
+            var total = Scalar[dtype](0)
+            for k in range(contract_size):
+                total += vector.unsafe_get(
+                    vector_batch_offset * contract_size + k
+                ) * matrix.unsafe_get(
+                    matrix_batch_offset * contract_size * columns
+                    + k * columns
+                    + column
+                )
+            result.unsafe_set(batch * columns + column, total)
+    return result^
 
 
 # https://docs.modular.com/mojo/notebooks/Matmul

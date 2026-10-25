@@ -14,7 +14,8 @@ Exports
 -------
 - Decompositions: `lu_decomposition`, `qr`, `cholesky`, `eig`, `eigh`, `svd`.
 - Norms: `det`, `trace`, `norm`, `matrix_rank`, `cond`.
-- Products: `dot`, `matmul`, `cross`, `outer`, `kron`, `tensordot`.
+- Products: `dot`, `inner`, `vdot`, `vecdot`, `matmul`, `matvec`, `vecmat`,
+  `cross`, `outer`, `kron`, `tensordot`.
 - Solving: `solve`, `lstsq`, `inv`, `pinv`.
 - Miscellaneous: `diagonal`.
 """
@@ -41,10 +42,15 @@ from .norms import (
 from .products import (
     cross,
     dot,
+    inner,
     kron,
     matmul,
+    matvec,
     outer,
     tensordot,
+    vdot,
+    vecdot,
+    vecmat,
 )
 from .solving import (
     inv,

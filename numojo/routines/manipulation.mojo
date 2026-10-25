@@ -7,7 +7,7 @@
 # ===----------------------------------------------------------------------=== #
 """
 Manipulation routines (numojo.routines.manipulation).
-======================================================
+=====================================================
 Array shape and layout manipulation operations.
 
 Routines for reshaping, transposing, broadcasting, flipping, concatenating,
@@ -17,9 +17,9 @@ Exports
 -------
 - `reshape`, `ravel`, `expand_dims`, `atleast_1d`, `atleast_2d`,
   `atleast_3d`: Shape changes.
-- `transpose`, `swapaxes`, `moveaxis`, `flip`, `flipud`, `fliplr`, `roll`:
-  Layout changes.
-- `broadcast_to`: Broadcasting.
+- `transpose`, `swapaxes`, `moveaxis`, `permute_dims`, `matrix_transpose`,
+  `squeeze`, `flip`, `flipud`, `fliplr`, `roll`: Layout changes.
+- `broadcast_to`, `broadcast_shapes`, `broadcast_arrays`: Broadcasting.
 - `repeat`, `pad`: Repeating and padding.
 - `split`, `array_split`, `dsplit`, `hsplit`, `vsplit`: Splitting.
 - `concatenate`, `stack`, `dstack`, `hstack`, `vstack`, `row_stack`,
@@ -792,6 +792,249 @@ def moveaxis[
     return moveaxis(A, src, dest)
 
 
+def permute_dims[
+    dtype: DType
+](a: NDArray[dtype], axes: List[Int]) raises -> NDArray[dtype]:
+    """Permutes the axes of an array.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array.
+        axes: A permutation of every axis. Negative axes are supported.
+
+    Returns:
+        A zero-copy view with axes arranged in the requested order.
+
+    Raises:
+        NumojoError: If `axes` is not a valid permutation of all axes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](24).reshape(nm.Shape(2, 3, 4))
+        var result = nm.permute_dims(a, [Int(2), 0, 1])
+        print(result.shape)  # [4, 2, 3]
+        ```
+    """
+    var new_shape = a.shape.permute(axes)
+    var new_strides = a.strides.permute(axes)
+    return a.view_with_layout(new_shape, new_strides, a.offset)
+
+
+def matrix_transpose[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Transposes the two innermost dimensions of an array.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array with at least two dimensions.
+
+    Returns:
+        A zero-copy view with its last two axes exchanged.
+
+    Raises:
+        NumojoError: If the input has fewer than two dimensions.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](24).reshape(nm.Shape(2, 3, 4))
+        print(nm.matrix_transpose(a).shape)  # [2, 4, 3]
+        ```
+    """
+    if a.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "matrix_transpose requires an array of at least rank 2."
+                ),
+                location="matrix_transpose",
+            )
+        )
+
+    var axes = List[Int]()
+    for i in range(a.ndim):
+        axes.append(i)
+    axes[a.ndim - 2] = a.ndim - 1
+    axes[a.ndim - 1] = a.ndim - 2
+    return permute_dims(a, axes)
+
+
+def _squeeze_axes[
+    dtype: DType
+](a: NDArray[dtype], axes: List[Int], all_singletons: Bool) raises -> NDArray[
+    dtype
+]:
+    """Returns a view with selected singleton dimensions removed.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array.
+        axes: The dimensions to remove when `all_singletons` is false.
+        all_singletons: Whether to remove every dimension of size one.
+
+    Returns:
+        A zero-copy view with the selected singleton dimensions removed.
+
+    Raises:
+        NumojoError: If an axis is invalid, repeated, or does not have size one.
+    """
+    var normalized_axes = List[Int]()
+    if not all_singletons:
+        normalized_axes = _normalize_axis_list(axes, a.ndim, "axis", "squeeze")
+        for i in range(len(normalized_axes)):
+            var axis = normalized_axes[i]
+            if a.shape[axis] != 1:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=String(
+                            "Cannot squeeze axis {} with size {}; expected"
+                            " size 1."
+                        ).format(axis, a.shape[axis]),
+                        location="squeeze",
+                    )
+                )
+
+    var output_ndim = a.ndim
+    if all_singletons:
+        for axis in range(a.ndim):
+            if a.shape[axis] == 1:
+                output_ndim -= 1
+    else:
+        output_ndim -= len(normalized_axes)
+
+    var output_shape = NDArrayShape(ndim=output_ndim, initialized=False)
+    var output_strides = NDArrayStrides(ndim=output_ndim, initialized=False)
+    var output_axis = 0
+    for axis in range(a.ndim):
+        var remove_axis = (
+            a.shape[axis] == 1 if all_singletons else axis in normalized_axes
+        )
+        if not remove_axis:
+            output_shape.unsafe_set(output_axis, a.shape[axis])
+            output_strides.unsafe_set(output_axis, a.strides[axis])
+            output_axis += 1
+
+    return a.view_with_layout(output_shape, output_strides, a.offset)
+
+
+def squeeze[dtype: DType](a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Removes every dimension of size one from an array.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array.
+
+    Returns:
+        A zero-copy view with every singleton dimension removed.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.ones[nm.i32](nm.Shape(1, 3, 1))
+        print(nm.squeeze(a).shape)  # [3]
+        ```
+    """
+    return _squeeze_axes(a, List[Int](), True)
+
+
+def squeeze[
+    dtype: DType
+](a: NDArray[dtype], axis: Int) raises -> NDArray[dtype]:
+    """Removes one singleton dimension from an array.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array.
+        axis: The dimension to remove. Negative axes are supported.
+
+    Returns:
+        A zero-copy view with the requested singleton dimension removed.
+
+    Raises:
+        NumojoError: If `axis` is invalid or does not have size one.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.ones[nm.i32](nm.Shape(2, 1, 3))
+        print(nm.squeeze(a, 1).shape)  # [2, 3]
+        ```
+    """
+    var axes: List[Int] = [axis]
+    return _squeeze_axes(a, axes, False)
+
+
+def squeeze[
+    dtype: DType
+](a: NDArray[dtype], axes: List[Int]) raises -> NDArray[dtype]:
+    """Removes multiple singleton dimensions from an array.
+
+    Parameters:
+        dtype: The data type of the array.
+
+    Args:
+        a: The input array.
+        axes: The dimensions to remove. Negative axes are supported.
+
+    Returns:
+        A zero-copy view with the requested singleton dimensions removed.
+
+    Raises:
+        NumojoError: If an axis is invalid, repeated, or does not have size one.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.ones[nm.i32](nm.Shape(1, 2, 1))
+        print(nm.squeeze(a, [Int(0), 2]).shape)  # [2]
+        ```
+    """
+    return _squeeze_axes(a, axes, False)
+
+
+def broadcast_shapes(*shapes: NDArrayShape) raises -> NDArrayShape:
+    """Computes the shape produced by broadcasting input shapes together.
+
+    Args:
+        shapes: The shapes to combine according to broadcasting rules.
+
+    Returns:
+        The common broadcast shape, or an empty shape when no inputs are given.
+
+    Raises:
+        NumojoError: If the input shapes are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        print(nm.broadcast_shapes(nm.Shape(3, 1), nm.Shape(1, 4)))
+        # [3, 4]
+        ```
+    """
+    var result = NDArrayShape()
+    for i in range(len(shapes)):
+        result = result.broadcast(shapes[i])
+    return result
+
+
 def broadcast_to[
     dtype: DType
 ](a: NDArray[dtype], shape: NDArrayShape) raises -> NDArray[dtype]:
@@ -827,6 +1070,8 @@ def broadcast_to[
             )
         )
 
+    # Nested views are not yet lifetime-safe. Materialize a stable owner before
+    # adding stride-zero broadcast dimensions to a non-C-contiguous input.
     if not a.is_c_contiguous():
         return broadcast_to(a.contiguous(), shape)
 
@@ -852,6 +1097,47 @@ def broadcast_to[
 
     # view.
     return a.view_with_layout(shape, b_strides, a.offset)
+
+
+def broadcast_arrays[
+    dtype: DType
+](*arrays: NDArray[dtype]) raises -> List[NDArray[dtype]]:
+    """Broadcasts arrays against each other.
+
+    Parameters:
+        dtype: The shared data type of the arrays.
+
+    Args:
+        arrays: The arrays to broadcast to a common shape.
+
+    Returns:
+        Broadcasted arrays with a common shape, or an empty list when no inputs
+        are given. Inputs that are already C-contiguous produce zero-copy views;
+        other layouts are materialized for safe view ownership.
+
+    Raises:
+        NumojoError: If the input shapes are not broadcast-compatible.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.ones[nm.i32](nm.Shape(3, 1))
+        var b = nm.ones[nm.i32](nm.Shape(1, 4))
+        var arrays = nm.broadcast_arrays(a, b)
+        print(arrays[0].shape, arrays[1].shape)  # [3, 4] [3, 4]
+        ```
+    """
+    var result = List[NDArray[dtype]]()
+    if len(arrays) == 0:
+        return result^
+
+    var common_shape = NDArrayShape()
+    for i in range(len(arrays)):
+        common_shape = common_shape.broadcast(arrays[i].shape)
+    for i in range(len(arrays)):
+        result.append(broadcast_to(arrays[i], common_shape))
+    return result^
 
 
 def _broadcast_back_to[

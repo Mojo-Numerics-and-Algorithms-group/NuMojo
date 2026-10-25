@@ -3,7 +3,7 @@
 ![logo](./assets/numojo_logo_360x360.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Mojo](https://img.shields.io/badge/mojo-1.1.0-orange.svg)](https://www.modular.com/mojo)
+[![Mojo](https://img.shields.io/badge/mojo-1.2.0-orange.svg)](https://www.modular.com/mojo)
 
 NuMojo is a library for numerical computing in Mojo 🔥, similar to NumPy in Python.
 
@@ -171,7 +171,7 @@ platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [dependencies]
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.12.0" }
 ```
 
 Then run:
@@ -181,7 +181,7 @@ pixi install
 
 `numojo` brings its compatible `mojo` and `max-core` versions into the environment through its package runtime dependencies. The MAX and conda-forge channels are still required so Pixi can resolve those transitive packages.
 
-For development snapshots, replace `tag = "v0.11.0"` with `branch = "main"` or the appropriate `pre-x.y` branch.
+For development snapshots, replace `tag = "v0.12.0"` with `branch = "main"`.
 
 The package will be automatically available in your Pixi environment, and VSCode LSP will provide intelligent code hints.
 
@@ -201,7 +201,7 @@ channels = [
 platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-numojo = "=0.11.0"
+numojo = "=0.12.0"
 ```
 
 Then run:
@@ -213,6 +213,7 @@ pixi install
 
 | NuMojo Version | Required Mojo Version |
 | -------------- | --------------------- |
+| v0.12.0        | ==1.2.0               |
 | v0.11.0        | ==1.1.0               |
 | v0.10.0        | ==1.0.0               |
 | v0.9.0         | ==26.2                |

@@ -14,7 +14,7 @@
     <br />
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
-[![Mojo](https://img.shields.io/badge/mojo-1.1.0-orange.svg)](https://www.modular.com/mojo)
+[![Mojo](https://img.shields.io/badge/mojo-1.2.0-orange.svg)](https://www.modular.com/mojo)
 
     <div style="font-family: 'Arial'; border: 1px solid black; padding: 5px;">
         <a href="https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo-Examples-and-Benchmarks/blob/main/docs/README.md"><strong>查看範例» </strong></a> &nbsp; &nbsp;
@@ -187,7 +187,7 @@ platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [dependencies]
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.12.0" }
 ```
 
 接著執行：
@@ -198,7 +198,7 @@ pixi install
 
 `numojo`會透過執行階段相依性自動安裝相容版本的`mojo`與`max-core`。Pixi仍需要MAX及conda-forge頻道來解析這些傳遞相依性。
 
-如需使用開發快照，請將`tag = "v0.11.0"`改為`branch = "main"`或適當的`pre-x.y`分支。
+如需使用開發快照，請將`tag = "v0.12.0"`改為`branch = "main"`。
 
 安裝完成後，該套件會自動出現在你的 Pixi 環境中，VSCode LSP 也會提供智能程式碼提示。
 
@@ -218,7 +218,7 @@ channels = [
 platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-numojo = "=0.11.0"
+numojo = "=0.12.0"
 ```
 
 接著執行：
@@ -231,6 +231,7 @@ pixi install
 
 | NuMojo 版本 | 所需 Mojo 版本 |
 | ----------- | --------------- |
+| v0.12.0     | ==1.2.0         |
 | v0.11.0     | ==1.1.0         |
 | v0.10.0     | ==1.0.0         |
 | v0.9.0      | ==26.2          |

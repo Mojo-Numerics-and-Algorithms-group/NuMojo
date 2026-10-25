@@ -3,7 +3,7 @@
 ![logo](../../assets/numojo_logo_360x360.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](../../LICENSE)
-[![Mojo](https://img.shields.io/badge/mojo-1.1.0-orange.svg)](https://www.modular.com/mojo)
+[![Mojo](https://img.shields.io/badge/mojo-1.2.0-orange.svg)](https://www.modular.com/mojo)
 
 NuMojo는 Python의 NumPy와 유사한 Mojo 🔥 수치 계산 라이브러리입니다.
 
@@ -167,7 +167,7 @@ platforms = ["osx-arm64", "linux-64"]
 preview = ["pixi-build"]
 
 [dependencies]
-numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.11.0" }
+numojo = { git = "https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo", tag = "v0.12.0" }
 ```
 
 그런 다음 다음을 실행합니다.
@@ -177,7 +177,7 @@ pixi install
 
 `numojo`의 런타임 의존성을 통해 호환되는`mojo`와`max-core`가 자동으로 설치됩니다. 이러한 전이 의존성을 해결하려면 MAX 및 conda-forge 채널이 필요합니다.
 
-개발 스냅샷을 사용하려면`tag = "v0.11.0"`을`branch = "main"`또는 적절한`pre-x.y`브랜치로 바꾸세요.
+개발 스냅샷을 사용하려면`tag = "v0.12.0"`을`branch = "main"`으로 바꾸세요.
 
 패키지는 Pixi 환경에 자동으로 반영되며, VSCode LSP가 지능형 코드 힌트를 제공합니다.
 
@@ -197,7 +197,7 @@ channels = [
 platforms = ["osx-arm64", "linux-64"]
 
 [dependencies]
-numojo = "=0.11.0"
+numojo = "=0.12.0"
 ```
 
 그런 다음 다음을 실행합니다.
@@ -209,6 +209,7 @@ pixi install
 
 | NuMojo 버전 | 필요한 Mojo 버전 |
 | ----------- | ----------------- |
+| v0.12.0     | ==1.2.0            |
 | v0.11.0     | ==1.1.0            |
 | v0.10.0     | ==1.0.0            |
 | v0.9.0      | ==26.2             |

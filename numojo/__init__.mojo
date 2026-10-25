@@ -147,11 +147,16 @@ from numojo.routines.linalg import (
     cross,
     diagonal,
     dot,
+    inner,
     kron,
     matmul,
+    matvec,
     outer,
     tensordot,
     trace,
+    vdot,
+    vecdot,
+    vecmat,
 )
 
 from numojo.routines import logic

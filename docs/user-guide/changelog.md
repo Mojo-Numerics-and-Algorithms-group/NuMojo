@@ -2,7 +2,22 @@
 
 This is a list of RELEASED changes for the NuMojo Package.
 
-## Unreleased (v0.11.0)
+## 20261025 (v0.12.0)
+
+### ⭐️ New in v0.12.0
+
+- Added `stack` and `dstack`, plus the specialized `dsplit`, `hsplit`, and `vsplit` array-manipulation routines. [PR #424]
+
+### 🦋 Changed in v0.12.0
+
+- Updated the release baseline to Mojo 1.2.0 and MAX 26.7.0. [PR #426]
+
+### 🛠️ Fixed in v0.12.0
+
+- Fixed mixed real/complex, reverse, and in-place `ComplexNDArray` arithmetic, including broadcasting and non-contiguous views. [PR #425]
+- Corrected complex powers and complex-valued creation routines including `ones`, `eye`, `tri`, `vander`, `logspace`, and `geomspace`. [PR #425]
+
+## 20261020 (v0.11.0)
 
 ### ⭐️ New in v0.11.0
 

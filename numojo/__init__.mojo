@@ -48,7 +48,7 @@ FORMAT FOR DOCSTRING (See "Mojo docstring style guide" for more information)
 (Items marked with * are defined by the Mojo docstring style guide).
 """
 
-comptime __version__: String = "V0.11.0"
+comptime __version__: String = "V0.12.0"
 
 # ===----------------------------------------------------------------------=== #
 # Import core types

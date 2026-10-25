@@ -97,7 +97,7 @@ For a concise overview of the directory layout and how core, routines, and opera
 
 ## Next Steps and Future Development
 
-### Immediate Priorities (v0.11+)
+### Immediate Priorities (v0.12+)
 1. **Enhanced I/O Support:** Broader `.npy`/`.pt` compatibility and additional formats
 2. **Performance Optimization:** Further SIMD optimization and memory efficiency improvements
 3. **Testing Coverage:** Comprehensive test suite expansion for all implemented functions

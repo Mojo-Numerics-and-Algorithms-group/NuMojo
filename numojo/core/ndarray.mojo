@@ -4998,6 +4998,9 @@ struct NDArray[dtype: DType = DType.float64](
         """
         var result = Self(shape=self.shape, order="C")
 
+        if self.size == 0:
+            return result^
+
         if self.is_c_contiguous():
             # Fast path: single memcpy from (possibly offset) contiguous data
             unsafe_memcpy(
@@ -5464,7 +5467,7 @@ struct NDArray[dtype: DType = DType.float64](
             print(v.is_c_contiguous())  # False
             ```
         """
-        if self.ndim == 0:
+        if self.size == 0 or self.ndim == 0:
             return True
         if self.ndim == 1:
             return Int(self.strides.unsafe_load(0)) == 1
@@ -5500,7 +5503,7 @@ struct NDArray[dtype: DType = DType.float64](
             print(a.is_f_contiguous())  # True
             ```
         """
-        if self.ndim == 0:
+        if self.size == 0 or self.ndim == 0:
             return True
         if self.ndim == 1:
             return Int(self.strides.unsafe_load(0)) == 1

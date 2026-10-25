@@ -707,6 +707,8 @@ struct NDArrayShape(
         Returns:
           The total number of elements in the corresponding array.
         """
+        if self.ndim == 0:
+            return 1
         return Int(self._buf.product())
 
     def sum(self) -> Scalar[Self.element_type]:
@@ -725,6 +727,8 @@ struct NDArrayShape(
         Returns:
             Product of all elements in the IndexBuffer.
         """
+        if self.ndim == 0:
+            return 1
         return self._buf.product()
 
     # ===----------------------------------------------------------------------=== #

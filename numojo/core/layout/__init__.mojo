@@ -12,6 +12,10 @@ Layout metadata types used by NuMojo arrays and matrices (shape, strides, and fl
 
 Exports
 -------
+- `NDLayout`: Compact owned shape and stride metadata.
+- `LayoutIndex`: Mixed index value used for layout-only slicing.
+- `Shape`: Small-buffer-optimized shape metadata used by `NDLayout`.
+- `Strides`: Small-buffer-optimized stride metadata used by `NDLayout`.
 - `NDArrayShape`: Represents the shape (dimensions) of an array.
 - `NDArrayStrides`: Represents the strides (memory layout) of an array.
 - `Flags`: Layout flags controlling array behavior.
@@ -23,5 +27,6 @@ Exports
 # ===----------------------------------------------------------------------=== #
 from .array_methods import newaxis
 from .flags import Flags
+from .ndlayout import INLINE_LAYOUT_RANK, LayoutIndex, NDLayout, Shape, Strides
 from .ndshape import NDArrayShape
 from .ndstrides import NDArrayStrides

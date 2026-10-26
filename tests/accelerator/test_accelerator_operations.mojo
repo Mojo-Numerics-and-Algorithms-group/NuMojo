@@ -1,18 +1,44 @@
+# ===----------------------------------------------------------------------=== #
+# NuMojo: Accelerator array operation tests
+# Distributed under the Apache 2.0 License with LLVM Exceptions.
+# See LICENSE and the LLVM License for more information.
+# https://github.com/Mojo-Numerics-and-Algorithms-group/NuMojo/blob/main/LICENSE
+# https://llvm.org/LICENSE.txt
+# ===----------------------------------------------------------------------=== #
 """
-Tests for `AcceleratorNDArray` elementwise operation dispatch.
+Accelerator operation tests (tests.accelerator.test_accelerator_operations).
+============================================================================
+Tests `AcceleratorNDArray` elementwise and reduction dispatch.
+
+Exports
+-------
+- `test_add_cpu_uniform`, `test_add_cpu_distinct_values`.
+- `test_sub_cpu_distinct_values`, `test_mul_cpu_distinct_values`.
+- `test_div_cpu_distinct_values`, `test_neg_cpu_distinct_values`.
+- `test_sum_cpu_distinct_values`, `test_add_cpu_shape_mismatch_raises`.
+- `test_elementwise_ops_gpu_match_cpu_when_available`.
+- `test_sum_gpu_matches_cpu_when_available`.
+- `main`: Runs discovered tests when an accelerator is available.
 """
 
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.sys.info import default_accelerator
+from std.testing import TestSuite
+from std.testing.testing import assert_equal, assert_true
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator.device import Device
 from numojo.core.accelerator_ndarray import AcceleratorNDArray, full, zeros
-from numojo.core.layout.ndshape import NDArrayShape as Shape
-from std.testing.testing import assert_true, assert_equal
-from std.testing import TestSuite
-from std.sys.info import default_accelerator
+from numojo.core.layout.ndlayout import Shape
 
 
 def test_add_cpu_uniform() raises:
-    var a = full[DType.float32, Device.CPU](Shape(8), 3.0)
-    var b = full[DType.float32, Device.CPU](Shape(8), 4.0)
+    var a = full[DType.float32, Device.CPU](Shape([8]), 3.0)
+    var b = full[DType.float32, Device.CPU](Shape([8]), 4.0)
     var c = a + b
     for i in range(8):
         assert_equal(c.item(i), 7.0, "cpu add uniform")
@@ -24,8 +50,8 @@ def _make_distinct_operands() raises -> (
         AcceleratorNDArray[DType.float32, Device.CPU],
     ]
 ):
-    var a = zeros[DType.float32, Device.CPU](Shape(6))
-    var b = zeros[DType.float32, Device.CPU](Shape(6))
+    var a = zeros[DType.float32, Device.CPU](Shape([6]))
+    var b = zeros[DType.float32, Device.CPU](Shape([6]))
     for i in range(6):
         a.itemset(i, Float32(i + 1))
         b.itemset(i, Float32(2 * (i + 1)))
@@ -89,8 +115,8 @@ def test_sum_cpu_distinct_values() raises:
 
 
 def test_add_cpu_shape_mismatch_raises() raises:
-    var a = full[DType.float32, Device.CPU](Shape(4), 1.0)
-    var b = full[DType.float32, Device.CPU](Shape(5), 1.0)
+    var a = full[DType.float32, Device.CPU](Shape([4]), 1.0)
+    var b = full[DType.float32, Device.CPU](Shape([5]), 1.0)
     var raised = False
     try:
         _ = a + b
@@ -136,7 +162,7 @@ def _run_gpu_sum_test[device: Device]() raises:
     # reduction kernel's block-tree-reduction + host-combine path is
     # actually exercised (not just a single-block edge case).
     var size = 1000
-    var a = zeros[DType.float32, Device.CPU](Shape(size))
+    var a = zeros[DType.float32, Device.CPU](Shape([size]))
     var expected = Float32(0)
     for i in range(size):
         var v = Float32((i % 53) - 26)

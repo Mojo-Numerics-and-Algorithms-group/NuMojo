@@ -31,13 +31,10 @@ import numojo.core.accelerator.kernels as kernels
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.error import NumojoError
 from numojo.core.indexing.item import Item
-from numojo.core.indexing.offset import IndexMethods
 from numojo.core.layout.flags import Flags
-from numojo.core.layout.ndshape import NDArrayShape
-from numojo.core.layout.ndstrides import NDArrayStrides
+from numojo.core.layout.ndlayout import NDLayout, Shape, Strides
 from numojo.core.memory.storage import AcceleratorDataContainer
 from numojo.core.ndarray import NDArray
-from numojo.core.type_aliases import Shape
 
 
 struct AcceleratorNDArray[
@@ -57,11 +54,7 @@ struct AcceleratorNDArray[
     """
 
     var _buf: AcceleratorDataContainer[Self.dtype, Self.device]
-    var ndim: Int
-    var shape: NDArrayShape
-    var size: Int
-    var strides: NDArrayStrides
-    var offset: Int
+    var _layout: NDLayout
     var flags: Flags
 
     # ===------------------------------------------------------------------=== #
@@ -71,11 +64,7 @@ struct AcceleratorNDArray[
     @always_inline("nodebug")
     def __init__(out self):
         self._buf = AcceleratorDataContainer[Self.dtype, Self.device]()
-        self.ndim = 0
-        self.shape = NDArrayShape()
-        self.size = 0
-        self.strides = NDArrayStrides()
-        self.offset = 0
+        self._layout = NDLayout()
         self.flags = Flags(
             c_contiguous=True,
             f_contiguous=True,
@@ -84,39 +73,41 @@ struct AcceleratorNDArray[
         )
 
     @always_inline("nodebug")
-    def __init__(out self, shape: NDArrayShape, order: String = "C") raises:
-        self.ndim = shape.ndim
-        self.shape = shape
-        self.size = shape.size()
-        self.strides = NDArrayStrides(shape, order=order)
-        self.offset = 0
-        self._buf = AcceleratorDataContainer[Self.dtype, Self.device](self.size)
+    def __init__(out self, shape: Shape, order: String = "C") raises:
+        self._layout = NDLayout(shape, order=order)
+        self._buf = AcceleratorDataContainer[Self.dtype, Self.device](
+            self._layout.size
+        )
         self.flags = Flags(
-            self.shape, self.strides, owndata=True, writeable=True
+            c_contiguous=self._layout.is_c_contiguous(),
+            f_contiguous=self._layout.is_f_contiguous(),
+            owndata=True,
+            writeable=True,
         )
 
     @always_inline("nodebug")
     def __init__(out self, shape: List[Int], order: String = "C") raises:
-        self = Self(shape=NDArrayShape(shape), order=order)
+        self = Self(shape=Shape(shape), order=order)
 
     @always_inline("nodebug")
     def __init__(out self, *shape: Int, order: String = "C") raises:
-        self = Self(shape=NDArrayShape(shape), order=order)
+        var dimensions = List[Int](capacity=len(shape))
+        for dimension in shape:
+            dimensions.append(dimension)
+        self = Self(shape=Shape(dimensions), order=order)
 
     @always_inline("nodebug")
     def __init__(
         out self,
-        shape: NDArrayShape,
-        strides: NDArrayStrides,
+        shape: Shape,
+        strides: Strides,
         offset: Int,
         flags: Flags,
     ) raises:
-        self.ndim = shape.ndim
-        self.shape = shape
-        self.size = shape.size()
-        self.strides = strides
-        self.offset = offset
-        self._buf = AcceleratorDataContainer[Self.dtype, Self.device](self.size)
+        self._layout = NDLayout(shape, strides, offset)
+        self._buf = AcceleratorDataContainer[Self.dtype, Self.device](
+            self._layout.size
+        )
         self.flags = flags
 
     @always_inline("nodebug")
@@ -125,81 +116,248 @@ struct AcceleratorNDArray[
         var data: AcceleratorDataContainer[Self.dtype, Self.device],
         *,
         is_view: Bool,
-        shape: NDArrayShape,
-        strides: NDArrayStrides,
-        offset: Int,
-        size: Int,
+        var layout: NDLayout,
     ) raises:
         self._buf = data^
-        self.ndim = shape.ndim
-        self.shape = shape
-        self.size = size
-        self.strides = strides
-        self.offset = offset
-        self.flags = Flags(shape, strides, owndata=not is_view, writeable=True)
+        self._layout = layout^
+        self.flags = Flags(
+            c_contiguous=self._layout.is_c_contiguous(),
+            f_contiguous=self._layout.is_f_contiguous(),
+            owndata=not is_view,
+            writeable=True,
+        )
 
     @always_inline("nodebug")
     def __init__(out self, *, copy: Self):
-        self.ndim = copy.ndim
-        self.shape = copy.shape
-        self.size = copy.size
-        self.strides = copy.strides
-        self.offset = copy.offset
+        self._layout = copy._layout.copy()
         self.flags = copy.flags
         self._buf = copy._buf.copy()
 
     @always_inline("nodebug")
     def __init__(out self, *, deinit move: Self):
-        self.ndim = move.ndim
-        self.shape = move.shape
-        self.size = move.size
-        self.strides = move.strides
-        self.offset = move.offset
+        self._layout = move._layout^
         self.flags = move.flags
         self._buf = move._buf^
 
     @always_inline("nodebug")
     def view(self) raises -> Self:
-        """Create a metadata-only view sharing the same storage."""
-        return self._make_view(
-            shape=self.shape,
-            strides=self.strides,
-            offset=self.offset,
-            size=self.size,
-        )
+        """Create a metadata-only view sharing the same storage.
+
+        Returns:
+            A view with copied layout metadata and shared element storage.
+
+        Examples:
+            ```mojo
+            var shared = array.view()
+            ```
+        """
+        return self._make_view(self._layout.copy())
+
+    def slice(
+        self,
+        axis: Int,
+        start: Int,
+        count: Int,
+        step: Int = 1,
+    ) raises -> Self:
+        """Create a view sliced along one axis.
+
+        Args:
+            axis: Axis to slice.
+            start: First selected index.
+            count: Number of selected elements.
+            step: Distance between selected elements.
+
+        Returns:
+            A view with updated layout metadata and shared storage.
+
+        Examples:
+            ```mojo
+            var every_other = array.slice(0, 0, 3, 2)
+            ```
+        """
+        return self._make_view(self._layout.slice(axis, start, count, step))
+
+    def select(self, axis: Int, index: Int) raises -> Self:
+        """Create a view with one indexed axis removed.
+
+        Args:
+            axis: Axis to remove.
+            index: Element selected from that axis.
+
+        Returns:
+            A rank-one-lower view sharing the source storage.
+
+        Examples:
+            ```mojo
+            var row = array.select(0, 1)
+            ```
+        """
+        return self._make_view(self._layout.select(axis, index))
+
+    def transpose(self, axes: List[Int]) raises -> Self:
+        """Create a view with axes in the requested order.
+
+        Args:
+            axes: Complete axis permutation.
+
+        Returns:
+            A view with shape and strides permuted together.
+
+        Examples:
+            ```mojo
+            var permuted = array.transpose([1, 0])
+            ```
+        """
+        return self._make_view(self._layout.transpose(axes))
+
+    def transpose(self) raises -> Self:
+        """Create a view with reversed axis order.
+
+        Returns:
+            A view with reversed shape and strides.
+
+        Examples:
+            ```mojo
+            var transposed = array.transpose()
+            ```
+        """
+        return self._make_view(self._layout.transpose())
+
+    def reshape(self, shape: Shape) raises -> Self:
+        """Create a C-contiguous view with a compatible shape.
+
+        Args:
+            shape: Requested shape, optionally containing one `-1`.
+
+        Returns:
+            A reshaped view sharing the source storage.
+
+        Examples:
+            ```mojo
+            var reshaped = array.reshape(Shape(3, 2))
+            ```
+        """
+        return self._make_view(self._layout.reshape(shape))
+
+    def reshape(self, shape: List[Int]) raises -> Self:
+        """Create a C-contiguous view with list-provided dimensions.
+
+        Args:
+            shape: Requested dimensions, optionally containing one `-1`.
+
+        Returns:
+            A reshaped view sharing the source storage.
+
+        Examples:
+            ```mojo
+            var reshaped = array.reshape([3, 2])
+            ```
+        """
+        return self._make_view(self._layout.reshape(shape))
 
     @always_inline("nodebug")
     def _make_view(
         self,
-        shape: NDArrayShape,
-        strides: NDArrayStrides,
-        offset: Int,
-        size: Int,
+        var layout: NDLayout,
     ) raises -> Self:
         var shared = self._buf.share()
         return Self(
             shared^,
             is_view=True,
-            shape=shape,
-            strides=strides,
-            offset=offset,
-            size=size,
+            layout=layout^,
         )
+
+    # ===----------------------------------------------------------------------=== #
+    # Layout metadata
+    # ===----------------------------------------------------------------------=== #
+
+    @always_inline("nodebug")
+    def ndim(self) -> Int:
+        """Return the number of dimensions.
+
+        Returns:
+            The array rank.
+
+        Examples:
+            ```mojo
+            var rank = array.ndim()
+            ```
+        """
+        return len(self._layout)
+
+    def shape(self) -> Shape:
+        """Return the array shape.
+
+        Returns:
+            A copy of the array dimensions.
+
+        Examples:
+            ```mojo
+            var shape = array.shape()
+            ```
+        """
+        return self._layout.shape()
+
+    def strides(self) -> Strides:
+        """Return the element strides.
+
+        Returns:
+            A copy of the array's element strides.
+
+        Examples:
+            ```mojo
+            var strides = array.strides()
+            ```
+        """
+        return self._layout.strides()
+
+    @always_inline("nodebug")
+    def size(self) -> Int:
+        """Return the number of logical elements.
+
+        Returns:
+            The product of the array dimensions.
+
+        Examples:
+            ```mojo
+            var element_count = array.size()
+            ```
+        """
+        return self._layout.size
+
+    @always_inline("nodebug")
+    def offset(self) -> Int:
+        """Return the first element's offset in the underlying storage.
+
+        Returns:
+            The element offset of the logical array origin.
+
+        Examples:
+            ```mojo
+            var first_element = array.offset()
+            ```
+        """
+        return self._layout.offset
 
     # ===------------------------------------------------------------------=== #
     # Representation
     # ===------------------------------------------------------------------=== #
 
     def _as_cpu_ndarray_for_display(self) raises -> NDArray[Self.dtype]:
-        var out = NDArray[Self.dtype](self.shape)
-        for i in range(self.size):
+        var shape = self._layout.shape_list()
+        var contiguous_layout = NDLayout(shape)
+        var out = NDArray[Self.dtype](
+            shape, contiguous_layout.strides_list(), 0
+        )
+        for i in range(self.size()):
             out.itemset(i, self.item(i))
         return out^
 
     def __str__(self) -> String:
         var res: String
         try:
-            if self.ndim == 0:
+            if self.ndim() == 0:
                 res = (
                     String(self.item(0))
                     + "  (0darray["
@@ -219,11 +377,11 @@ struct AcceleratorNDArray[
                     order = "F"
                 res += (
                     "\n"
-                    + String(self.ndim)
+                    + String(self.ndim())
                     + "D-array  Shape: "
-                    + self.shape.__str__()
+                    + self.shape().__str__()
                     + "  Strides: "
-                    + self.strides.__str__()
+                    + self.strides().__str__()
                     + "  DType: "
                     + _concise_dtype_str(self.dtype)
                     + "  order: "
@@ -244,9 +402,9 @@ struct AcceleratorNDArray[
         writer.write(self.__str__())
 
     def __len__(self) -> Int:
-        if self.ndim == 0:
+        if self.ndim() == 0:
             return 1
-        return Int(self.shape.unsafe_load(0))
+        return self._layout.unsafe_shape_at(0)
 
     # ===------------------------------------------------------------------=== #
     # Device helpers
@@ -258,20 +416,25 @@ struct AcceleratorNDArray[
     def is_gpu(self) -> Bool:
         return Self.device.type == "gpu"
 
-    def unsafe_ptr(
-        ref self,
-    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    def unsafe_ptr[
+        o: Origin
+    ](
+        ref[o] self,
+    ) -> Pointer[Scalar[Self.dtype], o] where (
         Self.device.type == "cpu"
     ):
         return (
             self._buf.host_storage.unsafe_value()
-            .ptr.unsafe_offset(self.offset)
-            .as_unsafe_any_origin()
+            .ptr.unsafe_offset(self.offset())
+            .unsafe_mut_cast[o.mut]()
+            .unsafe_origin_cast[o]()
         )
 
-    def unsafe_device_ptr(
-        ref self,
-    ) -> Pointer[Scalar[Self.dtype], MutAnyOrigin] where (
+    def unsafe_device_ptr[
+        o: Origin
+    ](
+        ref[o] self,
+    ) -> Pointer[Scalar[Self.dtype], o] where (
         Self.device.type == "gpu"
     ):
         """Return the raw device pointer to the buffer's data.
@@ -280,7 +443,12 @@ struct AcceleratorNDArray[
             An `UnsafePointer` to the first element of the underlying
             device buffer (not the logical view start).
         """
-        return self._buf.device_storage.unsafe_value().unsafe_ptr()
+        return (
+            self._buf.device_storage.unsafe_value()
+            .unsafe_ptr()
+            .unsafe_mut_cast[o.mut]()
+            .unsafe_origin_cast[o]()
+        )
 
     def device_context(
         self,
@@ -289,7 +457,7 @@ struct AcceleratorNDArray[
         return self._buf.device_storage.unsafe_value().handle.device_context()
 
     def num_elements(self) -> Int:
-        return self.size
+        return self.size()
 
     # ===------------------------------------------------------------------=== #
     # Indexing and scalar access
@@ -300,27 +468,15 @@ struct AcceleratorNDArray[
         return index if index >= 0 else index + dim
 
     @always_inline("nodebug")
-    def _flat_offset(self, flat_index: Int) raises -> Int:
-        var idx = self.normalize(flat_index, self.size)
-        if idx < 0 or idx >= self.size:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Flat index {} out of range for size {}."
-                    ).format(flat_index, self.size),
-                    location="AcceleratorNDArray._flat_offset",
-                )
-            )
-        if self.flags.C_CONTIGUOUS or self.ndim <= 1:
-            return self.offset + idx
+    def _coordinates_offset(self, coordinates: Item) raises -> Int:
+        var result = self.offset()
+        for axis in range(self.ndim()):
+            result += coordinates[axis] * self._layout.stride_at(axis)
+        return result
 
-        var rem = idx
-        var coords = Item(ndim=self.ndim)
-        for d in range(self.ndim - 1, -1, -1):
-            coords[d] = rem % self.shape[d]
-            rem //= self.shape[d]
-        return self.offset + IndexMethods.get_1d_index(coords, self.strides)
+    @always_inline("nodebug")
+    def _flat_offset(self, flat_index: Int) raises -> Int:
+        return self._layout.flat_position(flat_index)
 
     def item(self, flat_index: Int) raises -> Scalar[Self.dtype]:
         comptime if Self.device.type == "cpu":
@@ -339,36 +495,35 @@ struct AcceleratorNDArray[
             )
 
     def item(self, *indices: Int) raises -> Scalar[Self.dtype]:
-        if len(indices) != self.ndim:
+        if len(indices) != self.ndim():
             raise Error(
                 NumojoError(
                     category="index",
                     message=String("Expected {} indices but got {}.").format(
-                        self.ndim, len(indices)
+                        self.ndim(), len(indices)
                     ),
                     location="AcceleratorNDArray.item(*indices)",
                 )
             )
 
-        var coords = Item(ndim=self.ndim)
-        for i in range(self.ndim):
-            var n = self.normalize(indices[i], self.shape[i])
-            if n < 0 or n >= self.shape[i]:
+        var coords = Item(ndim=self.ndim())
+        for i in range(self.ndim()):
+            var extent = self._layout.shape_at(i)
+            var n = self.normalize(indices[i], extent)
+            if n < 0 or n >= extent:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
                             "Index {} out of range for axis {} with size {}."
-                        ).format(indices[i], i, self.shape[i]),
+                        ).format(indices[i], i, extent),
                         location="AcceleratorNDArray.item(*indices)",
                     )
                 )
             coords[i] = n
 
         comptime if Self.device.type == "cpu":
-            return self._buf[
-                self.offset + IndexMethods.get_1d_index(coords, self.strides)
-            ]
+            return self._buf[self._coordinates_offset(coords)]
         else:
             raise Error(
                 NumojoError(
@@ -399,7 +554,7 @@ struct AcceleratorNDArray[
             )
 
     def __getitem__(self) raises -> Scalar[Self.dtype]:
-        if self.ndim != 0 and self.size != 1:
+        if self.ndim() != 0 and self.size() != 1:
             raise Error(
                 NumojoError(
                     category="index",
@@ -413,35 +568,34 @@ struct AcceleratorNDArray[
         return self.item(0)
 
     def __getitem__(self, index: Item) raises -> Scalar[Self.dtype]:
-        if index.__len__() != self.ndim:
+        if index.__len__() != self.ndim():
             raise Error(
                 NumojoError(
                     category="index",
                     message=String(
                         "Expected {} indices in Item but got {}."
-                    ).format(self.ndim, index.__len__()),
+                    ).format(self.ndim(), index.__len__()),
                     location="AcceleratorNDArray.__getitem__(index: Item)",
                 )
             )
-        var normalized = Item(ndim=self.ndim)
-        for i in range(self.ndim):
-            var n = self.normalize(index[i], self.shape[i])
-            if n < 0 or n >= self.shape[i]:
+        var normalized = Item(ndim=self.ndim())
+        for i in range(self.ndim()):
+            var extent = self._layout.shape_at(i)
+            var n = self.normalize(index[i], extent)
+            if n < 0 or n >= extent:
                 raise Error(
                     NumojoError(
                         category="index",
                         message=String(
                             "Index {} out of range for axis {} with size {}."
-                        ).format(index[i], i, self.shape[i]),
+                        ).format(index[i], i, extent),
                         location="AcceleratorNDArray.__getitem__(index: Item)",
                     )
                 )
             normalized[i] = n
 
         comptime if Self.device.type == "cpu":
-            var off = self.offset + IndexMethods.get_1d_index(
-                normalized, self.strides
-            )
+            var off = self._coordinates_offset(normalized)
             return self._buf[off]
         else:
             raise Error(
@@ -456,48 +610,10 @@ struct AcceleratorNDArray[
             )
 
     def __getitem__(self, idx: Int) raises -> Self:
-        if self.ndim == 0:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message="Cannot index a 0-D array with an integer index.",
-                    location="AcceleratorNDArray.__getitem__(idx: Int)",
-                )
-            )
-
-        var norm = self.normalize(idx, self.shape[0])
-        if norm < 0 or norm >= self.shape[0]:
-            raise Error(
-                NumojoError(
-                    category="index",
-                    message=String(
-                        "Index {} out of range for axis 0 with size {}."
-                    ).format(idx, self.shape[0]),
-                    location="AcceleratorNDArray.__getitem__(idx: Int)",
-                )
-            )
-
-        var new_offset = self.offset + norm * self.strides[0]
-        if self.ndim == 1:
-            return self._make_view(
-                shape=NDArrayShape(),
-                strides=NDArrayStrides(),
-                offset=new_offset,
-                size=1,
-            )
-
-        var new_shape = self.shape.pop(0)
-        var new_strides = self.strides.pop(0)
-        var new_size = self.size // self.shape[0]
-        return self._make_view(
-            shape=new_shape,
-            strides=new_strides,
-            offset=new_offset,
-            size=new_size,
-        )
+        return self.select(0, idx)
 
     def __getitem__(self, var *slices: Slice) raises -> Self:
-        if self.ndim == 0:
+        if self.ndim() == 0:
             raise Error(
                 NumojoError(
                     category="index",
@@ -507,25 +623,22 @@ struct AcceleratorNDArray[
             )
 
         var n_slices = len(slices)
-        if n_slices > self.ndim:
+        if n_slices > self.ndim():
             raise Error(
                 NumojoError(
                     category="index",
                     message=String(
                         "Too many slices: got {}, but array ndim is {}."
-                    ).format(n_slices, self.ndim),
+                    ).format(n_slices, self.ndim()),
                     location="AcceleratorNDArray.__getitem__(*slices: Slice)",
                 )
             )
 
-        var new_shape = List[Int](capacity=self.ndim)
-        var new_strides = List[Int](capacity=self.ndim)
-        var new_offset = self.offset
-        var new_size = 1
+        var new_layout = self._layout.copy()
 
-        for axis in range(self.ndim):
+        for axis in range(self.ndim()):
             var s = slices[axis] if axis < n_slices else Slice(
-                0, self.shape[axis], 1
+                0, new_layout.shape_at(axis), 1
             )
 
             var step = s.step.or_else(1)
@@ -540,102 +653,46 @@ struct AcceleratorNDArray[
                     )
                 )
 
-            var dim = self.shape[axis]
-            var start: Int
-            var end: Int
+            var start, stop, increment = s.indices(new_layout.shape_at(axis))
+            var count = 0
+            if increment > 0 and start < stop:
+                count = 1 + (stop - start - 1) // increment
+            elif increment < 0 and start > stop:
+                count = 1 + (start - stop - 1) // (-increment)
+            new_layout = new_layout.slice(axis, start, count, increment)
 
-            if step > 0:
-                start = s.start.or_else(0)
-                end = s.end.or_else(dim)
-            else:
-                start = s.start.or_else(dim - 1)
-                end = s.end.or_else(-1)
-
-            if start < 0:
-                start += dim
-            if end < 0:
-                end += dim
-
-            if step > 0:
-                if start < 0:
-                    start = 0
-                if start > dim:
-                    start = dim
-                if end < 0:
-                    end = 0
-                if end > dim:
-                    end = dim
-            else:
-                if start < -1:
-                    start = -1
-                if start >= dim:
-                    start = dim - 1
-                if end < -1:
-                    end = -1
-                if end >= dim:
-                    end = dim - 1
-
-            var slice_len: Int
-            if step > 0:
-                slice_len = max((end - start + step - 1) // step, 0)
-            else:
-                slice_len = max((start - end + (-step) - 1) // (-step), 0)
-
-            if slice_len == 0:
-                raise Error(
-                    NumojoError(
-                        category="shape",
-                        message=(
-                            "Empty slices are not supported yet in"
-                            " AcceleratorNDArray basic slicing."
-                        ),
-                        location=(
-                            "AcceleratorNDArray.__getitem__(*slices: Slice)"
-                        ),
-                    )
-                )
-
-            new_offset += start * self.strides[axis]
-            new_shape.append(slice_len)
-            new_strides.append(self.strides[axis] * step)
-            new_size *= slice_len
-
-        return self._make_view(
-            shape=NDArrayShape(new_shape),
-            strides=NDArrayStrides(strides=new_strides),
-            offset=new_offset,
-            size=new_size,
-        )
+        return self._make_view(new_layout^)
 
     def __setitem__(mut self, index: Item, value: Scalar[Self.dtype]) raises:
-        if index.__len__() != self.ndim:
+        if index.__len__() != self.ndim():
             raise Error(
                 NumojoError(
                     category="index",
                     message=String(
                         "Expected {} indices in Item but got {}."
-                    ).format(self.ndim, index.__len__()),
+                    ).format(self.ndim(), index.__len__()),
                     location=(
                         "AcceleratorNDArray.__setitem__(index: Item, value)"
                     ),
                 )
             )
-        var coords = List[Int](capacity=self.ndim)
-        for i in range(self.ndim):
+        var coords = List[Int](capacity=self.ndim())
+        for i in range(self.ndim()):
             coords.append(index[i])
 
         comptime if Self.device.type == "cpu":
-            var normalized = Item(ndim=self.ndim)
-            for i in range(self.ndim):
-                var n = self.normalize(coords[i], self.shape[i])
-                if n < 0 or n >= self.shape[i]:
+            var normalized = Item(ndim=self.ndim())
+            for i in range(self.ndim()):
+                var extent = self._layout.shape_at(i)
+                var n = self.normalize(coords[i], extent)
+                if n < 0 or n >= extent:
                     raise Error(
                         NumojoError(
                             category="index",
                             message=String(
                                 "Index {} out of range for axis {} with"
                                 " size {}."
-                            ).format(coords[i], i, self.shape[i]),
+                            ).format(coords[i], i, extent),
                             location=(
                                 "AcceleratorNDArray.__setitem__(index: Item,"
                                 " value)"
@@ -643,9 +700,7 @@ struct AcceleratorNDArray[
                         )
                     )
                 normalized[i] = n
-            var off = self.offset + IndexMethods.get_1d_index(
-                normalized, self.strides
-            )
+            var off = self._coordinates_offset(normalized)
             self._buf[off] = value
         else:
             raise Error(
@@ -667,15 +722,14 @@ struct AcceleratorNDArray[
     # ===------------------------------------------------------------------=== #
 
     def deep_copy(self) raises -> Self:
-        var out = Self(shape=self.shape)
-        out.strides = self.strides
-        out.offset = self.offset
+        var out = Self(shape=self.shape())
+        out._layout = self._layout.copy()
         out.flags = self.flags
 
         comptime if Self.device.type == "cpu":
             var src_ptr = self._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
-            for i in range(self.size):
+            for i in range(self.size()):
                 dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
         else:
             self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
@@ -685,15 +739,14 @@ struct AcceleratorNDArray[
         return out^
 
     def to_host(self) raises -> AcceleratorNDArray[Self.dtype, Device.CPU]:
-        var out = AcceleratorNDArray[Self.dtype, Device.CPU](shape=self.shape)
-        out.strides = self.strides
-        out.offset = self.offset
+        var out = AcceleratorNDArray[Self.dtype, Device.CPU](shape=self.shape())
+        out._layout = self._layout.copy()
         out.flags = self.flags
 
         comptime if Self.device.type == "cpu":
             var src_ptr = self._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
-            for i in range(self.size):
+            for i in range(self.size()):
                 dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
         else:
             self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
@@ -708,20 +761,18 @@ struct AcceleratorNDArray[
     ](self,) raises -> AcceleratorNDArray[Self.dtype, target]:
         comptime if target.type == "cpu":
             var host = self.to_host()
-            var out = AcceleratorNDArray[Self.dtype, target](shape=host.shape)
-            out.strides = host.strides
-            out.offset = host.offset
+            var out = AcceleratorNDArray[Self.dtype, target](shape=host.shape())
+            out._layout = host._layout.copy()
             out.flags = host.flags
             var src_ptr = host._buf.host_storage.unsafe_value().ptr
             var dst_ptr = out._buf.host_storage.unsafe_value().ptr
-            for i in range(host.size):
+            for i in range(host.size()):
                 dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
             return out^
         else:
             var host = self.to_host()
-            var out = AcceleratorNDArray[Self.dtype, target](shape=host.shape)
-            out.strides = host.strides
-            out.offset = host.offset
+            var out = AcceleratorNDArray[Self.dtype, target](shape=host.shape())
+            out._layout = host._layout.copy()
             out.flags = host.flags
             out._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_from(
                 host._buf.host_storage.unsafe_value().ptr
@@ -754,13 +805,17 @@ struct AcceleratorNDArray[
         Raises:
             NumojoError: If shapes differ, or either operand is not contiguous.
         """
-        if self.shape != other.shape:
+        if not self._layout.has_same_shape(other._layout):
             raise Error(
                 NumojoError(
                     category="shape",
                     message=String(
                         "Shapes {} and {} do not match for {}."
-                    ).format(self.shape, other.shape, op_name),
+                    ).format(
+                        self.shape().__str__(),
+                        other.shape().__str__(),
+                        op_name,
+                    ),
                     location="AcceleratorNDArray._binary_op",
                 )
             )
@@ -777,7 +832,7 @@ struct AcceleratorNDArray[
                 )
             )
 
-        var out = Self(shape=self.shape)
+        var out = Self(shape=self.shape())
 
         comptime if Self.device.type == "cpu":
             comptime assert Self.device.type == "cpu"
@@ -785,22 +840,22 @@ struct AcceleratorNDArray[
             var src1 = self.unsafe_ptr()
             var src2 = other.unsafe_ptr()
             comptime if op_code == kernels.ADD:
-                for i in range(self.size):
+                for i in range(self.size()):
                     dst[unsafe_offset=i] = (
                         src1[unsafe_offset=i] + src2[unsafe_offset=i]
                     )
             elif op_code == kernels.SUB:
-                for i in range(self.size):
+                for i in range(self.size()):
                     dst[unsafe_offset=i] = (
                         src1[unsafe_offset=i] - src2[unsafe_offset=i]
                     )
             elif op_code == kernels.MUL:
-                for i in range(self.size):
+                for i in range(self.size()):
                     dst[unsafe_offset=i] = (
                         src1[unsafe_offset=i] * src2[unsafe_offset=i]
                     )
             else:
-                for i in range(self.size):
+                for i in range(self.size()):
                     dst[unsafe_offset=i] = (
                         src1[unsafe_offset=i] / src2[unsafe_offset=i]
                     )
@@ -809,10 +864,14 @@ struct AcceleratorNDArray[
             var context = self.device_context()
             kernels.launch_binary_op[Self.dtype, op_code](
                 context,
-                out.unsafe_device_ptr(),
-                self.unsafe_device_ptr(),
-                other.unsafe_device_ptr(),
-                self.size,
+                out.unsafe_device_ptr().unsafe_origin_cast[MutAnyOrigin](),
+                self.unsafe_device_ptr()
+                .unsafe_mut_cast[True]()
+                .unsafe_origin_cast[MutAnyOrigin](),
+                other.unsafe_device_ptr()
+                .unsafe_mut_cast[True]()
+                .unsafe_origin_cast[MutAnyOrigin](),
+                self.size(),
             )
 
         return out^
@@ -856,14 +915,18 @@ struct AcceleratorNDArray[
             comptime assert Self.device.type == "cpu"
             var src = self.unsafe_ptr()
             var result = Scalar[Self.dtype](0)
-            for i in range(self.size):
+            for i in range(self.size()):
                 result += src[unsafe_offset=i]
             return result
         else:
             comptime assert Self.device.type == "gpu"
             var context = self.device_context()
             return kernels.launch_sum_reduce[Self.dtype](
-                context, self.unsafe_device_ptr(), self.size
+                context,
+                self.unsafe_device_ptr()
+                .unsafe_mut_cast[True]()
+                .unsafe_origin_cast[MutAnyOrigin](),
+                self.size(),
             )
 
     def __neg__(self) raises -> Self:
@@ -885,22 +948,24 @@ struct AcceleratorNDArray[
                 )
             )
 
-        var out = Self(shape=self.shape)
+        var out = Self(shape=self.shape())
 
         comptime if Self.device.type == "cpu":
             comptime assert Self.device.type == "cpu"
             var dst = out.unsafe_ptr()
             var src = self.unsafe_ptr()
-            for i in range(self.size):
+            for i in range(self.size()):
                 dst[unsafe_offset=i] = -src[unsafe_offset=i]
         else:
             comptime assert Self.device.type == "gpu"
             var context = self.device_context()
             kernels.launch_neg[Self.dtype](
                 context,
-                out.unsafe_device_ptr(),
-                self.unsafe_device_ptr(),
-                self.size,
+                out.unsafe_device_ptr().unsafe_origin_cast[MutAnyOrigin](),
+                self.unsafe_device_ptr()
+                .unsafe_mut_cast[True]()
+                .unsafe_origin_cast[MutAnyOrigin](),
+                self.size(),
             )
 
         return out^
@@ -913,7 +978,7 @@ struct AcceleratorNDArray[
 
 def empty[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](shape: NDArrayShape, order: String = "C") raises -> AcceleratorNDArray[
+](shape: Shape, order: String = "C") raises -> AcceleratorNDArray[
     dtype, device
 ]:
     """Create an uninitialized accelerator array on `device`."""
@@ -926,27 +991,30 @@ def empty[
     dtype, device
 ]:
     """Create an uninitialized accelerator array on `device`."""
-    return empty[dtype, device](NDArrayShape(shape), order=order)
+    return empty[dtype, device](Shape(shape), order=order)
 
 
 def empty[
     dtype: DType = DType.float64, device: Device = Device.CPU
 ](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an uninitialized accelerator array on `device`."""
-    return empty[dtype, device](NDArrayShape(shape), order=order)
+    var dimensions = List[Int](capacity=len(shape))
+    for dimension in shape:
+        dimensions.append(dimension)
+    return empty[dtype, device](Shape(dimensions), order=order)
 
 
 def full[
     dtype: DType = DType.float64, device: Device = Device.CPU
 ](
-    shape: NDArrayShape,
+    shape: Shape,
     fill_value: Scalar[dtype],
     order: String = "C",
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with `fill_value`."""
     comptime if device.type == "cpu":
         var out = AcceleratorNDArray[dtype, device](shape=shape, order=order)
-        for i in range(out.size):
+        for i in range(out.size()):
             out.itemset(i, fill_value)
         return out^
     else:
@@ -962,12 +1030,12 @@ def full[
     order: String = "C",
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with `fill_value`."""
-    return full[dtype, device](NDArrayShape(shape), fill_value, order=order)
+    return full[dtype, device](Shape(shape), fill_value, order=order)
 
 
 def zeros[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](shape: NDArrayShape, order: String = "C") raises -> AcceleratorNDArray[
+](shape: Shape, order: String = "C") raises -> AcceleratorNDArray[
     dtype, device
 ]:
     """Create an accelerator array filled with zeros."""
@@ -980,19 +1048,22 @@ def zeros[
     dtype, device
 ]:
     """Create an accelerator array filled with zeros."""
-    return zeros[dtype, device](NDArrayShape(shape), order=order)
+    return zeros[dtype, device](Shape(shape), order=order)
 
 
 def zeros[
     dtype: DType = DType.float64, device: Device = Device.CPU
 ](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with zeros."""
-    return zeros[dtype, device](NDArrayShape(shape), order=order)
+    var dimensions = List[Int](capacity=len(shape))
+    for dimension in shape:
+        dimensions.append(dimension)
+    return zeros[dtype, device](Shape(dimensions), order=order)
 
 
 def ones[
     dtype: DType = DType.float64, device: Device = Device.CPU
-](shape: NDArrayShape, order: String = "C") raises -> AcceleratorNDArray[
+](shape: Shape, order: String = "C") raises -> AcceleratorNDArray[
     dtype, device
 ]:
     """Create an accelerator array filled with ones."""
@@ -1005,14 +1076,17 @@ def ones[
     dtype, device
 ]:
     """Create an accelerator array filled with ones."""
-    return ones[dtype, device](NDArrayShape(shape), order=order)
+    return ones[dtype, device](Shape(shape), order=order)
 
 
 def ones[
     dtype: DType = DType.float64, device: Device = Device.CPU
 ](*shape: Int, order: String = "C") raises -> AcceleratorNDArray[dtype, device]:
     """Create an accelerator array filled with ones."""
-    return ones[dtype, device](NDArrayShape(shape), order=order)
+    var dimensions = List[Int](capacity=len(shape))
+    for dimension in shape:
+        dimensions.append(dimension)
+    return ones[dtype, device](Shape(dimensions), order=order)
 
 
 def empty_like[
@@ -1021,7 +1095,7 @@ def empty_like[
     a: AcceleratorNDArray[dtype, device], order: String = "C"
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create an uninitialized accelerator array with `a`'s shape and device."""
-    return empty[dtype, device](a.shape, order=order)
+    return empty[dtype, device](a.shape(), order=order)
 
 
 def zeros_like[
@@ -1030,7 +1104,7 @@ def zeros_like[
     a: AcceleratorNDArray[dtype, device], order: String = "C"
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create a zeros accelerator array with `a`'s shape and device."""
-    return zeros[dtype, device](a.shape, order=order)
+    return zeros[dtype, device](a.shape(), order=order)
 
 
 def ones_like[
@@ -1039,7 +1113,7 @@ def ones_like[
     a: AcceleratorNDArray[dtype, device], order: String = "C"
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create a ones accelerator array with `a`'s shape and device."""
-    return ones[dtype, device](a.shape, order=order)
+    return ones[dtype, device](a.shape(), order=order)
 
 
 def full_like[
@@ -1050,7 +1124,7 @@ def full_like[
     order: String = "C",
 ) raises -> AcceleratorNDArray[dtype, device]:
     """Create a filled accelerator array with `a`'s shape and device."""
-    return full[dtype, device](a.shape, fill_value, order=order)
+    return full[dtype, device](a.shape(), fill_value, order=order)
 
 
 def arange[
@@ -1063,12 +1137,12 @@ def arange[
     """Create an accelerator array with evenly spaced values."""
     var num = Int((stop - start) / step)
     comptime if device.type == "cpu":
-        var out = AcceleratorNDArray[dtype, device](Shape(num))
+        var out = AcceleratorNDArray[dtype, device](Shape([num]))
         for i in range(num):
             out.itemset(i, start + step * Scalar[dtype](i))
         return out^
     else:
-        var host = AcceleratorNDArray[dtype, Device.CPU](Shape(num))
+        var host = AcceleratorNDArray[dtype, Device.CPU](Shape([num]))
         for i in range(num):
             host.itemset(i, start + step * Scalar[dtype](i))
         return host.to[device]()

@@ -21,7 +21,9 @@ Exports
 - `quantile`, `percentile`: Order statistics via linear interpolation.
 - `cov`, `corrcoef`: Covariance and correlation-coefficient matrices.
 - `bincount`, `histogram`: Binning and counting of array elements.
-- `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`: NaN-aware reductions.
+- `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`,
+  `nanargmax`, `nanargmin`, `nanprod`, `nancumsum`, `nancumprod`,
+  `nanpercentile`, `nanquantile`, `nan_to_num`: NaN-aware reductions.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -45,10 +47,18 @@ from .histograms import (
     histogram,
 )
 from .nanfunctions import (
+    nan_to_num,
+    nanargmax,
+    nanargmin,
+    nancumprod,
+    nancumsum,
     nanmax,
     nanmean,
     nanmedian,
     nanmin,
+    nanpercentile,
+    nanprod,
+    nanquantile,
     nanstd,
     nansum,
     nanvar,

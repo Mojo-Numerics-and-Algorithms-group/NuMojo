@@ -173,5 +173,51 @@ def test_isin() raises:
     check(nm.isin(B, t), np.isin(Bnp, tnp), "`isin` 2-D fails.")
 
 
+def test_union1d() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.fromstring[nm.i32]("[1, 2, 3, 3]")
+    var b = nm.fromstring[nm.i32]("[2, 3, 4, 4]")
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+    check_is_close(nm.union1d(a, b), np.union1d(anp, bnp), "`union1d` fails.")
+
+
+def test_intersect1d() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.fromstring[nm.i32]("[1, 2, 3, 3]")
+    var b = nm.fromstring[nm.i32]("[2, 3, 4, 4]")
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+    check_is_close(
+        nm.intersect1d(a, b), np.intersect1d(anp, bnp), "`intersect1d` fails."
+    )
+
+
+def test_setdiff1d() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.fromstring[nm.i32]("[1, 2, 3, 3]")
+    var b = nm.fromstring[nm.i32]("[2, 3, 4, 4]")
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+    check_is_close(
+        nm.setdiff1d(a, b), np.setdiff1d(anp, bnp), "`setdiff1d` fails."
+    )
+
+
+def test_setxor1d() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.fromstring[nm.i32]("[1, 2, 3, 3]")
+    var b = nm.fromstring[nm.i32]("[2, 3, 4, 4]")
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+    check_is_close(
+        nm.setxor1d(a, b), np.setxor1d(anp, bnp), "`setxor1d` fails."
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

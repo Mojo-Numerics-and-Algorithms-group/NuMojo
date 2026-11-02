@@ -17,6 +17,8 @@ Exports
   with counts, first-occurrence indices, and/or reconstruction indices.
 - `isin`: Test whether each element of an array is also present in
   another array.
+- `union1d`, `intersect1d`, `setdiff1d`, `setxor1d`: Set operations on the
+  sorted unique values of two (flattened) arrays.
 
 Notes
 -----
@@ -820,3 +822,228 @@ def isin[
         var found = _sorted_contains(test_values, m, elem_flat.unsafe_get(i))
         result.unsafe_set(i, found != invert)
     return result^
+
+
+# ===----------------------------------------------------------------------=== #
+# union1d, intersect1d, setdiff1d, setxor1d
+# ===----------------------------------------------------------------------=== #
+
+
+def _sorted_unique_values[
+    dtype: DType
+](A: NDArray[dtype]) raises -> List[Scalar[dtype]]:
+    """Internal: sorted unique values of a flattened array."""
+    if A.size == 0:
+        return List[Scalar[dtype]]()
+    var core = _unique_core(ravel(A, order="C"))
+    return core[0].copy()
+
+
+def _values_to_array[
+    dtype: DType
+](values: List[Scalar[dtype]]) raises -> NDArray[dtype]:
+    """Internal: builds a 1-d array from a list of values."""
+    var n = len(values)
+    var result = NDArray[dtype](Shape(n))
+    for i in range(n):
+        result.unsafe_set(i, values[i])
+    return result^
+
+
+def union1d[
+    dtype: DType, //
+](ar1: NDArray[dtype], ar2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Returns the sorted, unique values that are in either of the two input
+    arrays.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        ar1: A NDArray.
+        ar2: A NDArray.
+
+    Returns:
+        A 1-d array of the sorted unique values present in `ar1` or `ar2`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.fromstring[nm.i32]("[1, 2, 3]")
+        var b = nm.fromstring[nm.i32]("[2, 3, 4]")
+        print(nm.union1d(a, b))  # [1, 2, 3, 4]
+        ```
+    """
+    var a = _sorted_unique_values(ar1)
+    var b = _sorted_unique_values(ar2)
+    var na = len(a)
+    var nb = len(b)
+    var out = List[Scalar[dtype]]()
+    var i = 0
+    var j = 0
+    while (i < na) and (j < nb):
+        if a[i] < b[j]:
+            out.append(a[i])
+            i += 1
+        elif a[i] > b[j]:
+            out.append(b[j])
+            j += 1
+        else:
+            out.append(a[i])
+            i += 1
+            j += 1
+    while i < na:
+        out.append(a[i])
+        i += 1
+    while j < nb:
+        out.append(b[j])
+        j += 1
+    return _values_to_array(out)
+
+
+def intersect1d[
+    dtype: DType, //
+](ar1: NDArray[dtype], ar2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Returns the sorted, unique values common to both input arrays.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        ar1: A NDArray.
+        ar2: A NDArray.
+
+    Returns:
+        A 1-d array of the sorted unique values present in both `ar1` and
+        `ar2`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.fromstring[nm.i32]("[1, 2, 3]")
+        var b = nm.fromstring[nm.i32]("[2, 3, 4]")
+        print(nm.intersect1d(a, b))  # [2, 3]
+        ```
+    """
+    var a = _sorted_unique_values(ar1)
+    var b = _sorted_unique_values(ar2)
+    var na = len(a)
+    var nb = len(b)
+    var out = List[Scalar[dtype]]()
+    var i = 0
+    var j = 0
+    while (i < na) and (j < nb):
+        if a[i] < b[j]:
+            i += 1
+        elif a[i] > b[j]:
+            j += 1
+        else:
+            out.append(a[i])
+            i += 1
+            j += 1
+    return _values_to_array(out)
+
+
+def setdiff1d[
+    dtype: DType, //
+](ar1: NDArray[dtype], ar2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Returns the sorted, unique values in `ar1` that are not in `ar2`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        ar1: A NDArray.
+        ar2: A NDArray.
+
+    Returns:
+        A 1-d array of the sorted unique values of `ar1` that do not
+        appear in `ar2`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.fromstring[nm.i32]("[1, 2, 3]")
+        var b = nm.fromstring[nm.i32]("[2, 3, 4]")
+        print(nm.setdiff1d(a, b))  # [1]
+        ```
+    """
+    var a = _sorted_unique_values(ar1)
+    var b = _sorted_unique_values(ar2)
+    var na = len(a)
+    var nb = len(b)
+    var out = List[Scalar[dtype]]()
+    var i = 0
+    var j = 0
+    while (i < na) and (j < nb):
+        if a[i] < b[j]:
+            out.append(a[i])
+            i += 1
+        elif a[i] > b[j]:
+            j += 1
+        else:
+            i += 1
+            j += 1
+    while i < na:
+        out.append(a[i])
+        i += 1
+    return _values_to_array(out)
+
+
+def setxor1d[
+    dtype: DType, //
+](ar1: NDArray[dtype], ar2: NDArray[dtype]) raises -> NDArray[dtype]:
+    """
+    Returns the sorted, unique values that are in only one (not both) of
+    the input arrays.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        ar1: A NDArray.
+        ar2: A NDArray.
+
+    Returns:
+        A 1-d array of the sorted unique values present in exactly one of
+        `ar1` and `ar2`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.fromstring[nm.i32]("[1, 2, 3]")
+        var b = nm.fromstring[nm.i32]("[2, 3, 4]")
+        print(nm.setxor1d(a, b))  # [1, 4]
+        ```
+    """
+    var a = _sorted_unique_values(ar1)
+    var b = _sorted_unique_values(ar2)
+    var na = len(a)
+    var nb = len(b)
+    var out = List[Scalar[dtype]]()
+    var i = 0
+    var j = 0
+    while (i < na) and (j < nb):
+        if a[i] < b[j]:
+            out.append(a[i])
+            i += 1
+        elif a[i] > b[j]:
+            out.append(b[j])
+            j += 1
+        else:
+            i += 1
+            j += 1
+    while i < na:
+        out.append(a[i])
+        i += 1
+    while j < nb:
+        out.append(b[j])
+        j += 1
+    return _values_to_array(out)

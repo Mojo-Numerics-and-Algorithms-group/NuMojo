@@ -396,6 +396,10 @@ from numojo.routines.setops import (
     unique_index,
     unique_inverse,
     isin,
+    union1d,
+    intersect1d,
+    setdiff1d,
+    setxor1d,
 )
 
 # ===----------------------------------------------------------------------=== #

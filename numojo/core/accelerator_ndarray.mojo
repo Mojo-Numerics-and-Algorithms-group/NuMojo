@@ -16,6 +16,8 @@ GPU acceleration support.
 Exports
 -------
 - `AcceleratorNDArray`: Device-aware N-dimensional array type.
+- `AcceleratorNDArrayView`: Borrowed device-aware N-dimensional array view.
+- `NDArrayLike`: Common read-only array interface.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -26,8 +28,10 @@ from max.gpu.host import DeviceContext
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from numojo.core.accelerator.array_like import NDArrayLike
 from numojo.core.accelerator.device import Device
 import numojo.core.accelerator.kernels as kernels
+from numojo.core.accelerator.ndarray_view import AcceleratorNDArrayView
 from numojo.core.dtype.default_dtype import _concise_dtype_str
 from numojo.core.error import NumojoError
 from numojo.core.indexing.item import Item
@@ -42,6 +46,7 @@ struct AcceleratorNDArray[
 ](
     Copyable,
     Movable,
+    NDArrayLike,
     Sized,
     Writable,
 ):
@@ -56,6 +61,10 @@ struct AcceleratorNDArray[
     var _buf: AcceleratorDataContainer[Self.dtype, Self.device]
     var _layout: NDLayout
     var flags: Flags
+
+    comptime ElementType = Self.dtype
+    comptime DeviceType = Self.device
+    comptime Writable = True
 
     # ===------------------------------------------------------------------=== #
     # Lifecycle
@@ -111,23 +120,6 @@ struct AcceleratorNDArray[
         self.flags = flags
 
     @always_inline("nodebug")
-    def __init__(
-        out self,
-        var data: AcceleratorDataContainer[Self.dtype, Self.device],
-        *,
-        is_view: Bool,
-        var layout: NDLayout,
-    ) raises:
-        self._buf = data^
-        self._layout = layout^
-        self.flags = Flags(
-            c_contiguous=self._layout.is_c_contiguous(),
-            f_contiguous=self._layout.is_f_contiguous(),
-            owndata=not is_view,
-            writeable=True,
-        )
-
-    @always_inline("nodebug")
     def __init__(out self, *, copy: Self):
         self._layout = copy._layout.copy()
         self.flags = copy.flags
@@ -140,27 +132,83 @@ struct AcceleratorNDArray[
         self._buf = move._buf^
 
     @always_inline("nodebug")
-    def view(self) raises -> Self:
-        """Create a metadata-only view sharing the same storage.
+    def view[
+        o: Origin
+    ](
+        ref[o] self,
+    ) -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
+        """Create an immutable borrowed view of this array.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Returns:
-            A view with copied layout metadata and shared element storage.
+            A view whose storage origin is tied to this borrow.
 
         Examples:
             ```mojo
             var shared = array.view()
             ```
         """
-        return self._make_view(self._layout.copy())
+        return AcceleratorNDArrayView[
+            mut=False,
+            dtype=Self.dtype,
+            device=Self.device,
+            origin=ImmOrigin(o),
+        ](
+            self._unsafe_base_ptr().as_imm(),
+            self._layout.copy(),
+        )
 
-    def slice(
-        self,
+    @always_inline("nodebug")
+    def view_mut[
+        o: MutOrigin
+    ](
+        ref[o] self,
+    ) -> AcceleratorNDArrayView[
+        mut=True, dtype=Self.dtype, device=Self.device, origin=o
+    ]:
+        """Create a mutable borrowed view of this array.
+
+        Parameters:
+            o: Mutable origin of the current owner borrow.
+
+        Returns:
+            A writable view whose storage origin is tied to this mutable borrow.
+
+        Examples:
+            `var writable = array.view_mut()` creates a writable view.
+        """
+        return AcceleratorNDArrayView[
+            mut=True, dtype=Self.dtype, device=Self.device, origin=o
+        ](
+            self._unsafe_base_ptr(),
+            self._layout.copy(),
+        )
+
+    def slice[
+        o: Origin
+    ](
+        ref[o] self,
         axis: Int,
         start: Int,
         count: Int,
         step: Int = 1,
-    ) raises -> Self:
+    ) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a view sliced along one axis.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Args:
             axis: Axis to slice.
@@ -178,8 +226,18 @@ struct AcceleratorNDArray[
         """
         return self._make_view(self._layout.slice(axis, start, count, step))
 
-    def select(self, axis: Int, index: Int) raises -> Self:
+    def select[
+        o: Origin
+    ](ref[o] self, axis: Int, index: Int) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a view with one indexed axis removed.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Args:
             axis: Axis to remove.
@@ -195,8 +253,18 @@ struct AcceleratorNDArray[
         """
         return self._make_view(self._layout.select(axis, index))
 
-    def transpose(self, axes: List[Int]) raises -> Self:
+    def transpose[
+        o: Origin
+    ](ref[o] self, axes: List[Int]) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a view with axes in the requested order.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Args:
             axes: Complete axis permutation.
@@ -211,8 +279,18 @@ struct AcceleratorNDArray[
         """
         return self._make_view(self._layout.transpose(axes))
 
-    def transpose(self) raises -> Self:
+    def transpose[
+        o: Origin
+    ](ref[o] self) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a view with reversed axis order.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Returns:
             A view with reversed shape and strides.
@@ -224,8 +302,18 @@ struct AcceleratorNDArray[
         """
         return self._make_view(self._layout.transpose())
 
-    def reshape(self, shape: Shape) raises -> Self:
+    def reshape[
+        o: Origin
+    ](ref[o] self, shape: Shape) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a C-contiguous view with a compatible shape.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Args:
             shape: Requested shape, optionally containing one `-1`.
@@ -240,8 +328,18 @@ struct AcceleratorNDArray[
         """
         return self._make_view(self._layout.reshape(shape))
 
-    def reshape(self, shape: List[Int]) raises -> Self:
+    def reshape[
+        o: Origin
+    ](ref[o] self, shape: List[Int]) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         """Create a C-contiguous view with list-provided dimensions.
+
+        Parameters:
+            o: Origin of the current owner borrow.
 
         Args:
             shape: Requested dimensions, optionally containing one `-1`.
@@ -257,15 +355,25 @@ struct AcceleratorNDArray[
         return self._make_view(self._layout.reshape(shape))
 
     @always_inline("nodebug")
-    def _make_view(
-        self,
+    def _make_view[
+        o: Origin
+    ](
+        ref[o] self,
         var layout: NDLayout,
-    ) raises -> Self:
-        var shared = self._buf.share()
-        return Self(
-            shared^,
-            is_view=True,
-            layout=layout^,
+    ) -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
+        return AcceleratorNDArrayView[
+            mut=False,
+            dtype=Self.dtype,
+            device=Self.device,
+            origin=ImmOrigin(o),
+        ](
+            self._unsafe_base_ptr().as_imm(),
+            layout^,
         )
 
     # ===----------------------------------------------------------------------=== #
@@ -311,6 +419,17 @@ struct AcceleratorNDArray[
             ```
         """
         return self._layout.strides()
+
+    def layout(self) -> NDLayout:
+        """Return a copy of the logical layout.
+
+        Returns:
+            Copied layout metadata.
+
+        Examples:
+            Use `array.layout()` in generic indexing code.
+        """
+        return self._layout.copy()
 
     @always_inline("nodebug")
     def size(self) -> Int:
@@ -416,39 +535,108 @@ struct AcceleratorNDArray[
     def is_gpu(self) -> Bool:
         return Self.device.type == "gpu"
 
-    def unsafe_ptr[
-        o: Origin
-    ](
-        ref[o] self,
-    ) -> Pointer[Scalar[Self.dtype], o] where (
-        Self.device.type == "cpu"
-    ):
-        return (
-            self._buf.host_storage.unsafe_value()
-            .ptr.unsafe_offset(self.offset())
-            .unsafe_mut_cast[o.mut]()
-            .unsafe_origin_cast[o]()
-        )
-
-    def unsafe_device_ptr[
-        o: Origin
-    ](
-        ref[o] self,
-    ) -> Pointer[Scalar[Self.dtype], o] where (
-        Self.device.type == "gpu"
-    ):
-        """Return the raw device pointer to the buffer's data.
+    @always_inline("nodebug")
+    def is_c_contiguous(self) -> Bool:
+        """Return whether the array is C contiguous.
 
         Returns:
-            An `UnsafePointer` to the first element of the underlying
-            device buffer (not the logical view start).
+            C-contiguity of the logical layout.
+
+        Examples:
+            Check `array.is_c_contiguous()` before flat pointer traversal.
         """
-        return (
-            self._buf.device_storage.unsafe_value()
-            .unsafe_ptr()
-            .unsafe_mut_cast[o.mut]()
-            .unsafe_origin_cast[o]()
-        )
+        return self._layout.is_c_contiguous()
+
+    @always_inline("nodebug")
+    def is_f_contiguous(self) -> Bool:
+        """Return whether the array is Fortran contiguous.
+
+        Returns:
+            Fortran-contiguity of the logical layout.
+
+        Examples:
+            Use `array.is_f_contiguous()` to select traversal order.
+        """
+        return self._layout.is_f_contiguous()
+
+    @always_inline("nodebug")
+    def owns_data(self) -> Bool:
+        """Return whether this array owns its backing allocation.
+
+        Returns:
+            Ownership flag for the backing storage.
+
+        Examples:
+            `array.owns_data()` is true for a normally constructed owner.
+        """
+        return self.flags.OWNDATA
+
+    @always_inline("nodebug")
+    def is_writeable(self) -> Bool:
+        """Return whether this array exposes mutable storage.
+
+        Returns:
+            Runtime writeability flag.
+
+        Examples:
+            Use `array.is_writeable()` for validation.
+        """
+        return self.flags.WRITEABLE
+
+    @always_inline("nodebug")
+    def _unsafe_base_ptr[
+        o: Origin
+    ](ref[o] self,) -> Pointer[Scalar[Self.dtype], o]:
+        comptime if Self.device.type == "cpu":
+            return (
+                self._buf.host_storage.unsafe_value()
+                .ptr.unsafe_mut_cast[o.mut]()
+                .unsafe_origin_cast[o]()
+            )
+        else:
+            return (
+                self._buf.device_storage.unsafe_value()
+                .unsafe_ptr()
+                .unsafe_mut_cast[o.mut]()
+                .unsafe_origin_cast[o]()
+            )
+
+    @always_inline("nodebug")
+    def unsafe_ptr[
+        o: Origin
+    ](ref[o] self,) -> Pointer[Scalar[Self.dtype], ImmOrigin(o)]:
+        """Return an immutable pointer to the first logical element.
+
+        Parameters:
+            o: Origin of the current owner borrow.
+
+        Returns:
+            Immutable pointer tied to the current owner borrow.
+
+        Examples:
+            Use `array.unsafe_ptr()` for a SIMD loop or kernel launch.
+        """
+        var offset = self._layout.offset
+        return self._unsafe_base_ptr().as_imm().unsafe_offset(offset)
+
+    @always_inline("nodebug")
+    def unsafe_mut_ptr[
+        o: MutOrigin
+    ](ref[o] self,) -> Pointer[Scalar[Self.dtype], o]:
+        """Return a mutable pointer to the first logical element.
+
+        Parameters:
+            o: Mutable origin of the current owner borrow.
+
+        Returns:
+            Mutable pointer tied to the current mutable owner borrow.
+
+        Examples:
+            Use `array.unsafe_mut_ptr()` for output SIMD loops.
+        """
+        comptime assert Self.Writable, "cannot mutate a read-only array"
+        var offset = self._layout.offset
+        return self._unsafe_base_ptr().unsafe_offset(offset)
 
     def device_context(
         self,
@@ -609,10 +797,24 @@ struct AcceleratorNDArray[
                 )
             )
 
-    def __getitem__(self, idx: Int) raises -> Self:
+    def __getitem__[
+        o: Origin
+    ](ref[o] self, idx: Int) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         return self.select(0, idx)
 
-    def __getitem__(self, var *slices: Slice) raises -> Self:
+    def __getitem__[
+        o: Origin
+    ](ref[o] self, var *slices: Slice) raises -> AcceleratorNDArrayView[
+        mut=False,
+        dtype=Self.dtype,
+        device=Self.device,
+        origin=ImmOrigin(o),
+    ]:
         if self.ndim() == 0:
             raise Error(
                 NumojoError(
@@ -721,36 +923,19 @@ struct AcceleratorNDArray[
     # Host/Device transfer
     # ===------------------------------------------------------------------=== #
 
-    def deep_copy(self) raises -> Self:
-        var out = Self(shape=self.shape())
-        out._layout = self._layout.copy()
-        out.flags = self.flags
-
-        comptime if Self.device.type == "cpu":
-            var src_ptr = self._buf.host_storage.unsafe_value().ptr
-            var dst_ptr = out._buf.host_storage.unsafe_value().ptr
-            for i in range(self.size()):
-                dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
-        else:
-            self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
-                out._buf.device_storage.unsafe_value().get_buffer()
-            )
-            self._buf.device_storage.unsafe_value().get_buffer().context().synchronize()
-        return out^
-
     def to_host(self) raises -> AcceleratorNDArray[Self.dtype, Device.CPU]:
         var out = AcceleratorNDArray[Self.dtype, Device.CPU](shape=self.shape())
         out._layout = self._layout.copy()
         out.flags = self.flags
 
         comptime if Self.device.type == "cpu":
-            var src_ptr = self._buf.host_storage.unsafe_value().ptr
-            var dst_ptr = out._buf.host_storage.unsafe_value().ptr
+            var src_ptr = self.unsafe_ptr()
+            var dst_ptr = out.unsafe_mut_ptr()
             for i in range(self.size()):
                 dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
         else:
             self._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_to(
-                out._buf.host_storage.unsafe_value().ptr
+                out.unsafe_mut_ptr()
             )
             self._buf.device_storage.unsafe_value().get_buffer().context().synchronize()
 
@@ -764,8 +949,8 @@ struct AcceleratorNDArray[
             var out = AcceleratorNDArray[Self.dtype, target](shape=host.shape())
             out._layout = host._layout.copy()
             out.flags = host.flags
-            var src_ptr = host._buf.host_storage.unsafe_value().ptr
-            var dst_ptr = out._buf.host_storage.unsafe_value().ptr
+            var src_ptr = host.unsafe_ptr()
+            var dst_ptr = out.unsafe_mut_ptr()
             for i in range(host.size()):
                 dst_ptr[unsafe_offset=i] = src_ptr[unsafe_offset=i]
             return out^
@@ -775,7 +960,7 @@ struct AcceleratorNDArray[
             out._layout = host._layout.copy()
             out.flags = host.flags
             out._buf.device_storage.unsafe_value().get_buffer().enqueue_copy_from(
-                host._buf.host_storage.unsafe_value().ptr
+                host.unsafe_ptr()
             )
             out._buf.device_storage.unsafe_value().get_buffer().context().synchronize()
             return out^
@@ -836,7 +1021,7 @@ struct AcceleratorNDArray[
 
         comptime if Self.device.type == "cpu":
             comptime assert Self.device.type == "cpu"
-            var dst = out.unsafe_ptr()
+            var dst = out.unsafe_mut_ptr()
             var src1 = self.unsafe_ptr()
             var src2 = other.unsafe_ptr()
             comptime if op_code == kernels.ADD:
@@ -864,11 +1049,11 @@ struct AcceleratorNDArray[
             var context = self.device_context()
             kernels.launch_binary_op[Self.dtype, op_code](
                 context,
-                out.unsafe_device_ptr().unsafe_origin_cast[MutAnyOrigin](),
-                self.unsafe_device_ptr()
+                out.unsafe_mut_ptr().unsafe_origin_cast[MutAnyOrigin](),
+                self.unsafe_ptr()
                 .unsafe_mut_cast[True]()
                 .unsafe_origin_cast[MutAnyOrigin](),
-                other.unsafe_device_ptr()
+                other.unsafe_ptr()
                 .unsafe_mut_cast[True]()
                 .unsafe_origin_cast[MutAnyOrigin](),
                 self.size(),
@@ -923,7 +1108,7 @@ struct AcceleratorNDArray[
             var context = self.device_context()
             return kernels.launch_sum_reduce[Self.dtype](
                 context,
-                self.unsafe_device_ptr()
+                self.unsafe_ptr()
                 .unsafe_mut_cast[True]()
                 .unsafe_origin_cast[MutAnyOrigin](),
                 self.size(),
@@ -952,7 +1137,7 @@ struct AcceleratorNDArray[
 
         comptime if Self.device.type == "cpu":
             comptime assert Self.device.type == "cpu"
-            var dst = out.unsafe_ptr()
+            var dst = out.unsafe_mut_ptr()
             var src = self.unsafe_ptr()
             for i in range(self.size()):
                 dst[unsafe_offset=i] = -src[unsafe_offset=i]
@@ -961,8 +1146,8 @@ struct AcceleratorNDArray[
             var context = self.device_context()
             kernels.launch_neg[Self.dtype](
                 context,
-                out.unsafe_device_ptr().unsafe_origin_cast[MutAnyOrigin](),
-                self.unsafe_device_ptr()
+                out.unsafe_mut_ptr().unsafe_origin_cast[MutAnyOrigin](),
+                self.unsafe_ptr()
                 .unsafe_mut_cast[True]()
                 .unsafe_origin_cast[MutAnyOrigin](),
                 self.size(),

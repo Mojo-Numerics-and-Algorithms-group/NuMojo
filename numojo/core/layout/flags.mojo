@@ -69,13 +69,12 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
             f_contiguous: The data is in a Fortran-style contiguous segment.
             owndata: The array owns the underlying data buffer.
             writeable: The data area can be written to.
-                If owndata is False, writeable is forced to be False.
         """
 
         self.C_CONTIGUOUS = c_contiguous
         self.F_CONTIGUOUS = f_contiguous
         self.OWNDATA = owndata
-        self.WRITEABLE = writeable and owndata
+        self.WRITEABLE = writeable
         self.FORC = f_contiguous or c_contiguous
 
     def __init__(
@@ -93,7 +92,6 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
             strides: The strides of the array.
             owndata: The array owns the underlying data buffer.
             writeable: The data area can be written to.
-                If owndata is False, writeable is forced to be False.
         """
         var ndim = len(shape)
         # 0-D and 1-D arrays are both C and F contiguous
@@ -132,7 +130,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
                     else:
                         expected = strides[k]
         self.OWNDATA = owndata
-        self.WRITEABLE = writeable and owndata
+        self.WRITEABLE = writeable
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
     def __init__(
@@ -150,7 +148,6 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
             strides: The strides of the array.
             owndata: The array owns the underlying data buffer.
             writeable: The data area can be written to.
-                If owndata is False, writeable is forced to be False.
         """
 
         self.C_CONTIGUOUS = (
@@ -160,7 +157,7 @@ struct Flags(ImplicitlyCopyable, RegisterPassable):
             True if (strides[0] == 1) or (shape[0] == 1) else False
         )
         self.OWNDATA = owndata
-        self.WRITEABLE = writeable and owndata
+        self.WRITEABLE = writeable
         self.FORC = self.F_CONTIGUOUS or self.C_CONTIGUOUS
 
     def __init__(out self, *, copy: Self):

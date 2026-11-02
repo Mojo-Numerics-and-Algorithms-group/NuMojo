@@ -29,6 +29,10 @@ For more functions (math, linalg, statistics), import from `numojo.routines.*`.
 # NuMojo
 # ===----------------------------------------------------------------------=== #
 import numojo as nm
+from numojo.core.accelerator import (
+    NDArrayLike,
+)
+from numojo.core.accelerator.ndarray_view import AcceleratorNDArrayView
 from numojo.core.accelerator_ndarray import AcceleratorNDArray
 from numojo.core.complex.complex_ndarray import ComplexNDArray
 from numojo.core.complex.complex_simd import ComplexSIMD

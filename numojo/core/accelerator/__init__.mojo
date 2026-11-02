@@ -12,6 +12,8 @@ Accelerator (GPU) support namespace for NuMojo.
 
 Exports
 -------
+- `NDArrayLike`: Common read-only accelerator-array interface.
+- `AcceleratorNDArrayView`: Borrowed accelerator-array view.
 - `Device`: Abstract device interface.
 - `DeviceHandle`: Handle for device instances.
 - `DeviceSpec`: Device specification and capabilities.
@@ -24,6 +26,7 @@ Exports
 # ===----------------------------------------------------------------------=== #
 # NuMojo
 # ===----------------------------------------------------------------------=== #
+from .array_like import NDArrayLike
 from .device import (
     cpu,
     cuda,
@@ -33,3 +36,4 @@ from .device import (
     mps,
     rocm,
 )
+from .ndarray_view import AcceleratorNDArrayView

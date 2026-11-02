@@ -39,8 +39,10 @@ from .accelerator import (
     cuda,
     Device,
     mps,
+    NDArrayLike,
     rocm,
 )
+from .accelerator.ndarray_view import AcceleratorNDArrayView
 from .accelerator_ndarray import AcceleratorNDArray
 from .complex import (
     ComplexNDArray,

@@ -37,5 +37,6 @@ Most math routines call into this layer via `HostExecutor.apply_*` helpers.
 
 ## Related docs
 
+- `accelerator-ndarray-execution.md`
 - `ndarray-basic-structure.md`
 - `style-guide.md`

@@ -135,6 +135,10 @@ def test_explicit_strided_layout() raises:
     assert_false(layout.is_c_contiguous())
     assert_false(layout.is_f_contiguous())
 
+    var strided_1d = NDLayout(Shape(4), Strides(2), offset=0)
+    assert_false(strided_1d.is_c_contiguous())
+    assert_false(strided_1d.is_f_contiguous())
+
 
 def test_slice_and_select() raises:
     """Tests axis slicing, negative steps, empty slices, and selection."""

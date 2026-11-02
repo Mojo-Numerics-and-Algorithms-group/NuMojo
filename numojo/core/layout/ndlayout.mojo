@@ -1119,7 +1119,7 @@ struct NDLayout(Copyable, Movable, Sized, Writable):
             var contiguous = NDLayout([2, 3]).is_c_contiguous()
             ```
         """
-        if len(self) <= 1 or self.size == 0:
+        if len(self) == 0 or self.size == 0:
             return True
         var expected = 1
         for axis in range(len(self) - 1, -1, -1):
@@ -1155,7 +1155,7 @@ struct NDLayout(Copyable, Movable, Sized, Writable):
             var contiguous = NDLayout([2, 3], order="F").is_f_contiguous()
             ```
         """
-        if len(self) <= 1 or self.size == 0:
+        if len(self) == 0 or self.size == 0:
             return True
         var expected = 1
         for axis in range(len(self)):

@@ -1,7 +1,7 @@
 from std.python import Python, PythonObject
 from std.testing.testing import assert_raises, assert_true
-from std.utils.numerics import nan
-from utils_for_test import check, check_is_close
+from std.utils.numerics import inf, nan, neg_inf
+from utils_for_test import check, check_is_close, check_values_close
 from std.testing import TestSuite
 
 import numojo as nm
@@ -366,6 +366,140 @@ def test_nanmedian() raises:
     with assert_raises():
         var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
         _ = nm.nanmedian(all_nan)
+
+
+def test_nanargmax_nanargmin() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    check_values_close(
+        nm.nanargmax(A), np.nanargmax(Anp), "`nanargmax` is broken"
+    )
+    check_values_close(
+        nm.nanargmin(A), np.nanargmin(Anp), "`nanargmin` is broken"
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanargmax(A, axis=axis),
+            np.nanargmax(Anp, axis=axis),
+            String("`nanargmax` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.nanargmin(A, axis=axis),
+            np.nanargmin(Anp, axis=axis),
+            String("`nanargmin` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanargmax(all_nan)
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanargmin(all_nan)
+
+
+def test_nanprod() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(nm.nanprod(A), np.nanprod(Anp), atol=PythonObject(0.001)),
+        "`nanprod` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanprod(A, axis=axis),
+            np.nanprod(Anp, axis=axis),
+            String("`nanprod` is broken for axis {}").format(axis),
+        )
+
+
+def test_nancumsum_nancumprod() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    check_is_close(
+        nm.nancumsum(A), np.nancumsum(Anp), "`nancumsum` is broken"
+    )
+    check_is_close(
+        nm.nancumprod(A), np.nancumprod(Anp), "`nancumprod` is broken"
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nancumsum(A, axis=axis),
+            np.nancumsum(Anp, axis=axis),
+            String("`nancumsum` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.nancumprod(A, axis=axis),
+            np.nancumprod(Anp, axis=axis),
+            String("`nancumprod` is broken for axis {}").format(axis),
+        )
+
+
+def test_nanquantile_nanpercentile() raises:
+    var np = Python.import_module("numpy")
+    var A = _make_nan_array()
+    var Anp = A.to_numpy()
+
+    assert_true(
+        np.isclose(
+            nm.nanquantile(A, Float64(0.5)),
+            np.nanquantile(Anp, 0.5),
+            atol=PythonObject(0.001),
+        ),
+        "`nanquantile` is broken",
+    )
+    assert_true(
+        np.isclose(
+            nm.nanpercentile(A, Float64(50)),
+            np.nanpercentile(Anp, 50),
+            atol=PythonObject(0.001),
+        ),
+        "`nanpercentile` is broken",
+    )
+    for axis in range(2):
+        check_is_close(
+            nm.nanquantile(A, Float64(0.5), axis=axis),
+            np.nanquantile(Anp, 0.5, axis=axis),
+            String("`nanquantile` is broken for axis {}").format(axis),
+        )
+        check_is_close(
+            nm.nanpercentile(A, Float64(50), axis=axis),
+            np.nanpercentile(Anp, 50, axis=axis),
+            String("`nanpercentile` is broken for axis {}").format(axis),
+        )
+
+    with assert_raises():
+        var all_nan = nm.array[f64](data=[nan[f64](), nan[f64]()], shape=[2])
+        _ = nm.nanquantile(all_nan, Float64(0.5))
+
+
+def test_nan_to_num() raises:
+    var np = Python.import_module("numpy")
+    var A = nm.array[f64](
+        data=[Scalar[f64](1.0), nan[f64](), inf[f64](), neg_inf[f64]()],
+        shape=[4],
+    )
+    var Anp = A.to_numpy()
+
+    check_is_close(
+        nm.nan_to_num(A), np.nan_to_num(Anp), "`nan_to_num` is broken"
+    )
+    check_is_close(
+        nm.nan_to_num(A, nan=Float64(-1.0)),
+        np.nan_to_num(Anp, nan=-1.0),
+        "`nan_to_num` with `nan` override is broken",
+    )
+    check_is_close(
+        nm.nan_to_num(A, posinf=Float64(100.0), neginf=Float64(-100.0)),
+        np.nan_to_num(Anp, posinf=100.0, neginf=-100.0),
+        "`nan_to_num` with `posinf`/`neginf` override is broken",
+    )
 
 
 def main() raises:

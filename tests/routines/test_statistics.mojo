@@ -422,9 +422,7 @@ def test_nancumsum_nancumprod() raises:
     var A = _make_nan_array()
     var Anp = A.to_numpy()
 
-    check_is_close(
-        nm.nancumsum(A), np.nancumsum(Anp), "`nancumsum` is broken"
-    )
+    check_is_close(nm.nancumsum(A), np.nancumsum(Anp), "`nancumsum` is broken")
     check_is_close(
         nm.nancumprod(A), np.nancumprod(Anp), "`nancumprod` is broken"
     )

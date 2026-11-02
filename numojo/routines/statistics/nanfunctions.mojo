@@ -930,7 +930,9 @@ def nanargmin_1d[
 
 def nanargmax[
     dtype: DType, //
-](a: NDArray[dtype]) raises -> Scalar[DType.int] where dtype.is_floating_point():
+](a: NDArray[dtype]) raises -> Scalar[
+    DType.int
+] where dtype.is_floating_point():
     """
     Returns the index of the maximum value of the array, ignoring `NaN`
     elements. The array is flattened before the index is computed.
@@ -1004,7 +1006,9 @@ def nanargmax[
 
 def nanargmin[
     dtype: DType, //
-](a: NDArray[dtype]) raises -> Scalar[DType.int] where dtype.is_floating_point():
+](a: NDArray[dtype]) raises -> Scalar[
+    DType.int
+] where dtype.is_floating_point():
     """
     Returns the index of the minimum value of the array, ignoring `NaN`
     elements. The array is flattened before the index is computed.

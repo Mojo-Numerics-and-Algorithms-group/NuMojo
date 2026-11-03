@@ -336,6 +336,23 @@ from numojo.routines.indexing import (
     flatnonzero,
     fancy_index,
     put,
+    indices,
+    ix_,
+    diag_indices,
+    diag_indices_from,
+    tril_indices,
+    tril_indices_from,
+    triu_indices,
+    triu_indices_from,
+    mask_indices,
+    argwhere,
+    fill_diagonal,
+    insert,
+    place,
+    extract,
+    put_along_axis,
+    putmask,
+    choose,
 )
 
 

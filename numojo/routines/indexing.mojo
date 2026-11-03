@@ -21,6 +21,14 @@ Exports
 - `nonzero`, `flatnonzero`: Find non-zero elements.
 - `fancy_index`: Apply fancy indexing.
 - `unravel_index`, `ravel_multi_index`: Index conversion.
+- `indices`, `ix_`: Index-grid generators.
+- `diag_indices`, `diag_indices_from`: Diagonal index generators.
+- `tril_indices`, `tril_indices_from`, `triu_indices`, `triu_indices_from`,
+  `mask_indices`: Triangular index generators.
+- `argwhere`: Indices of non-zero elements, grouped by element.
+- `fill_diagonal`: In-place diagonal fill.
+- `insert`, `place`, `extract`, `put_along_axis`, `putmask`, `choose`:
+  Element insertion/selection helpers.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -1626,3 +1634,1063 @@ def searchsorted[
             else:
                 hi = mid
     return lo
+
+
+# ===----------------------------------------------------------------------=== #
+# Index generators
+# ===----------------------------------------------------------------------=== #
+
+
+def indices(dimensions: List[Int]) raises -> NDArray[DType.int]:
+    """Returns an array representing the indices of a grid.
+
+    Args:
+        dimensions: The shape of the grid.
+
+    Returns:
+        An integer array of shape `[len(dimensions)] + dimensions` whose
+        `result[d]` sub-array contains the index along dimension `d` at
+        every grid point.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var grid = nm.indices(List[Int](2, 3))
+        print(grid.shape)
+        # (2, 2, 3)
+        ```
+        .
+    """
+    var ndim = len(dimensions)
+    var inner_size = 1
+    for d in range(ndim):
+        inner_size *= dimensions[d]
+
+    var out_shape_list = List[Int](capacity=ndim + 1)
+    out_shape_list.append(ndim)
+    for d in range(ndim):
+        out_shape_list.append(dimensions[d])
+
+    var result = NDArray[DType.int](NDArrayShape(out_shape_list))
+
+    for dim_idx in range(ndim):
+        for flat in range(inner_size):
+            var rem = flat
+            var coord = 0
+            for d in range(ndim - 1, -1, -1):
+                var dim_size = dimensions[d]
+                var c = rem % dim_size
+                rem //= dim_size
+                if d == dim_idx:
+                    coord = c
+            result.unsafe_set(
+                dim_idx * inner_size + flat, Scalar[DType.int](coord)
+            )
+
+    return result^
+
+
+def ix_[
+    dtype: DType,
+    //,
+](arrays: List[NDArray[dtype]]) raises -> List[NDArray[dtype]]:
+    """Constructs an open mesh from 1-D arrays for cross-product indexing.
+
+    Each input array is reshaped so that it has size along its own axis and
+    size 1 along every other axis, enabling broadcasting into a dense grid.
+
+    Parameters:
+        dtype: Data type of the input arrays.
+
+    Args:
+        arrays: A `List` of 1-D arrays, one per dimension of the desired grid.
+
+    Returns:
+        A `List` of the same length, with array `k` reshaped to shape
+        `(1, ..., len(arrays[k]), ..., 1)` (the non-1 entry at position `k`).
+
+    Raises:
+        NumojoError: If any input array is not 1-D.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var rows = nm.array[nm.int]("[0, 1, 2]")
+        var cols = nm.array[nm.int]("[0, 1]")
+        var mesh = List[nm.NDArray[nm.int]]()
+        mesh.append(rows^)
+        mesh.append(cols^)
+        var grid = nm.indexing.ix_(mesh)
+        # grid[0] has shape (3, 1); grid[1] has shape (1, 2)
+        ```
+        .
+    """
+    var n = len(arrays)
+    var result = List[NDArray[dtype]]()
+    for k in range(n):
+        if arrays[k].ndim != 1:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=String(
+                        "\nError in `ix_`: array {} must be 1-D, got {}"
+                        " dimensions."
+                    ).format(k, arrays[k].ndim),
+                    location="ix_",
+                )
+            )
+        var shape_list = List[Int](capacity=n)
+        for j in range(n):
+            if j == k:
+                shape_list.append(arrays[k].size)
+            else:
+                shape_list.append(1)
+        result.append(
+            manipulation.reshape(arrays[k], NDArrayShape(shape_list))
+        )
+    return result^
+
+
+def diag_indices(n: Int, ndim: Int = 2) raises -> List[NDArray[DType.int]]:
+    """Returns indices to access the main diagonal of an `ndim`-D array.
+
+    Args:
+        n: The length of each dimension.
+        ndim: The number of dimensions. Default is 2.
+
+    Returns:
+        A `List` of `ndim` 1-D integer arrays, each containing `0, 1, ..., n-1`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var idx = nm.indexing.diag_indices(3)
+        print(idx[0])  # [0, 1, 2]
+        print(idx[1])  # [0, 1, 2]
+        ```
+        .
+    """
+    var result = List[NDArray[DType.int]]()
+    for _ in range(ndim):
+        var arr = NDArray[DType.int](NDArrayShape(n))
+        for i in range(n):
+            arr.unsafe_set(i, Scalar[DType.int](i))
+        result.append(arr^)
+    return result^
+
+
+def diag_indices_from[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> List[NDArray[DType.int]]:
+    """Returns indices to access the main diagonal of an N-D array `a`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Array whose diagonal indices are computed. Must have at least 2
+            dimensions, all of the same length.
+
+    Returns:
+        A `List` of `a.ndim` 1-D integer arrays, each containing
+        `0, 1, ..., n-1` where `n` is the common dimension length.
+
+    Raises:
+        NumojoError: If `a` has fewer than 2 dimensions.
+        NumojoError: If the dimensions of `a` are not all equal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.zeros[nm.i32](nm.Shape(3, 3))
+        var idx = nm.indexing.diag_indices_from(a)
+        print(idx[0])  # [0, 1, 2]
+        ```
+        .
+    """
+    if a.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `diag_indices_from`: array must be at least"
+                    " 2-D."
+                ),
+                location="diag_indices_from",
+            )
+        )
+    for d in range(1, a.ndim):
+        if a.shape[d] != a.shape[0]:
+            raise Error(
+                NumojoError(
+                    category="shape",
+                    message=(
+                        "\nError in `diag_indices_from`: all dimensions of"
+                        " the input must be of equal length."
+                    ),
+                    location="diag_indices_from",
+                )
+            )
+    return diag_indices(a.shape[0], a.ndim)
+
+
+def tril_indices(
+    n: Int, k: Int = 0, m: Optional[Int] = None
+) raises -> Tuple[NDArray[DType.int], NDArray[DType.int]]:
+    """Returns the indices of the lower triangle of an `(n, m)` array.
+
+    Args:
+        n: Number of rows.
+        k: Diagonal offset. `k=0` is the main diagonal; `k>0` is above it;
+            `k<0` is below it.
+        m: Number of columns. Defaults to `n`.
+
+    Returns:
+        A tuple `(rows, cols)` of 1-D integer arrays giving the coordinates
+        of the lower-triangular entries, in row-major order.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var rc = nm.indexing.tril_indices(3)
+        print(rc[0])  # [0, 1, 1, 2, 2, 2]
+        print(rc[1])  # [0, 0, 1, 0, 1, 2]
+        ```
+        .
+    """
+    var ncols = m.value() if m else n
+    var rows = List[Int]()
+    var cols = List[Int]()
+    for i in range(n):
+        for j in range(ncols):
+            if j <= i + k:
+                rows.append(i)
+                cols.append(j)
+
+    var row_arr = NDArray[DType.int](NDArrayShape(len(rows)))
+    var col_arr = NDArray[DType.int](NDArrayShape(len(rows)))
+    for idx in range(len(rows)):
+        row_arr.unsafe_set(idx, Scalar[DType.int](rows[idx]))
+        col_arr.unsafe_set(idx, Scalar[DType.int](cols[idx]))
+
+    return Tuple(row_arr^, col_arr^)
+
+
+def triu_indices(
+    n: Int, k: Int = 0, m: Optional[Int] = None
+) raises -> Tuple[NDArray[DType.int], NDArray[DType.int]]:
+    """Returns the indices of the upper triangle of an `(n, m)` array.
+
+    Args:
+        n: Number of rows.
+        k: Diagonal offset. `k=0` is the main diagonal; `k>0` is above it;
+            `k<0` is below it.
+        m: Number of columns. Defaults to `n`.
+
+    Returns:
+        A tuple `(rows, cols)` of 1-D integer arrays giving the coordinates
+        of the upper-triangular entries, in row-major order.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var rc = nm.indexing.triu_indices(3)
+        print(rc[0])  # [0, 0, 0, 1, 1, 2]
+        print(rc[1])  # [0, 1, 2, 1, 2, 2]
+        ```
+        .
+    """
+    var ncols = m.value() if m else n
+    var rows = List[Int]()
+    var cols = List[Int]()
+    for i in range(n):
+        for j in range(ncols):
+            if j >= i + k:
+                rows.append(i)
+                cols.append(j)
+
+    var row_arr = NDArray[DType.int](NDArrayShape(len(rows)))
+    var col_arr = NDArray[DType.int](NDArrayShape(len(rows)))
+    for idx in range(len(rows)):
+        row_arr.unsafe_set(idx, Scalar[DType.int](rows[idx]))
+        col_arr.unsafe_set(idx, Scalar[DType.int](cols[idx]))
+
+    return Tuple(row_arr^, col_arr^)
+
+
+def tril_indices_from[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], k: Int = 0) raises -> Tuple[
+    NDArray[DType.int], NDArray[DType.int]
+]:
+    """Returns the indices of the lower triangle of 2-D array `a`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: A 2-D array.
+        k: Diagonal offset. `k=0` is the main diagonal.
+
+    Returns:
+        A tuple `(rows, cols)` of 1-D integer arrays.
+
+    Raises:
+        NumojoError: If `a` is not 2-D.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.zeros[nm.i32](nm.Shape(3, 4))
+        var rc = nm.indexing.tril_indices_from(a)
+        print(rc[0])  # [0, 1, 1, 2, 2, 2]
+        ```
+        .
+    """
+    if a.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `tril_indices_from`: array must be 2-D."
+                ),
+                location="tril_indices_from",
+            )
+        )
+    return tril_indices(a.shape[0], k, a.shape[1])
+
+
+def triu_indices_from[
+    dtype: DType,
+    //,
+](a: NDArray[dtype], k: Int = 0) raises -> Tuple[
+    NDArray[DType.int], NDArray[DType.int]
+]:
+    """Returns the indices of the upper triangle of 2-D array `a`.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: A 2-D array.
+        k: Diagonal offset. `k=0` is the main diagonal.
+
+    Returns:
+        A tuple `(rows, cols)` of 1-D integer arrays.
+
+    Raises:
+        NumojoError: If `a` is not 2-D.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.zeros[nm.i32](nm.Shape(3, 4))
+        var rc = nm.indexing.triu_indices_from(a)
+        print(rc[0])  # [0, 0, 0, 0, 1, 1, 1, 2, 2]
+        ```
+        .
+    """
+    if a.ndim != 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `triu_indices_from`: array must be 2-D."
+                ),
+                location="triu_indices_from",
+            )
+        )
+    return triu_indices(a.shape[0], k, a.shape[1])
+
+
+def mask_indices(
+    n: Int, mask_func: String, k: Int = 0
+) raises -> Tuple[NDArray[DType.int], NDArray[DType.int]]:
+    """Returns indices to access `(n, n)` arrays, given a masking function.
+
+    Args:
+        n: The returned indices apply to an `(n, n)` array.
+        mask_func: Either `"triu"` or `"tril"`.
+        k: Diagonal offset forwarded to the masking function.
+
+    Returns:
+        A tuple `(rows, cols)` of 1-D integer arrays.
+
+    Raises:
+        NumojoError: If `mask_func` is not `"triu"` or `"tril"`.
+
+    Notes:
+        NumPy's `mask_indices` accepts an arbitrary callable `mask_func`.
+        Mojo's type system cannot cleanly accept a bound Python-style
+        callable here, so this is a deliberate compatibility deviation:
+        `mask_func` is a `String`, either `"triu"` or `"tril"`, naming the
+        masking function to apply.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var rc = nm.indexing.mask_indices(4, "triu")
+        print(rc[0])
+        ```
+        .
+    """
+    if mask_func == "triu":
+        return triu_indices(n, k)
+    elif mask_func == "tril":
+        return tril_indices(n, k)
+    else:
+        raise Error(
+            NumojoError(
+                category="value",
+                message=String(
+                    "\nError in `mask_indices`: mask_func must be 'triu' or"
+                    " 'tril', got '{}'."
+                ).format(mask_func),
+                location="mask_indices",
+            )
+        )
+
+
+def argwhere[
+    dtype: DType,
+    //,
+](a: NDArray[dtype]) raises -> NDArray[DType.int]:
+    """Returns the indices of non-zero elements, grouped by element.
+
+    Parameters:
+        dtype: Data type of the source array.
+
+    Args:
+        a: Input array.
+
+    Returns:
+        An integer array of shape `(N, a.ndim)` where `N` is the number of
+        non-zero elements; row `i` gives the coordinates of the `i`-th
+        non-zero element.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[[1, 0], [0, 4]]")
+        print(nm.indexing.argwhere(a))
+        # [[0 0]
+        #  [1 1]]
+        ```
+        .
+    """
+    var idx = nonzero(a)
+    var ndim = a.ndim
+    var n = idx[0].size if ndim > 0 else 0
+
+    var out_shape_list = List[Int]()
+    out_shape_list.append(n)
+    out_shape_list.append(ndim)
+    var result = NDArray[DType.int](NDArrayShape(out_shape_list))
+    for row in range(n):
+        for d in range(ndim):
+            result.unsafe_set(row * ndim + d, idx[d].unsafe_get(row))
+
+    return result^
+
+
+def fill_diagonal[
+    dtype: DType,
+    //,
+](mut a: NDArray[dtype], val: Scalar[dtype], wrap: Bool = False) raises:
+    """Fills the main diagonal of `a` in-place with `val`.
+
+    For arrays with more than 2 dimensions, all dimensions must have equal
+    length, and `wrap` has no effect (matching NumPy).
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        a: Array to modify in-place. Must have at least 2 dimensions.
+        val: Value written to each diagonal entry.
+        wrap: For tall (`rows > cols`) 2-D arrays only: if `True`, the
+            diagonal "wraps" after `cols` columns and continues filling
+            every `cols + 1`-th flat element through the end of the array.
+
+    Raises:
+        NumojoError: If `a` has fewer than 2 dimensions.
+        NumojoError: If `a.ndim > 2` and its dimensions are not all equal.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.zeros[nm.i32](nm.Shape(3, 3))
+        nm.indexing.fill_diagonal(a, Scalar[nm.i32](1))
+        print(a)
+        # [[1 0 0]
+        #  [0 1 0]
+        #  [0 0 1]]
+        ```
+        .
+    """
+    if a.ndim < 2:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message="\nError in `fill_diagonal`: array must be at least 2-D.",
+                location="fill_diagonal",
+            )
+        )
+
+    var step: Int
+    var end: Int
+    if a.ndim == 2:
+        var ncols = a.shape[1]
+        step = ncols + 1
+        if wrap:
+            end = a.size
+        else:
+            end = ncols * ncols
+    else:
+        for d in range(1, a.ndim):
+            if a.shape[d] != a.shape[0]:
+                raise Error(
+                    NumojoError(
+                        category="shape",
+                        message=(
+                            "\nError in `fill_diagonal`: all dimensions must"
+                            " be of equal length for ndim > 2."
+                        ),
+                        location="fill_diagonal",
+                    )
+                )
+        var cumulative = 1
+        step = 1
+        for d in range(a.ndim - 1):
+            cumulative *= a.shape[d]
+            step += cumulative
+        end = a.size
+
+    if end > a.size:
+        end = a.size
+
+    var idx = 0
+    while idx < end:
+        a.itemset(idx, val)
+        idx += step
+
+
+# ===----------------------------------------------------------------------=== #
+# Insertion / extraction helpers
+# ===----------------------------------------------------------------------=== #
+
+
+def insert[
+    dtype: DType,
+    //,
+](
+    a: NDArray[dtype],
+    index: Int,
+    values: NDArray[dtype],
+    axis: Optional[Int] = None,
+) raises -> NDArray[dtype]:
+    """Inserts `values` into `a` before position `index`.
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        a: Source array.
+        index: Insertion position along `axis` (or the flattened array, if
+            `axis` is `None`). Negative values count from the end.
+        values: Values to insert.
+        axis: Axis along which to insert. If `None` (default), `a` is
+            flattened before insertion and the result is 1-D.
+
+    Returns:
+        A new array with `values` inserted.
+
+    Raises:
+        NumojoError: If `axis` is out of bounds for `a`.
+
+    Notes:
+        When `axis` is given, `values` must either be broadcastable to a
+        single slice (any array whose size along `axis` is 1, or which has
+        fewer dimensions than `a`) or match `a`'s shape exactly along every
+        axis other than `axis`. General NumPy-style broadcasting across the
+        non-insertion axes is not supported.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.i32]("[1, 2, 3]")
+        print(nm.indexing.insert(a, 1, nm.array[nm.i32]("[9]")))
+        # [1, 9, 2, 3]
+        ```
+        .
+    """
+    if not axis:
+        var flat_a = ravel(a)
+        var flat_v = ravel(values)
+        var n = flat_a.size
+        var v = flat_v.size
+
+        var idx = index
+        if idx < 0:
+            idx += n
+        if idx < 0:
+            idx = 0
+        if idx > n:
+            idx = n
+
+        var result = NDArray[dtype](NDArrayShape(n + v))
+        for i in range(idx):
+            result.unsafe_set(i, flat_a.unsafe_get(i))
+        for i in range(v):
+            result.unsafe_set(idx + i, flat_v.unsafe_get(i))
+        for i in range(idx, n):
+            result.unsafe_set(idx + v + (i - idx), flat_a.unsafe_get(i))
+        return result^
+
+    var norm_axis = axis.value()
+    if norm_axis < 0:
+        norm_axis += a.ndim
+    if norm_axis < 0 or norm_axis >= a.ndim:
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `insert`: axis {} is out of bounds for array"
+                    " with {} dimensions."
+                ).format(axis.value(), a.ndim),
+                location="insert",
+            )
+        )
+
+    var axis_size = a.shape[norm_axis]
+    var vcount = values.shape[norm_axis] if values.ndim == a.ndim else 1
+
+    var idx = index
+    if idx < 0:
+        idx += axis_size
+    if idx < 0:
+        idx = 0
+    if idx > axis_size:
+        idx = axis_size
+
+    var out_shape_list = List[Int](capacity=a.ndim)
+    for d in range(a.ndim):
+        if d == norm_axis:
+            out_shape_list.append(axis_size + vcount)
+        else:
+            out_shape_list.append(a.shape[d])
+
+    var result = NDArray[dtype](NDArrayShape(out_shape_list))
+    var a_c = a.contiguous()
+    var values_c = values.contiguous()
+    var values_is_full = values.ndim == a.ndim
+
+    for flat in range(result.size):
+        var rem = flat
+        var coords = List[Int](capacity=a.ndim)
+        for _ in range(a.ndim):
+            coords.append(0)
+        for d in range(result.ndim - 1, -1, -1):
+            coords[d] = rem % result.shape[d]
+            rem //= result.shape[d]
+
+        var c = coords[norm_axis]
+        if c < idx:
+            result.unsafe_set(flat, a_c._getitem(coords))
+        elif c < idx + vcount:
+            if values_is_full:
+                var vcoords = coords.copy()
+                vcoords[norm_axis] = c - idx
+                result.unsafe_set(flat, values_c._getitem(vcoords))
+            else:
+                result.unsafe_set(flat, values_c.unsafe_get(0))
+        else:
+            var acoords = coords.copy()
+            acoords[norm_axis] = c - vcount
+            result.unsafe_set(flat, a_c._getitem(acoords))
+
+    return result^
+
+
+def place[
+    dtype: DType,
+    //,
+](mut a: NDArray[dtype], mask: NDArray[DType.bool], vals: NDArray[dtype]) raises:
+    """Changes elements of `a` based on `mask`, cyclically using `vals`.
+
+    Unlike `putmask`, `vals` is only consumed (and cycled) for positions
+    actually selected by `mask`, matching `numpy.place`.
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        a: Array to modify in-place.
+        mask: Boolean array, same shape as `a`.
+        vals: Values cyclically used to fill selected positions.
+
+    Raises:
+        NumojoError: If `mask`'s shape does not match `a`'s shape.
+        NumojoError: If `vals` is empty while `mask` selects at least one
+            position.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](6)
+        var mask = nm.array[nm.boolean]("[True, False, True, False, True, False]")
+        nm.indexing.place(a, mask, nm.array[nm.i32]("[10, 20]"))
+        print(a)
+        # [10, 1, 20, 3, 10, 5]
+        ```
+        .
+    """
+    if a.shape != mask.shape:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `place`: mask must have the same shape as a."
+                ),
+                location="place",
+            )
+        )
+
+    var mask_c = mask.contiguous()
+
+    if vals.size == 0:
+        for i in range(a.size):
+            if mask_c.unsafe_get(i):
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message=(
+                            "\nError in `place`: vals is empty but mask"
+                            " selects at least one position."
+                        ),
+                        location="place",
+                    )
+                )
+        return
+
+    var vals_c = vals.contiguous()
+    var vi = 0
+    for i in range(a.size):
+        if mask_c.unsafe_get(i):
+            a.itemset(i, vals_c.unsafe_get(vi % vals_c.size))
+            vi += 1
+
+
+def extract[
+    dtype: DType,
+    //,
+](condition: NDArray[DType.bool], a: NDArray[dtype]) raises -> NDArray[dtype]:
+    """Returns the elements of `a` where `condition` is `True`.
+
+    Equivalent to `compress(ravel(condition), ravel(a))`.
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        condition: Boolean selector, same size as `a`.
+        a: Source array.
+
+    Returns:
+        A 1-D array of the selected elements.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](6)
+        var mask = nm.array[nm.boolean]("[True, False, True, False, True, False]")
+        print(nm.indexing.extract(mask, a))
+        # [0, 2, 4]
+        ```
+        .
+    """
+    var cond_flat = ravel(condition)
+    var a_flat = ravel(a)
+    return compress(cond_flat, a_flat, axis=0)
+
+
+def put_along_axis[
+    dtype: DType,
+    //,
+](
+    mut a: NDArray[dtype],
+    indices: NDArray[DType.int],
+    values: NDArray[dtype],
+    axis: Int,
+) raises:
+    """Puts values into `a` at the given 1-D indices along `axis`.
+
+    The inverse counterpart of `take_along_axis`.
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        a: Destination array to modify in-place.
+        indices: Indices array, broadcastable to `a`'s shape with the size
+            along `axis` replaced by `indices.shape[axis]`.
+        values: Values array, broadcast to the same shape as `indices`.
+        axis: Axis along which to place values.
+
+    Raises:
+        NumojoError: If `axis` is out of bounds for `a`.
+        NumojoError: If `indices.ndim` does not equal `a.ndim`.
+        NumojoError: If any index is out of bounds for the given axis.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.zeros[nm.i32](nm.Shape(2, 3))
+        var ind = nm.array[nm.int]("[[0], [2]]")
+        var vals = nm.array[nm.i32]("[[9], [9]]")
+        nm.indexing.put_along_axis(a, ind, vals, axis=1)
+        print(a)
+        # [[9 0 0]
+        #  [0 0 9]]
+        ```
+        .
+    """
+    var norm_axis = axis
+    if norm_axis < 0:
+        norm_axis += a.ndim
+    if norm_axis < 0 or norm_axis >= a.ndim:
+        raise Error(
+            NumojoError(
+                category="index",
+                message=String(
+                    "\nError in `put_along_axis`: axis {} is out of bounds"
+                    " for array with {} dimensions."
+                ).format(axis, a.ndim),
+                location="put_along_axis",
+            )
+        )
+    if indices.ndim != a.ndim:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=String(
+                    "\nError in `put_along_axis`: the ndim of a and indices"
+                    " must be same. Got {} and {}."
+                ).format(a.ndim, indices.ndim),
+                location="put_along_axis",
+            )
+        )
+
+    var bc_shape = a.shape
+    bc_shape[norm_axis] = indices.shape[norm_axis]
+    var indices_bc = broadcast_to(indices, bc_shape).contiguous()
+    var values_bc = broadcast_to(values, bc_shape).contiguous()
+
+    var axis_size = a.shape[norm_axis]
+
+    for flat in range(indices_bc.size):
+        var rem = flat
+        var coords = List[Int](capacity=a.ndim)
+        for _ in range(a.ndim):
+            coords.append(0)
+        for d in range(indices_bc.ndim - 1, -1, -1):
+            coords[d] = rem % indices_bc.shape[d]
+            rem //= indices_bc.shape[d]
+
+        var raw = Int(indices_bc.unsafe_get(flat))
+        if raw < -axis_size or raw >= axis_size:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `put_along_axis`: index {} is out of"
+                        " bounds for axis {} with size {}."
+                    ).format(raw, norm_axis, axis_size),
+                    location="put_along_axis",
+                )
+            )
+        if raw < 0:
+            raw += axis_size
+        coords[norm_axis] = raw
+
+        a.itemset(coords.copy(), values_bc.unsafe_get(flat))
+
+
+def putmask[
+    dtype: DType,
+    //,
+](mut a: NDArray[dtype], mask: NDArray[DType.bool], values: NDArray[dtype]) raises:
+    """Changes elements of `a` based on `mask`, tiling `values` over `a`'s shape.
+
+    Unlike `place`, `values` is conceptually tiled to `a`'s full size first
+    (indexed by position in `a`, not by selection order), matching
+    `numpy.putmask`.
+
+    Parameters:
+        dtype: Data type of the array.
+
+    Args:
+        a: Array to modify in-place.
+        mask: Boolean array, same shape as `a`.
+        values: Values tiled (cyclically repeated) over `a`'s positions.
+
+    Raises:
+        NumojoError: If `mask`'s shape does not match `a`'s shape.
+        NumojoError: If `values` is empty while `mask` selects at least one
+            position.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](6)
+        var mask = nm.array[nm.boolean]("[True, False, True, False, True, False]")
+        nm.indexing.putmask(a, mask, nm.array[nm.i32]("[10, 20]"))
+        print(a)
+        # [10, 1, 10, 3, 10, 5]
+        ```
+        .
+    """
+    if a.shape != mask.shape:
+        raise Error(
+            NumojoError(
+                category="shape",
+                message=(
+                    "\nError in `putmask`: mask must have the same shape as"
+                    " a."
+                ),
+                location="putmask",
+            )
+        )
+
+    var mask_c = mask.contiguous()
+
+    if values.size == 0:
+        for i in range(a.size):
+            if mask_c.unsafe_get(i):
+                raise Error(
+                    NumojoError(
+                        category="value",
+                        message=(
+                            "\nError in `putmask`: values is empty but mask"
+                            " selects at least one position."
+                        ),
+                        location="putmask",
+                    )
+                )
+        return
+
+    var values_c = values.contiguous()
+    for i in range(a.size):
+        if mask_c.unsafe_get(i):
+            a.itemset(i, values_c.unsafe_get(i % values_c.size))
+
+
+def choose[
+    dtype: DType,
+    //,
+](a: NDArray[DType.int], choices: List[NDArray[dtype]]) raises -> NDArray[
+    dtype
+]:
+    """Constructs an array from an index array and a list of choice arrays.
+
+    `result[i] = choices[a[i]][i]`, with `a` and every entry of `choices`
+    broadcast against each other.
+
+    Parameters:
+        dtype: Data type of the choice arrays.
+
+    Args:
+        a: Integer index array selecting, for each output position, which
+            array in `choices` to draw from.
+        choices: List of arrays to choose between.
+
+    Returns:
+        Array of the broadcast shape of `a` and every entry in `choices`.
+
+    Raises:
+        NumojoError: If `choices` is empty.
+        NumojoError: If `a` and `choices` are not mutually broadcast-compatible.
+        NumojoError: If any value in `a` is out of bounds for `choices`.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.array[nm.int]("[0, 1, 0]")
+        var c0 = nm.array[nm.i32]("[1, 1, 1]")
+        var c1 = nm.array[nm.i32]("[9, 9, 9]")
+        var options = List[nm.NDArray[nm.i32]]()
+        options.append(c0^)
+        options.append(c1^)
+        print(nm.indexing.choose(a, options))
+        # [1, 9, 1]
+        ```
+        .
+    """
+    var n = len(choices)
+    if n == 0:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="\nError in `choose`: choices must not be empty.",
+                location="choose",
+            )
+        )
+
+    var out_shape = a.shape
+    for k in range(n):
+        try:
+            out_shape = out_shape.broadcast(choices[k].shape)
+        except e:
+            raise Error(
+                NumojoError(
+                    category="broadcast",
+                    message=String(
+                        "\nError in `choose`: a and choices are not"
+                        " broadcast-compatible: "
+                    )
+                    + String(e),
+                    location="choose",
+                )
+            )
+
+    var a_bc = broadcast_to(a, out_shape).contiguous()
+    var bc_choices = List[NDArray[dtype]](capacity=n)
+    for k in range(n):
+        bc_choices.append(broadcast_to(choices[k], out_shape).contiguous())
+
+    var result = NDArray[dtype](out_shape)
+    for i in range(result.size):
+        var sel = Int(a_bc.unsafe_get(i))
+        if sel < 0 or sel >= n:
+            raise Error(
+                NumojoError(
+                    category="index",
+                    message=String(
+                        "\nError in `choose`: index {} is out of bounds for"
+                        " {} choices."
+                    ).format(sel, n),
+                    location="choose",
+                )
+            )
+        result.unsafe_set(i, bc_choices[sel].unsafe_get(i))
+
+    return result^

@@ -7,13 +7,25 @@
 """
 Test indexing module `nm.routines.indexing`.
 """
-from std.python import Python
-from std.testing.testing import assert_true, assert_almost_equal, assert_equal
-from utils_for_test import check, check_is_close
-from std.testing import TestSuite
 
-from numojo.prelude import *
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.python import Python
+from std.testing import TestSuite
+from std.testing.testing import (
+    assert_almost_equal,
+    assert_equal,
+    assert_raises,
+    assert_true,
+)
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 import numojo as nm
+from numojo.prelude import *
+from utils_for_test import check, check_is_close
 
 
 def test_compress() raises:
@@ -332,6 +344,310 @@ def test_take_along_axis_fortran_order() raises:
             " array is broken"
         ),
     )
+
+
+# ===----------------------------------------------------------------------=== #
+# Index generators
+# ===----------------------------------------------------------------------=== #
+
+
+def test_indices() raises:
+    var np = Python.import_module("numpy")
+
+    var dims: List[Int] = [2, 3]
+    var grid = nm.indices(dims)
+    var np_grid = np.indices(Python.list(2, 3))
+
+    check(grid, np_grid, "`indices` is broken for (2, 3)")
+
+    var dims3: List[Int] = [2, 3, 4]
+    var grid3 = nm.indices(dims3)
+    var np_grid3 = np.indices(Python.list(2, 3, 4))
+
+    check(grid3, np_grid3, "`indices` is broken for (2, 3, 4)")
+
+
+def test_ix_() raises:
+    var np = Python.import_module("numpy")
+
+    var rows = nm.array[int]("[0, 1, 2]")
+    var cols = nm.array[int]("[0, 1]")
+    var rows_np = rows.to_numpy()
+    var cols_np = cols.to_numpy()
+
+    var arrs = List[NDArray[int]]()
+    arrs.append(rows.copy())
+    arrs.append(cols.copy())
+
+    var mesh = nm.indexing.ix_(arrs)
+    var np_mesh = np.ix_(rows_np, cols_np)
+
+    check(mesh[0], np_mesh[0], "`ix_` is broken for first array")
+    check(mesh[1], np_mesh[1], "`ix_` is broken for second array")
+
+
+def test_diag_indices() raises:
+    var np = Python.import_module("numpy")
+
+    var idx = nm.indexing.diag_indices(4)
+    var np_idx = np.diag_indices(4)
+
+    check(idx[0], np_idx[0], "`diag_indices` is broken for rows")
+    check(idx[1], np_idx[1], "`diag_indices` is broken for cols")
+
+    var idx3 = nm.indexing.diag_indices(4, ndim=3)
+    var np_idx3 = np.diag_indices(4, ndim=3)
+    check(idx3[0], np_idx3[0], "`diag_indices` is broken for ndim=3 (0)")
+    check(idx3[2], np_idx3[2], "`diag_indices` is broken for ndim=3 (2)")
+
+
+def test_diag_indices_from() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[i32](16).reshape(Shape(4, 4))
+    var anp = a.to_numpy()
+
+    var idx = nm.indexing.diag_indices_from(a)
+    var np_idx = np.diag_indices_from(anp)
+
+    check(idx[0], np_idx[0], "`diag_indices_from` is broken for rows")
+    check(idx[1], np_idx[1], "`diag_indices_from` is broken for cols")
+
+    with assert_raises():
+        var b = nm.arange[i32](12).reshape(Shape(3, 4))
+        _ = nm.indexing.diag_indices_from(b)
+
+
+def test_tril_triu_indices() raises:
+    var np = Python.import_module("numpy")
+
+    for k in range(-2, 3):
+        var rc = nm.indexing.tril_indices(4, k)
+        var np_rc = np.tril_indices(4, k)
+        check(
+            rc[0],
+            np_rc[0],
+            String("`tril_indices` rows broken for k={}").format(k),
+        )
+        check(
+            rc[1],
+            np_rc[1],
+            String("`tril_indices` cols broken for k={}").format(k),
+        )
+
+        var ru = nm.indexing.triu_indices(4, k)
+        var np_ru = np.triu_indices(4, k)
+        check(
+            ru[0],
+            np_ru[0],
+            String("`triu_indices` rows broken for k={}").format(k),
+        )
+        check(
+            ru[1],
+            np_ru[1],
+            String("`triu_indices` cols broken for k={}").format(k),
+        )
+
+    var rc_nm = nm.indexing.tril_indices(3, 0, 5)
+    var np_rc_nm = np.tril_indices(3, 0, 5)
+    check(rc_nm[0], np_rc_nm[0], "`tril_indices` rows broken for n!=m")
+    check(rc_nm[1], np_rc_nm[1], "`tril_indices` cols broken for n!=m")
+
+
+def test_tril_triu_indices_from() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[i32](12).reshape(Shape(3, 4))
+    var anp = a.to_numpy()
+
+    var rc = nm.indexing.tril_indices_from(a, 1)
+    var np_rc = np.tril_indices_from(anp, 1)
+    check(rc[0], np_rc[0], "`tril_indices_from` rows broken")
+    check(rc[1], np_rc[1], "`tril_indices_from` cols broken")
+
+    var ru = nm.indexing.triu_indices_from(a, -1)
+    var np_ru = np.triu_indices_from(anp, -1)
+    check(ru[0], np_ru[0], "`triu_indices_from` rows broken")
+    check(ru[1], np_ru[1], "`triu_indices_from` cols broken")
+
+
+def test_mask_indices() raises:
+    var np = Python.import_module("numpy")
+
+    var rc = nm.indexing.mask_indices(4, "triu")
+    var np_rc = np.mask_indices(4, np.triu)
+    check(rc[0], np_rc[0], "`mask_indices` triu rows broken")
+    check(rc[1], np_rc[1], "`mask_indices` triu cols broken")
+
+    var rc2 = nm.indexing.mask_indices(4, "tril", -1)
+    var np_rc2 = np.mask_indices(4, np.tril, -1)
+    check(rc2[0], np_rc2[0], "`mask_indices` tril rows broken")
+    check(rc2[1], np_rc2[1], "`mask_indices` tril cols broken")
+
+    with assert_raises():
+        _ = nm.indexing.mask_indices(4, "bogus")
+
+
+def test_argwhere() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.array[i32]("[[1, 0, 3], [0, 0, 6]]")
+    var anp = a.to_numpy()
+
+    check(
+        nm.indexing.argwhere(a), np.argwhere(anp), "`argwhere` is broken"
+    )
+
+
+def test_fill_diagonal() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.zeros[i32](Shape(3, 3))
+    var anp = a.to_numpy()
+    nm.indexing.fill_diagonal(a, Scalar[i32](7))
+    np.fill_diagonal(anp, 7)
+    check(a, anp, "`fill_diagonal` is broken for square 2-D")
+
+    var b = nm.zeros[i32](Shape(4, 3))
+    var bnp = b.to_numpy()
+    nm.indexing.fill_diagonal(b, Scalar[i32](9), wrap=True)
+    np.fill_diagonal(bnp, 9, wrap=True)
+    check(b, bnp, "`fill_diagonal` is broken for tall 2-D with wrap")
+
+    var c = nm.zeros[i32](Shape(4, 3))
+    var cnp = c.to_numpy()
+    nm.indexing.fill_diagonal(c, Scalar[i32](9), wrap=False)
+    np.fill_diagonal(cnp, 9, wrap=False)
+    check(c, cnp, "`fill_diagonal` is broken for tall 2-D without wrap")
+
+    var d = nm.zeros[i32](Shape(3, 3, 3))
+    var dnp = d.to_numpy()
+    nm.indexing.fill_diagonal(d, Scalar[i32](5))
+    np.fill_diagonal(dnp, 5)
+    check(d, dnp, "`fill_diagonal` is broken for 3-D")
+
+    with assert_raises():
+        var e = nm.zeros[i32](Shape(3))
+        nm.indexing.fill_diagonal(e, Scalar[i32](1))
+
+
+# ===----------------------------------------------------------------------=== #
+# Insertion / extraction helpers
+# ===----------------------------------------------------------------------=== #
+
+
+def test_insert() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.array[i32]("[1, 2, 3, 4]")
+    var anp = a.to_numpy()
+    var v = nm.array[i32]("[9, 10]")
+    var vnp = v.to_numpy()
+
+    check(
+        nm.indexing.insert(a, 2, v),
+        np.insert(anp, 2, vnp),
+        "`insert` is broken for flattened insertion",
+    )
+
+    var a2 = nm.arange[i32](12).reshape(Shape(3, 4))
+    var a2np = a2.to_numpy()
+    var v2 = nm.array[i32]("[[90, 91, 92, 93]]")
+    var v2np = v2.to_numpy()
+
+    check(
+        nm.indexing.insert(a2, 1, v2, axis=0),
+        np.insert(a2np, 1, v2np, axis=0),
+        "`insert` is broken for axis=0",
+    )
+
+
+def test_place() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[i32](6)
+    var anp = a.to_numpy()
+    var mask = nm.array[boolean]("[1, 0, 1, 0, 1, 0]")
+    var masknp = mask.to_numpy()
+    var vals = nm.array[i32]("[10, 20]")
+    var valsnp = vals.to_numpy()
+
+    np.place(anp, masknp, valsnp)
+    nm.indexing.place(a, mask, vals)
+    check(a, anp, "`place` is broken")
+
+
+def test_extract() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[i32](6)
+    var anp = a.to_numpy()
+    var mask = nm.array[boolean]("[1, 0, 1, 0, 1, 0]")
+    var masknp = mask.to_numpy()
+
+    check(
+        nm.indexing.extract(mask, a),
+        np.extract(masknp, anp),
+        "`extract` is broken",
+    )
+
+
+def test_put_along_axis() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.zeros[i32](Shape(2, 3))
+    var anp = a.to_numpy()
+    var ind = nm.array[int]("[[0], [2]]")
+    var indnp = ind.to_numpy()
+    var vals = nm.array[i32]("[[9], [8]]")
+    var valsnp = vals.to_numpy()
+
+    np.put_along_axis(anp, indnp, valsnp, axis=1)
+    nm.indexing.put_along_axis(a, ind, vals, axis=1)
+    check(a, anp, "`put_along_axis` is broken")
+
+
+def test_putmask() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[i32](6)
+    var anp = a.to_numpy()
+    var mask = nm.array[boolean]("[1, 0, 1, 0, 1, 0]")
+    var masknp = mask.to_numpy()
+    var vals = nm.array[i32]("[10, 20]")
+    var valsnp = vals.to_numpy()
+
+    np.putmask(anp, masknp, valsnp)
+    nm.indexing.putmask(a, mask, vals)
+    check(a, anp, "`putmask` is broken")
+
+
+def test_choose() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.array[int]("[0, 1, 0, 2]")
+    var anp = a.to_numpy()
+    var c0 = nm.array[i32]("[1, 1, 1, 1]")
+    var c1 = nm.array[i32]("[9, 9, 9, 9]")
+    var c2 = nm.array[i32]("[5, 5, 5, 5]")
+    var c0np = c0.to_numpy()
+    var c1np = c1.to_numpy()
+    var c2np = c2.to_numpy()
+
+    var choices = List[NDArray[i32]]()
+    choices.append(c0.copy())
+    choices.append(c1.copy())
+    choices.append(c2.copy())
+
+    check(
+        nm.indexing.choose(a, choices),
+        np.choose(anp, [c0np, c1np, c2np]),
+        "`choose` is broken",
+    )
+
+    with assert_raises():
+        var empty_choices = List[NDArray[i32]]()
+        _ = nm.indexing.choose(a, empty_choices)
 
 
 def main() raises:

@@ -17,11 +17,18 @@ NVIDIA CUDA, AMD ROCm, and Apple Metal.
 Exports
 -------
 - `Device`: Execution device.
+- `DeviceHandle`: Shared runtime handle for a GPU device.
+- `DeviceSpec`: Runtime device identity.
+- `shared_device_context`: Lazily shared context for a physical GPU.
+- `is_accelerator_available`: Compile-time accelerator availability query.
+- `cpu`, `cuda`, `rocm`, `mps`: Common compile-time device constants.
 """
 
 # ===----------------------------------------------------------------------=== #
 # Stdlib
 # ===----------------------------------------------------------------------=== #
+from std.ffi import _Global
+from std.os import abort
 from std.sys.info import default_accelerator
 
 # ===----------------------------------------------------------------------=== #
@@ -39,6 +46,117 @@ comptime cpu = Device.CPU
 comptime cuda = Device.CUDA
 comptime rocm = Device.ROCM
 comptime mps = Device.MPS
+
+
+def _make_shared_device_context[device_id: Int]() -> DeviceContext:
+    """Create the process-wide context for one physical accelerator.
+
+    Parameters:
+        device_id: Zero-based physical accelerator index.
+
+    Returns:
+        A newly constructed context retained by `_Global`.
+    """
+    try:
+        return DeviceContext(device_id)
+    except e:
+        abort(
+            "NuMojo: shared DeviceContext creation failed for device "
+            + String(device_id)
+            + ": "
+            + String(e)
+        )
+
+
+def _shared_device_context_name[device_id: Int]() -> StaticString:
+    """Return the `_Global` symbol for one physical accelerator.
+
+    Parameters:
+        device_id: Zero-based physical accelerator index.
+
+    Returns:
+        The unique process-wide symbol for `device_id`.
+    """
+    comptime if device_id == 0:
+        return "numojo_shared_device_context_0"
+    elif device_id == 1:
+        return "numojo_shared_device_context_1"
+    elif device_id == 2:
+        return "numojo_shared_device_context_2"
+    elif device_id == 3:
+        return "numojo_shared_device_context_3"
+    elif device_id == 4:
+        return "numojo_shared_device_context_4"
+    elif device_id == 5:
+        return "numojo_shared_device_context_5"
+    elif device_id == 6:
+        return "numojo_shared_device_context_6"
+    elif device_id == 7:
+        return "numojo_shared_device_context_7"
+    elif device_id == 8:
+        return "numojo_shared_device_context_8"
+    elif device_id == 9:
+        return "numojo_shared_device_context_9"
+    elif device_id == 10:
+        return "numojo_shared_device_context_10"
+    elif device_id == 11:
+        return "numojo_shared_device_context_11"
+    elif device_id == 12:
+        return "numojo_shared_device_context_12"
+    elif device_id == 13:
+        return "numojo_shared_device_context_13"
+    elif device_id == 14:
+        return "numojo_shared_device_context_14"
+    else:
+        return "numojo_shared_device_context_15"
+
+
+def shared_device_context[device: Device]() raises -> DeviceContext:
+    """Return the lazily shared context for `device`.
+
+    Every specialization for a physical device index owns one `_Global`
+    entry. The returned `DeviceContext` is a cheap refcounted copy of that
+    entry, so creating arrays does not create additional native command
+    queues.
+
+    Parameters:
+        device: Compile-time GPU device descriptor.
+
+    Returns:
+        A copy of the process-wide context for `device`.
+
+    Raises:
+        NumojoError: If `device` is unavailable.
+
+    Constraints:
+        GPU devices with indices from 0 through 15 are supported.
+
+    Examples:
+        `var context = shared_device_context[Device.MPS]()`.
+    """
+    comptime assert (
+        device.type == "gpu"
+    ), "shared_device_context is only available for GPU devices"
+    comptime assert (
+        0 <= device.id < 16
+    ), "shared_device_context currently supports device indices 0-15"
+    if not device.is_available():
+        raise Error(
+            NumojoError(
+                category="value",
+                message=(
+                    "Cannot create shared context for unavailable device: "
+                    + device.device_name()
+                ),
+                location="shared_device_context",
+            )
+        )
+
+    comptime context_name = _shared_device_context_name[device.id]()
+    comptime context_global = _Global[
+        context_name, _make_shared_device_context[device.id]
+    ]
+    return context_global.get_or_create_ptr()[unsafe_offset=0].copy()
 
 
 struct DeviceSpec(
@@ -165,7 +283,7 @@ struct DeviceHandle[device: Device](Copyable, Movable, Writable):
                     location="DeviceHandle.__init__",
                 )
             )
-        self.context = DeviceContext(Self.device.id)
+        self.context = shared_device_context[Self.device]()
 
     def __init__(out self, var context: DeviceContext):
         comptime assert (

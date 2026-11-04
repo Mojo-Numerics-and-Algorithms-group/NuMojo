@@ -17,6 +17,7 @@ Exports
 - `Device`: Abstract device interface.
 - `DeviceHandle`: Handle for device instances.
 - `DeviceSpec`: Device specification and capabilities.
+- `shared_device_context`: Lazily shared context for a physical GPU.
 - `cpu`: CPU device instance.
 - `cuda`: CUDA device instance.
 - `mps`: Metal Performance Shaders device instance.
@@ -35,5 +36,6 @@ from .device import (
     DeviceSpec,
     mps,
     rocm,
+    shared_device_context,
 )
 from .ndarray_view import AcceleratorNDArrayView

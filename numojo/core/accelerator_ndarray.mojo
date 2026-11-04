@@ -644,6 +644,18 @@ struct AcceleratorNDArray[
         """Return the `DeviceContext` backing this array's GPU storage."""
         return self._buf.device_storage.unsafe_value().handle.device_context()
 
+    def synchronize(self) raises:
+        """Wait for queued work on this array's device to complete.
+
+        CPU arrays have no queued device work, so this method is a no-op.
+        GPU arrays synchronize their shared device context.
+
+        Examples:
+            Call `array.synchronize()` before timing queued GPU work.
+        """
+        comptime if Self.device.type == "gpu":
+            self._buf.device_storage.unsafe_value().handle.synchronize()
+
     def num_elements(self) -> Int:
         return self.size()
 

@@ -1,11 +1,19 @@
+# ===----------------------------------------------------------------------=== #
+# Stdlib
+# ===----------------------------------------------------------------------=== #
+from std.memory.alloc import unsafe_alloc
+from std.sys.info import default_accelerator
+from std.testing import TestSuite
+from std.testing.testing import assert_equal, assert_true
+
+# ===----------------------------------------------------------------------=== #
+# NuMojo
+# ===----------------------------------------------------------------------=== #
 from numojo.core.accelerator.device import (
     Device,
     DeviceHandle,
     DeviceSpec,
 )
-from std.testing.testing import assert_true, assert_equal
-from std.testing import TestSuite
-from std.sys.info import default_accelerator
 
 
 def test_default_init() raises:
@@ -322,6 +330,35 @@ def test_gpu_device_handle_when_available() raises:
         assert_true(handle.is_gpu(), "mps handle is_gpu")
     else:
         assert_true(True, "no gpu available; gpu handle test skipped")
+
+
+def _assert_shared_context_ordering[device: Device]() raises:
+    var first_handle = DeviceHandle[device]()
+    var second_handle = DeviceHandle[device]()
+    var first = first_handle.device_context()
+    var second = second_handle.device_context()
+    var buffer = first.enqueue_create_buffer[DType.float32](4)
+    var host = unsafe_alloc[Float32](4)
+
+    buffer.enqueue_fill(7.0)
+    buffer.enqueue_copy_to(host)
+    second.synchronize()
+
+    for i in range(4):
+        assert_equal(host[unsafe_offset=i], 7.0, "shared context ordering")
+    host.unsafe_free()
+
+
+def test_shared_gpu_context_when_available() raises:
+    """Test that context copies submit to and synchronize the same queue."""
+    comptime if default_accelerator().is_nvidia_gpu():
+        _assert_shared_context_ordering[Device.CUDA]()
+    elif default_accelerator().is_amd_gpu():
+        _assert_shared_context_ordering[Device.ROCM]()
+    elif default_accelerator().is_apple_gpu():
+        _assert_shared_context_ordering[Device.MPS]()
+    else:
+        assert_true(True, "no gpu available; shared context test skipped")
 
 
 def main() raises:

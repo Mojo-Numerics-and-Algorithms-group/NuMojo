@@ -48,6 +48,7 @@ from numojo.core.indexing import IndexMethods
 from numojo.core.layout import NDArrayShape, NDArrayStrides
 from numojo.core.ndarray import NDArray
 from numojo.routines.creation import array as _array_creation_from_list
+from numojo.routines.creation import ones
 from numojo.core.type_aliases import Shape
 from numojo.core.indexing.item import Item
 from numojo.routines.manipulation import ravel
@@ -2013,53 +2014,51 @@ def triu_indices_from[
     return triu_indices(a.shape[0], k, a.shape[1])
 
 
-def mask_indices(
-    n: Int, mask_func: String, k: Int = 0
-) raises -> Tuple[NDArray[DType.int], NDArray[DType.int]]:
+def mask_indices[
+    dtype: DType,
+    mask_func: def[](NDArray[dtype], Int) raises thin -> NDArray[dtype],
+](n: Int, k: Int = 0) raises -> Tuple[NDArray[DType.int], NDArray[DType.int]]:
     """Returns indices to access `(n, n)` arrays, given a masking function.
+
+    Mirrors NumPy's `mask_indices(n, mask_func, k=0)`: applies `mask_func`
+    to an `(n, n)` array of ones and returns the coordinates of its
+    non-zero entries.
+
+    Parameters:
+        dtype: Data type used for the intermediate masked array.
+        mask_func: A function taking an `NDArray[dtype]` and a diagonal
+            offset `k` and returning a same-shaped `NDArray[dtype]` — the
+            same call signature as `tril[dtype]`/`triu[dtype]`. Bound at
+            compile time, e.g. `mask_func=triu[dtype]`.
 
     Args:
         n: The returned indices apply to an `(n, n)` array.
-        mask_func: Either `"triu"` or `"tril"`.
-        k: Diagonal offset forwarded to the masking function.
+        k: Diagonal offset forwarded to `mask_func`.
 
     Returns:
         A tuple `(rows, cols)` of 1-D integer arrays.
 
-    Raises:
-        NumojoError: If `mask_func` is not `"triu"` or `"tril"`.
-
     Notes:
-        NumPy's `mask_indices` accepts an arbitrary callable `mask_func`.
-        Mojo's type system cannot cleanly accept a bound Python-style
-        callable here, so this is a deliberate compatibility deviation:
-        `mask_func` is a `String`, either `"triu"` or `"tril"`, naming the
-        masking function to apply.
+        NumPy's `mask_indices` accepts `mask_func` as an arbitrary runtime
+        Python callable. Mojo has no dynamic dispatch over arbitrary free
+        functions at runtime, so here `mask_func` is bound at compile time
+        instead. Any non-capturing function matching the `tril[dtype]`/
+        `triu[dtype]` signature works, including user-defined ones.
 
     Examples:
         ```mojo
         import numojo as nm
+        from numojo.routines.creation import triu
 
-        var rc = nm.indexing.mask_indices(4, "triu")
+        var rc = nm.indexing.mask_indices[nm.f64, mask_func=triu[nm.f64]](4)
         print(rc[0])
         ```
         .
     """
-    if mask_func == "triu":
-        return triu_indices(n, k)
-    elif mask_func == "tril":
-        return tril_indices(n, k)
-    else:
-        raise Error(
-            NumojoError(
-                category="value",
-                message=String(
-                    "\nError in `mask_indices`: mask_func must be 'triu' or"
-                    " 'tril', got '{}'."
-                ).format(mask_func),
-                location="mask_indices",
-            )
-        )
+    var m = ones[dtype](Shape(n, n))
+    var masked = mask_func(m, k)
+    var idx = nonzero(masked)
+    return Tuple(idx[0].copy(), idx[1].copy())
 
 
 def argwhere[

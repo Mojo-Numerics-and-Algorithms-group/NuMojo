@@ -471,21 +471,40 @@ def test_tril_triu_indices_from() raises:
     check(ru[1], np_ru[1], "`triu_indices_from` cols broken")
 
 
+def _mask_func_skip_first_col[
+    dtype_func: DType
+](m: NDArray[dtype_func], k: Int) raises -> NDArray[dtype_func]:
+    var result = m.copy()
+    for i in range(result.shape[0]):
+        var coords: List[Int] = [i, 0]
+        result.itemset(coords.copy(), Scalar[dtype_func](0))
+    return result^
+
+
 def test_mask_indices() raises:
     var np = Python.import_module("numpy")
 
-    var rc = nm.indexing.mask_indices(4, "triu")
+    var rc = nm.indexing.mask_indices[f64, mask_func=nm.triu[f64]](4)
     var np_rc = np.mask_indices(4, np.triu)
     check(rc[0], np_rc[0], "`mask_indices` triu rows broken")
     check(rc[1], np_rc[1], "`mask_indices` triu cols broken")
 
-    var rc2 = nm.indexing.mask_indices(4, "tril", -1)
+    var rc2 = nm.indexing.mask_indices[f64, mask_func=nm.tril[f64]](4, -1)
     var np_rc2 = np.mask_indices(4, np.tril, -1)
     check(rc2[0], np_rc2[0], "`mask_indices` tril rows broken")
     check(rc2[1], np_rc2[1], "`mask_indices` tril cols broken")
 
-    with assert_raises():
-        _ = nm.indexing.mask_indices(4, "bogus")
+    # A user-defined mask_func (matching the tril/triu call signature)
+    # also works, since the selection is a compile-time parameter rather
+    # than a fixed set of named options.
+    var rc3 = nm.indexing.mask_indices[
+        f64, mask_func=_mask_func_skip_first_col[f64]
+    ](3)
+    var np_rc3 = np.nonzero(
+        np.array(Python.list(Python.list(0, 1, 1), Python.list(0, 1, 1), Python.list(0, 1, 1)))
+    )
+    check(rc3[0], np_rc3[0], "`mask_indices` custom mask_func rows broken")
+    check(rc3[1], np_rc3[1], "`mask_indices` custom mask_func cols broken")
 
 
 def test_argwhere() raises:

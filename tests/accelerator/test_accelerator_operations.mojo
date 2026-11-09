@@ -18,6 +18,7 @@ Exports
 - `test_sum_cpu_distinct_values`, `test_add_cpu_shape_mismatch_raises`.
 - `test_elementwise_ops_gpu_match_cpu_when_available`.
 - `test_sum_gpu_matches_cpu_when_available`.
+- `test_synchronize_cpu`, `test_synchronize_gpu_when_available`.
 - `main`: Runs discovered tests when an accelerator is available.
 """
 
@@ -42,6 +43,13 @@ def test_add_cpu_uniform() raises:
     var c = a + b
     for i in range(8):
         assert_equal(c.item(i), 7.0, "cpu add uniform")
+
+
+def test_synchronize_cpu() raises:
+    """Test that synchronizing a CPU array is a harmless no-op."""
+    var array = zeros[DType.float32, Device.CPU](Shape([4]))
+    array.synchronize()
+    assert_equal(array.sum(), 0.0, "cpu synchronize is a no-op")
 
 
 def _make_distinct_operands() raises -> (
@@ -184,6 +192,26 @@ def test_sum_gpu_matches_cpu_when_available() raises:
         _run_gpu_sum_test[Device.MPS]()
     else:
         assert_true(True, "no gpu available; gpu sum test skipped")
+
+
+def _run_gpu_synchronize_test[device: Device]() raises:
+    var host = full[DType.float32, Device.CPU](Shape([4]), 3.0)
+    var array = host.to[device]()
+    array.synchronize()
+    var roundtrip = array.to_host()
+    assert_equal(roundtrip.sum(), 12.0, "gpu synchronize preserves values")
+
+
+def test_synchronize_gpu_when_available() raises:
+    """Test explicit array synchronization on the available GPU."""
+    comptime if default_accelerator().is_nvidia_gpu():
+        _run_gpu_synchronize_test[Device.CUDA]()
+    elif default_accelerator().is_amd_gpu():
+        _run_gpu_synchronize_test[Device.ROCM]()
+    elif default_accelerator().is_apple_gpu():
+        _run_gpu_synchronize_test[Device.MPS]()
+    else:
+        assert_true(True, "no gpu available; synchronize test skipped")
 
 
 def main() raises:

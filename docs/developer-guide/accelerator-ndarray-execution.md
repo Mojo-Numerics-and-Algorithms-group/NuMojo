@@ -110,6 +110,19 @@ are three separate pieces of work and should be implemented in this order.
 
 ### 1. Shared device contexts and asynchronous eager operations
 
+The shared-context foundation is implemented. `DeviceHandle` obtains a cheap
+copy of a lazily initialized process-wide context stored through
+`std.ffi._Global`, keyed by physical device ordinal. Consequently, ordinary
+array allocation no longer constructs a native context or command queue for
+every buffer. `AcceleratorNDArray.synchronize()` provides an explicit public
+synchronization boundary.
+
+Kernel launch helpers still synchronize after eager operations. Retaining that
+behavior is intentional until queued work can retain its input and output
+storage safely. The remaining work in this stage is asynchronous execution,
+staging-buffer ownership, context compatibility validation for future explicit
+contexts, and compiled-kernel caching.
+
 Use one lazily created default `DeviceContext` per physical device identity
 (backend plus ordinal), rather than constructing a native context and command
 queue for every allocation. A single universal context is not appropriate for

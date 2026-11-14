@@ -131,11 +131,13 @@ only between the arguments of one call:
 
 - **Reassigning an owner while a view is alive.** `var v = a.view()` followed by
   `a = zeros(...)` compiles. The old storage is freed and `v` keeps reading it,
-  which is a use-after-free.
-- **Several writable views of one region.** `w.select(0, 1)` called twice on a
-  mutable view `w`, or `w.view_mut()`, returns writable views with the same
-  owner origin. Slicing a mutable view borrows it immutably, so the compiler
-  sees no conflict.
+  which is a use-after-free. `List` and `Span` in the standard library have the
+  same hole. Closing it needs interior origins, which are unstable in Mojo and
+  have no timeline yet.
+- **Several writable views of one region.** `a.view_mut()` called twice on an
+  owner, or `w.select(0, 1)` called twice on a mutable view `w`, returns
+  writable views with the same owner origin. Mojo also accepts two mutable
+  `Span`s of one `List`, so this cannot be rejected for now.
 - **Mixing owner access and live views.** Reading or writing the owner while a
   mutable view is alive compiles. A read-only view also observes later writes
   to its owner; it forbids writes through itself and does not freeze the

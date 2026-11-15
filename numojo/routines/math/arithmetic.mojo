@@ -23,6 +23,7 @@ Exports
 - `mod`: Element-wise modulo.
 - `remainder`: Element-wise remainder.
 - `fma`: Fused multiply-add.
+- `gcd`, `lcm`: Element-wise greatest common divisor / least common multiple.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -342,6 +343,97 @@ def mod[
         return simd1 % simd2
 
     return HostExecutor.apply_binary[dtype, mod_kernel](scalar, array)
+
+
+# ===------------------------------------------------------------------------===#
+# Greatest common divisor / least common multiple
+# ===------------------------------------------------------------------------===#
+
+
+def gcd[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_integral():
+    """
+    Element-wise greatest common divisor of `array1` and `array2`.
+
+    Parameters:
+        dtype: The element type. Must be an integral type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A NDArray equal to `gcd(array1, array2)`. `gcd(0, 0)` is `0`.
+    """
+
+    def gcd_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
+        dtype, simd_w
+    ]:
+        var a = simd1.__abs__()
+        var b = simd2.__abs__()
+        comptime iterations = 64
+        for _ in range(iterations):
+            var active = b.ne(SIMD[dtype, simd_w](0))
+            var divisor = active.select(b, SIMD[dtype, simd_w](1))
+            var r = a % divisor
+            var new_a = active.select(b, a)
+            var new_b = active.select(r, SIMD[dtype, simd_w](0))
+            a = new_a
+            b = new_b
+        return a
+
+    return HostExecutor.apply_binary[dtype, gcd_kernel](array1, array2)
+
+
+def lcm[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_integral():
+    """
+    Element-wise least common multiple of `array1` and `array2`.
+
+    Parameters:
+        dtype: The element type. Must be an integral type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A NDArray equal to `lcm(array1, array2)`. `lcm(0, 0)` is `0`.
+    """
+
+    def lcm_kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
+        dtype, simd_w
+    ]:
+        var a = simd1.__abs__()
+        var b = simd2.__abs__()
+        var x = a
+        var y = b
+        comptime iterations = 64
+        for _ in range(iterations):
+            var active = y.ne(SIMD[dtype, simd_w](0))
+            var divisor = active.select(y, SIMD[dtype, simd_w](1))
+            var r = x % divisor
+            var new_x = active.select(y, x)
+            var new_y = active.select(r, SIMD[dtype, simd_w](0))
+            x = new_x
+            y = new_y
+        var g = x
+        var nonzero = g.ne(SIMD[dtype, simd_w](0))
+        var safe_g = nonzero.select(g, SIMD[dtype, simd_w](1))
+        var result = (a // safe_g) * b
+        return nonzero.select(result, SIMD[dtype, simd_w](0))
+
+    return HostExecutor.apply_binary[dtype, lcm_kernel](array1, array2)
 
 
 # ===------------------------------------------------------------------------===#

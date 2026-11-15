@@ -20,7 +20,8 @@ Exports
 - `transpose`, `swapaxes`, `moveaxis`, `permute_dims`, `matrix_transpose`,
   `squeeze`, `flip`, `flipud`, `fliplr`, `roll`: Layout changes.
 - `broadcast_to`, `broadcast_shapes`, `broadcast_arrays`: Broadcasting.
-- `repeat`, `pad`: Repeating and padding.
+- `repeat`, `tile`, `pad`: Repeating and padding.
+- `rot90`: Rotating an array by 90 degrees in a plane.
 - `split`, `array_split`, `dsplit`, `hsplit`, `vsplit`: Splitting.
 - `concatenate`, `stack`, `dstack`, `hstack`, `vstack`, `row_stack`,
   `column_stack`: Joining.
@@ -1738,6 +1739,183 @@ def repeat[
             )
         )
     return repeat(flat, repeats, axis=0)
+
+
+def tile[dtype: DType](A: NDArray[dtype], reps: Int) raises -> NDArray[dtype]:
+    """
+    (overload) Tiles `A` with a single repeat count applied to the last
+    axis. See docstring of `tile`.
+    """
+    var reps_list: List[Int] = [reps]
+    return tile(A, reps_list)
+
+
+def tile[
+    dtype: DType
+](A: NDArray[dtype], reps: List[Int]) raises -> NDArray[dtype]:
+    """
+    Constructs an array by repeating `A` the number of times given by
+    `reps`.
+
+    If `len(reps) < A.ndim`, `reps` is left-padded with `1`s to `A.ndim`
+    elements. If `len(reps) > A.ndim`, `A` is first promoted to
+    `len(reps)` dimensions by prepending size-1 axes.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        A: A NDArray.
+        reps: The number of repetitions along each axis, aligned to the
+            trailing axes of `A` (i.e. like broadcasting). All values
+            must be non-negative.
+
+    Returns:
+        The tiled array.
+
+    Raises:
+        NumojoError: If any value of `reps` is negative.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.arange[nm.i32](0, 3, 1)
+        print(nm.tile(a, [Int(2)]))  # [0, 1, 2, 0, 1, 2]
+        ```
+    """
+    for r in reps:
+        if r < 0:
+            raise Error(
+                NumojoError(
+                    category="value",
+                    message="`reps` must be non-negative.",
+                    location="tile",
+                )
+            )
+
+    var d = max(A.ndim, len(reps))
+
+    var full_reps = List[Int]()
+    for _ in range(d - len(reps)):
+        full_reps.append(1)
+    for r in reps:
+        full_reps.append(r)
+
+    var full_shape = List[Int]()
+    for _ in range(d - A.ndim):
+        full_shape.append(1)
+    for i in range(A.ndim):
+        full_shape.append(A.shape[i])
+
+    var A_c = reshape(A, NDArrayShape(full_shape)).contiguous()
+
+    var new_shape_list = List[Int]()
+    for i in range(d):
+        new_shape_list.append(full_shape[i] * full_reps[i])
+    var result = NDArray[dtype](NDArrayShape(new_shape_list))
+
+    for flat_idx in range(result.size):
+        var remainder = flat_idx
+        var src_flat = 0
+        for i in range(d):
+            var coord = remainder // result.strides[i]
+            remainder = remainder % result.strides[i]
+            var src_coord = coord % full_shape[i]
+            src_flat += src_coord * A_c.strides[i]
+        result.unsafe_set(flat_idx, A_c.unsafe_get(src_flat))
+
+    return result^
+
+
+def rot90[
+    dtype: DType
+](
+    a: NDArray[dtype], k: Int = 1, axes: Optional[List[Int]] = None
+) raises -> NDArray[dtype]:
+    """
+    Rotates an array by 90 degrees in the plane specified by `axes`.
+
+    Parameters:
+        dtype: DType.
+
+    Args:
+        a: A NDArray with at least two dimensions.
+        k: The number of times to rotate by 90 degrees. May be negative.
+        axes: The two axes defining the plane of rotation. Defaults to
+            `(0, 1)` if not given. Supports negative indices.
+
+    Returns:
+        The rotated array.
+
+    Raises:
+        NumojoError: If `axes` does not contain exactly two distinct,
+            in-bound axes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+
+        var a = nm.reshape(nm.arange[nm.i32](0, 4, 1), nm.Shape(2, 2))
+        print(nm.rot90(a))  # [[1, 3], [0, 2]]
+        ```
+    """
+    var ax_list: List[Int]
+    if axes:
+        # TODO: Move out of optional instead?
+        ax_list = axes.value().copy()
+    else:
+        ax_list = [0, 1]
+
+    if len(ax_list) != 2:
+        raise Error(
+            NumojoError(
+                category="value",
+                message="`axes` must contain exactly two elements.",
+                location="rot90",
+            )
+        )
+
+    var ax0 = ax_list[0]
+    var ax1 = ax_list[1]
+    if ax0 < 0:
+        ax0 += a.ndim
+    if ax1 < 0:
+        ax1 += a.ndim
+    if (
+        (ax0 < 0)
+        or (ax0 >= a.ndim)
+        or (ax1 < 0)
+        or (ax1 >= a.ndim)
+        or (ax0 == ax1)
+    ):
+        raise Error(
+            NumojoError(
+                category="value",
+                message="`axes` must be two distinct, in-bound axes.",
+                location="rot90",
+            )
+        )
+
+    var kk = k % 4
+    if kk < 0:
+        kk += 4
+
+    if kk == 0:
+        return a.contiguous()
+    if kk == 2:
+        return flip(flip(a, ax0), ax1)
+
+    var perm = List[Int]()
+    for i in range(a.ndim):
+        perm.append(i)
+    perm[ax0] = ax1
+    perm[ax1] = ax0
+
+    if kk == 1:
+        return permute_dims(flip(a, ax1), perm).contiguous()
+    else:
+        return flip(permute_dims(a, perm), ax1)
 
 
 def _pad_map_coord(coord: Int, size: Int, mode: String) raises -> Int:

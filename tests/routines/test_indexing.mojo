@@ -501,7 +501,11 @@ def test_mask_indices() raises:
         f64, mask_func=_mask_func_skip_first_col[f64]
     ](3)
     var np_rc3 = np.nonzero(
-        np.array(Python.list(Python.list(0, 1, 1), Python.list(0, 1, 1), Python.list(0, 1, 1)))
+        np.array(
+            Python.list(
+                Python.list(0, 1, 1), Python.list(0, 1, 1), Python.list(0, 1, 1)
+            )
+        )
     )
     check(rc3[0], np_rc3[0], "`mask_indices` custom mask_func rows broken")
     check(rc3[1], np_rc3[1], "`mask_indices` custom mask_func cols broken")
@@ -513,9 +517,7 @@ def test_argwhere() raises:
     var a = nm.array[i32]("[[1, 0, 3], [0, 0, 6]]")
     var anp = a.to_numpy()
 
-    check(
-        nm.indexing.argwhere(a), np.argwhere(anp), "`argwhere` is broken"
-    )
+    check(nm.indexing.argwhere(a), np.argwhere(anp), "`argwhere` is broken")
 
 
 def test_fill_diagonal() raises:

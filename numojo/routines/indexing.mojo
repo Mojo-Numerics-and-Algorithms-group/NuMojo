@@ -1748,9 +1748,7 @@ def ix_[
                 shape_list.append(arrays[k].size)
             else:
                 shape_list.append(1)
-        result.append(
-            manipulation.reshape(arrays[k], NDArrayShape(shape_list))
-        )
+        result.append(manipulation.reshape(arrays[k], NDArrayShape(shape_list)))
     return result^
 
 
@@ -1961,9 +1959,7 @@ def tril_indices_from[
         raise Error(
             NumojoError(
                 category="shape",
-                message=(
-                    "\nError in `tril_indices_from`: array must be 2-D."
-                ),
+                message="\nError in `tril_indices_from`: array must be 2-D.",
                 location="tril_indices_from",
             )
         )
@@ -2005,9 +2001,7 @@ def triu_indices_from[
         raise Error(
             NumojoError(
                 category="shape",
-                message=(
-                    "\nError in `triu_indices_from`: array must be 2-D."
-                ),
+                message="\nError in `triu_indices_from`: array must be 2-D.",
                 location="triu_indices_from",
             )
         )
@@ -2144,7 +2138,9 @@ def fill_diagonal[
         raise Error(
             NumojoError(
                 category="shape",
-                message="\nError in `fill_diagonal`: array must be at least 2-D.",
+                message=(
+                    "\nError in `fill_diagonal`: array must be at least 2-D."
+                ),
                 location="fill_diagonal",
             )
         )
@@ -2328,7 +2324,9 @@ def insert[
 def place[
     dtype: DType,
     //,
-](mut a: NDArray[dtype], mask: NDArray[DType.bool], vals: NDArray[dtype]) raises:
+](
+    mut a: NDArray[dtype], mask: NDArray[DType.bool], vals: NDArray[dtype]
+) raises:
     """Changes elements of `a` based on `mask`, cyclically using `vals`.
 
     Unlike `putmask`, `vals` is only consumed (and cycled) for positions
@@ -2535,7 +2533,9 @@ def put_along_axis[
 def putmask[
     dtype: DType,
     //,
-](mut a: NDArray[dtype], mask: NDArray[DType.bool], values: NDArray[dtype]) raises:
+](
+    mut a: NDArray[dtype], mask: NDArray[DType.bool], values: NDArray[dtype]
+) raises:
     """Changes elements of `a` based on `mask`, tiling `values` over `a`'s shape.
 
     Unlike `place`, `values` is conceptually tiled to `a`'s full size first
@@ -2572,8 +2572,7 @@ def putmask[
             NumojoError(
                 category="shape",
                 message=(
-                    "\nError in `putmask`: mask must have the same shape as"
-                    " a."
+                    "\nError in `putmask`: mask must have the same shape as a."
                 ),
                 location="putmask",
             )

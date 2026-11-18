@@ -532,5 +532,29 @@ def test_interp() raises:
     )
 
 
+def test_gcd_lcm() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.array[nm.i32]("[12, 0, 8, -9, 0]")
+    var b = nm.array[nm.i32]("[18, 0, 0, 6, 5]")
+    var a_np = a.to_numpy()
+    var b_np = b.to_numpy()
+
+    check_with_dtype(nm.gcd(a, b), np.gcd(a_np, b_np), "gcd must match NumPy")
+    check_with_dtype(nm.lcm(a, b), np.lcm(a_np, b_np), "lcm must match NumPy")
+
+    var c = nm.array[nm.i32]("[[4, 6], [10, 21]]")
+    var d = nm.array[nm.i32]("[2, 7]")
+    check_with_dtype(
+        nm.gcd(c, d),
+        np.gcd(c.to_numpy(), d.to_numpy()),
+        "gcd broadcasting must match NumPy",
+    )
+    check_with_dtype(
+        nm.lcm(c, d),
+        np.lcm(c.to_numpy(), d.to_numpy()),
+        "lcm broadcasting must match NumPy",
+    )
+
+
 def main() raises:
     TestSuite.discover_tests[__functions_in_module()]().run()

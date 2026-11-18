@@ -241,6 +241,59 @@ def test_repeat() raises:
     )
 
 
+def test_tile() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.arange[nm.i32](0, 3, 1)
+    var anp = a.to_numpy()
+    check_is_close(nm.tile(a, 2), np.tile(anp, 2), "`tile` 1-D int fails.")
+
+    var reps: List[Int] = [2, 3]
+    check_is_close(
+        nm.tile(a, reps),
+        np.tile(anp, Python.tuple(2, 3)),
+        "`tile` 1-D -> 2-D (more reps than ndim) fails.",
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 6, 1), Shape(2, 3))
+    var Bnp = B.to_numpy()
+    var reps2: List[Int] = [2]
+    check_is_close(
+        nm.tile(B, reps2),
+        np.tile(Bnp, 2),
+        "`tile` 2-D (fewer reps than ndim) fails.",
+    )
+    var reps3: List[Int] = [2, 1]
+    check_is_close(
+        nm.tile(B, reps3),
+        np.tile(Bnp, Python.tuple(2, 1)),
+        "`tile` 2-D matching ndim fails.",
+    )
+
+
+def test_rot90() raises:
+    var np = Python.import_module("numpy")
+
+    var a = nm.reshape(nm.arange[nm.i32](0, 4, 1), Shape(2, 2))
+    var anp = a.to_numpy()
+    check_is_close(nm.rot90(a), np.rot90(anp), "`rot90` default k=1 fails.")
+    check_is_close(nm.rot90(a, k=2), np.rot90(anp, k=2), "`rot90` k=2 fails.")
+    check_is_close(nm.rot90(a, k=3), np.rot90(anp, k=3), "`rot90` k=3 fails.")
+    check_is_close(nm.rot90(a, k=0), np.rot90(anp, k=0), "`rot90` k=0 fails.")
+    check_is_close(
+        nm.rot90(a, k=-1), np.rot90(anp, k=-1), "`rot90` negative k fails."
+    )
+
+    var B = nm.reshape(nm.arange[nm.i32](0, 24, 1), Shape(2, 3, 4))
+    var Bnp = B.to_numpy()
+    var axes: List[Int] = [1, 2]
+    check_is_close(
+        nm.rot90(B, k=1, axes=axes.copy()),
+        np.rot90(Bnp, k=1, axes=Python.tuple(1, 2)),
+        "`rot90` custom axes fails.",
+    )
+
+
 def test_pad() raises:
     var np = Python.import_module("numpy")
 

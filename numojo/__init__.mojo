@@ -218,6 +218,7 @@ from numojo.routines.math import (
     maximum,
     ptp,
 )
+from numojo.routines.math import gcd, lcm
 from numojo.routines.math import copysign
 from numojo.routines.math import (
     arccosh,
@@ -290,11 +291,14 @@ from numojo.routines.statistics import (
 from numojo.routines import bitwise
 from numojo.routines.bitwise import (
     bitwise_and,
+    bitwise_count,
     bitwise_or,
     bitwise_xor,
     invert,
     left_shift,
+    packbits,
     right_shift,
+    unpackbits,
 )
 
 from numojo.routines import creation
@@ -378,6 +382,8 @@ from numojo.routines.manipulation import (
     flipud,
     roll,
     repeat,
+    tile,
+    rot90,
     pad,
     expand_dims,
     atleast_1d,

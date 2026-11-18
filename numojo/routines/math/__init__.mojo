@@ -12,7 +12,8 @@ Arithmetic, trigonometric, hyperbolic, exponential, and utility mathematical ope
 
 Exports
 -------
-Arithmetic: `add`, `sub`, `mul`, `div`, `floor_div`, `mod`, `remainder`, `fma`.
+Arithmetic: `add`, `sub`, `mul`, `div`, `floor_div`, `mod`, `remainder`, `fma`,
+`gcd`, `lcm`.
 
 Trigonometric: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`, `hypot`, `hypot_fma`.
 
@@ -46,6 +47,8 @@ from .arithmetic import (
     div,
     floor_div,
     fma,
+    gcd,
+    lcm,
     mod,
     mul,
     remainder,

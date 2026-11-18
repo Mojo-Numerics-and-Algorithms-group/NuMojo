@@ -7,3 +7,7 @@ Due to the similiarity with NumPy, a Numpy equivelent comparison will be our met
 The functions contained in utils_for_test.mojo `check` and `check_is_close` will be used to compare NuMojo results with NumPy equivelents.
 
 Each test must be in it's own def function and begin with the word test example `test_arange`. This allows the `mojo test` command to find it. A single function can cover multiple similiar tests but they should have unique strings to identify which check failed.
+
+## Compile-fail tests
+
+Some guarantees are that a program must not compile, such as writing through a read-only `AcceleratorNDArrayView`. Put each such program in `tests/accelerator/compile_fail/` with a `# EXPECT-ERROR: <text>` line naming part of the expected compiler error. `bash tests/test_accelerator_compile_fail.sh`, run by `pixi run test_accelerator`, fails if a program compiles or fails with a different error.

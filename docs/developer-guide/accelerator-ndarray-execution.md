@@ -102,6 +102,55 @@ achieves this by synchronizing before tracked borrows are released. The planned
 asynchronous implementation below instead makes queued work retain its storage
 and context until completion.
 
+## Tested guarantees and known gaps
+
+These results were checked against Mojo 1.2 on CPU. The tests named below keep
+them true.
+
+The compiler rejects the following programs. Each is a case in
+`tests/accelerator/compile_fail/`, run by
+`tests/test_accelerator_compile_fail.sh` as part of `pixi run test_accelerator`:
+
+| Rejected program                                          | Case                               |
+| --------------------------------------------------------- | ---------------------------------- |
+| `itemset` on a read-only view                             | `read_only_view_itemset`           |
+| `unsafe_mut_ptr()` on a read-only view                    | `read_only_view_unsafe_mut_ptr`    |
+| `view_mut()` on a read-only owner borrow                  | `view_mut_from_read_only_owner`    |
+| An owner passed `mut` together with its view in one call  | `owner_and_view_in_one_call`       |
+| Moving an owner away while a view of it is still used     | `move_owner_while_view_alive`      |
+
+These NumPy-style workflows work and are tested in
+`tests/accelerator/test_view_workflows.mojo`: returning a view from a function,
+storing a view in a struct parameterized by origin, rebinding a view to a slice
+of itself in a loop, passing owners and views to one `NDArrayLike` function, and
+writing through a transformed mutable view.
+
+The following programs compile today even though they break the model's
+intent. Origins are tracked per owner, not per view, and Mojo checks exclusivity
+only between the arguments of one call:
+
+- **Reassigning an owner while a view is alive.** `var v = a.view()` followed by
+  `a = zeros(...)` compiles. The old storage is freed and `v` keeps reading it,
+  which is a use-after-free. `List` and `Span` in the standard library have the
+  same hole. Closing it needs interior origins, which are unstable in Mojo and
+  have no timeline yet.
+- **Several writable views of one region.** `a.view_mut()` called twice on an
+  owner, or `w.select(0, 1)` called twice on a mutable view `w`, returns
+  writable views with the same owner origin. Mojo also accepts two mutable
+  `Span`s of one `List`, so this cannot be rejected for now.
+- **Mixing owner access and live views.** Reading or writing the owner while a
+  mutable view is alive compiles. A read-only view also observes later writes
+  to its owner; it forbids writes through itself and does not freeze the
+  storage.
+
+These workflows are not supported yet:
+
+- Slice assignment such as `a[1:3] = 5`, and `fill` on views.
+- Arithmetic and reductions on views: `__add__`, `sum` and `__neg__` exist only
+  on owners, with `other: Self`.
+- Materializing a view into a new owner, so `a = a[::2]` has no equivalent.
+- Copying a view: `AcceleratorNDArrayView` is `Movable` only.
+
 ## Planned accelerator execution architecture
 
 The accelerator API will support ordinary eager operations and an explicit

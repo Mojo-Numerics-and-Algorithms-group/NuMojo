@@ -63,7 +63,6 @@ from numojo.core.layout import newaxis
 from numojo.core.indexing.item import Item
 from numojo.core.indexing import IndexMethods
 from numojo.core.complex.complex_simd import ComplexSIMD
-from numojo.core.accelerator import NDArrayLike
 from numojo.core.accelerator.device import Device, cpu, cuda, mps, rocm
 
 from numojo.core.complex.complex_ndarray import ComplexNDArray

@@ -546,13 +546,8 @@ struct AcceleratorNDArrayView[
             `view.itemset(0, value)` writes the first logical element.
         """
         comptime if Self.device.type == "cpu":
-            comptime if Self.mut:
-                var ptr = self._ptr.unsafe_mut_cast[True]()
-                ptr[
-                    unsafe_offset=self._layout.flat_position(flat_index)
-                ] = value
-            else:
-                pass
+            var ptr = self._ptr.unsafe_mut_cast[True]()
+            ptr[unsafe_offset=self._layout.flat_position(flat_index)] = value
         else:
             raise Error(
                 NumojoError(

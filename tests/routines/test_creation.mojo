@@ -446,6 +446,31 @@ def test_arr_manipulation() raises:
     )
 
 
+def test_astype() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.random.randn(4, 5)
+    var anp = a.to_numpy()
+
+    check_is_close(
+        nm.astype[f32](a),
+        anp.astype(np.float32),
+        "`astype` is broken for float64 -> float32",
+    )
+    check_is_close(
+        nm.astype[i32](a),
+        anp.astype(np.int32),
+        "`astype` is broken for float64 -> int32",
+    )
+
+    var i = nm.fromstring[nm.i32]("[0, 1, 2, 0, 3]")
+    var inp = i.to_numpy()
+    check_is_close(
+        nm.astype[boolean](i),
+        inp.astype(np.bool_),
+        "`astype` is broken for int32 -> bool",
+    )
+
+
 # def test_tensor_conversion() raises:
 #     var image = Tensor[DType.float32](TensorShape(256, 256, 3))
 #     builtin_random.rand(image.unsafe_ptr(), image.num_elements())

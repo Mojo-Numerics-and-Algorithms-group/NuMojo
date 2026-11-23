@@ -17,6 +17,8 @@ Arithmetic: `add`, `sub`, `mul`, `div`, `floor_div`, `mod`, `remainder`, `fma`,
 
 Trigonometric: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`, `hypot`, `hypot_fma`.
 
+Angle conversions: `degrees`/`rad2deg`, `radians`/`deg2rad`.
+
 Hyperbolic: `sinh`, `cosh`, `tanh`, `arcsinh`, `arccosh`, `arctanh`.
 
 Exponential: `exp`, `exp2`, `expm1`, `log`, `log2`, `log10`, `log1p`.
@@ -141,8 +143,12 @@ from .trig import (
     atan,
     atan2,
     cos,
+    deg2rad,
+    degrees,
     hypot,
     hypot_fma,
+    rad2deg,
+    radians,
     sin,
     tan,
 )

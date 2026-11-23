@@ -20,7 +20,8 @@ Exports
 - `stddev`: Standard deviation of array elements.
 - `quantile`, `percentile`: Order statistics via linear interpolation.
 - `cov`, `corrcoef`: Covariance and correlation-coefficient matrices.
-- `bincount`, `histogram`: Binning and counting of array elements.
+- `bincount`, `histogram`, `histogram_bin_edges`, `histogram2d`, `histogramdd`,
+  `digitize`: Binning and counting of array elements.
 - `nansum`, `nanmean`, `nanmax`, `nanmin`, `nanvar`, `nanstd`, `nanmedian`,
   `nanargmax`, `nanargmin`, `nanprod`, `nancumsum`, `nancumprod`,
   `nanpercentile`, `nanquantile`, `nan_to_num`: NaN-aware reductions.
@@ -44,7 +45,11 @@ from .correlation import (
 )
 from .histograms import (
     bincount,
+    digitize,
     histogram,
+    histogram2d,
+    histogram_bin_edges,
+    histogramdd,
 )
 from .nanfunctions import (
     nan_to_num,

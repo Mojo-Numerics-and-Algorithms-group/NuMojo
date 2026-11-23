@@ -211,6 +211,105 @@ def test_histogram() raises:
         _ = nm.histogram(a, bins=0)
 
 
+def test_histogram_bin_edges() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.random.randn(200)
+    var anp = a.to_numpy()
+
+    check_is_close(
+        nm.histogram_bin_edges(a, bins=12),
+        np.histogram_bin_edges(anp, bins=12),
+        "`histogram_bin_edges` broken for default range",
+    )
+    check_is_close(
+        nm.histogram_bin_edges(a, 10, Float64(-1.0), Float64(1.0)),
+        np.histogram_bin_edges(anp, bins=10, range=Python.tuple(-1.0, 1.0)),
+        "`histogram_bin_edges` broken for explicit range",
+    )
+
+    with assert_raises():
+        _ = nm.histogram_bin_edges(a, bins=0)
+
+
+def test_histogram2d() raises:
+    var np = Python.import_module("numpy")
+    var x = nm.random.randn(150)
+    var y = nm.random.randn(150)
+    var xnp = x.to_numpy()
+    var ynp = y.to_numpy()
+
+    var result = nm.histogram2d(x, y, bins=6)
+    var np_result = np.histogram2d(xnp, ynp, bins=6)
+    check_is_close(result[0], np_result[0], "`histogram2d` counts broken")
+    check_is_close(result[1], np_result[1], "`histogram2d` xedges broken")
+    check_is_close(result[2], np_result[2], "`histogram2d` yedges broken")
+
+    with assert_raises():
+        _ = nm.histogram2d(x, nm.random.randn(5), bins=6)
+
+    with assert_raises():
+        _ = nm.histogram2d(x, y, bins=0)
+
+
+def test_histogramdd() raises:
+    var np = Python.import_module("numpy")
+    var sample = nm.random.randn(100, 3)
+    var samplenp = sample.to_numpy()
+
+    var result = nm.histogramdd(sample, bins=4)
+    var np_result = np.histogramdd(samplenp, bins=4)
+    check_is_close(result[0], np_result[0], "`histogramdd` counts broken")
+    for d in range(3):
+        check_is_close(
+            result[1][d],
+            np_result[1][d],
+            String("`histogramdd` edges broken for axis {}").format(d),
+        )
+
+    with assert_raises():
+        _ = nm.histogramdd(sample, bins=0)
+
+    with assert_raises():
+        _ = nm.histogramdd(nm.random.randn(10), bins=4)
+
+
+def test_digitize() raises:
+    var np = Python.import_module("numpy")
+    var x = nm.fromstring[nm.f64]("[0.2, 6.4, 3.0, 1.6, -1.0, 11.0]")
+    var xnp = x.to_numpy()
+    var bins_inc = nm.fromstring[nm.f64]("[0.0, 1.0, 2.5, 4.0, 10.0]")
+    var bins_inc_np = bins_inc.to_numpy()
+
+    check_is_close(
+        nm.digitize(x, bins_inc),
+        np.digitize(xnp, bins_inc_np),
+        "`digitize` broken for increasing bins, right=False",
+    )
+    check_is_close(
+        nm.digitize(x, bins_inc, right=True),
+        np.digitize(xnp, bins_inc_np, right=True),
+        "`digitize` broken for increasing bins, right=True",
+    )
+
+    var bins_dec = nm.fromstring[nm.f64]("[10.0, 4.0, 2.5, 1.0, 0.0]")
+    var bins_dec_np = bins_dec.to_numpy()
+
+    check_is_close(
+        nm.digitize(x, bins_dec),
+        np.digitize(xnp, bins_dec_np),
+        "`digitize` broken for decreasing bins, right=False",
+    )
+    check_is_close(
+        nm.digitize(x, bins_dec, right=True),
+        np.digitize(xnp, bins_dec_np, right=True),
+        "`digitize` broken for decreasing bins, right=True",
+    )
+
+    with assert_raises():
+        var bad_bins = nm.random.randn(3, 2)
+        _ = nm.digitize(x, bad_bins)
+
+
 # ===-----------------------------------------------------------------------===#
 # NaN-aware reductions
 # ===-----------------------------------------------------------------------===#

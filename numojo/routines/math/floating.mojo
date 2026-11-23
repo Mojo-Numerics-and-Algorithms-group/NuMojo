@@ -241,9 +241,7 @@ def heaviside[
     ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) capturing -> SIMD[
         dtype, simd_w
     ]:
-        return simd1.lt(0).select[dtype](
-            0, simd1.eq(0).select(simd2, 1)
-        )
+        return simd1.lt(0).select[dtype](0, simd1.eq(0).select(simd2, 1))
 
     return HostExecutor.apply_binary[dtype, _kernel](array1, array2)
 
@@ -376,8 +374,7 @@ def ldexp[
         raise Error(
             NumojoError(
                 category="shape",
-                message="`ldexp` requires `x` and `exp` to be the same"
-                " size.",
+                message="`ldexp` requires `x` and `exp` to be the same size.",
                 location="ldexp",
             )
         )

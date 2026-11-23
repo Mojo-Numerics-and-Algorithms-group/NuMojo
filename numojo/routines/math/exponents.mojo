@@ -580,9 +580,7 @@ def logaddexp2[
         # `absdiff` (same magnitudes are infinite and apart) is replaced
         # with a value that still underflows `exp2` to exactly 0.
         var bad = isinf(absdiff) | isnan(absdiff)
-        var safe_neg_absdiff = bad.select(
-            SIMD[dtype, simd_w](-1100), -absdiff
-        )
+        var safe_neg_absdiff = bad.select(SIMD[dtype, simd_w](-1100), -absdiff)
         var stable = mx + math.log2(1 + math.exp2(safe_neg_absdiff))
         var neg_inf = isinf(mx) & mx.lt(0)
         return neg_inf.select(mx, stable)

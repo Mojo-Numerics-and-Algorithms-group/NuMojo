@@ -660,12 +660,8 @@ def test_modf_frexp_ldexp() raises:
 
     var frexp_result = nm.frexp(a)
     var np_frexp = np.frexp(anp)
-    check_is_close(
-        frexp_result[0], np_frexp[0], "`frexp` mantissa is broken"
-    )
-    check_with_dtype(
-        frexp_result[1], np_frexp[1], "`frexp` exponent is broken"
-    )
+    check_is_close(frexp_result[0], np_frexp[0], "`frexp` mantissa is broken")
+    check_with_dtype(frexp_result[1], np_frexp[1], "`frexp` exponent is broken")
 
     var ldexp_result = nm.ldexp(frexp_result[0], frexp_result[1])
     check_is_close(ldexp_result, anp, "`ldexp` is broken as `frexp` inverse")

@@ -24,6 +24,7 @@ Exports
 - `remainder`: Element-wise remainder.
 - `fma`: Fused multiply-add.
 - `gcd`, `lcm`: Element-wise greatest common divisor / least common multiple.
+- `divmod`: Element-wise quotient and remainder, together.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -745,6 +746,47 @@ def floor_div[
         return simd1 // simd2
 
     return HostExecutor.apply_binary[dtype, floordiv_kernel](scalar, array)
+
+
+# ===------------------------------------------------------------------------===#
+# Divmod
+# ===------------------------------------------------------------------------===#
+
+
+def divmod[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> Tuple[
+    NDArray[dtype], NDArray[dtype]
+]:
+    """
+    Element-wise quotient and remainder of array1 and array2.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A tuple `(quotient, remainder)` equal to
+        `(floor_div(array1, array2), mod(array1, array2))`.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Examples:
+    ```mojo
+    import numojo as nm
+    def main() raises:
+        var a = nm.fromstring("[7.0, -7.0]")
+        var b = nm.fromstring("[2.0, 2.0]")
+        var result = nm.divmod(a, b)
+        print(result[0])  # [3.0, -4.0]
+        print(result[1])  # [1.0, 1.0]
+    ```
+    """
+    return Tuple(floor_div(array1, array2), mod(array1, array2))
 
 
 # ===------------------------------------------------------------------------===#

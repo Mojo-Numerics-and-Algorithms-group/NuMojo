@@ -1,5 +1,6 @@
 from std.python import Python, PythonObject
 from std.testing.testing import assert_raises, assert_true
+from std.utils.numerics import neg_inf
 from utils_for_test import (
     check,
     check_is_close,
@@ -554,6 +555,123 @@ def test_gcd_lcm() raises:
         np.lcm(c.to_numpy(), d.to_numpy()),
         "lcm broadcasting must match NumPy",
     )
+
+
+def test_divmod() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.fromstring[nm.f64]("[7.0, -7.0, 7.5, -7.5]")
+    var b = nm.fromstring[nm.f64]("[2.0, 2.0, -2.0, -2.0]")
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+
+    var result = nm.divmod(a, b)
+    var np_result = np.divmod(anp, bnp)
+    check_is_close(result[0], np_result[0], "`divmod` quotient is broken")
+    check_is_close(result[1], np_result[1], "`divmod` remainder is broken")
+
+
+def test_logaddexp() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.random.randn(20)
+    var b = nm.random.randn(20)
+    var anp = a.to_numpy()
+    var bnp = b.to_numpy()
+
+    check_is_close(
+        nm.logaddexp(a, b), np.logaddexp(anp, bnp), "`logaddexp` is broken"
+    )
+    check_is_close(
+        nm.logaddexp2(a, b), np.logaddexp2(anp, bnp), "`logaddexp2` is broken"
+    )
+
+    var neg_inf_arr = nm.array[f64](
+        data=[neg_inf[f64](), neg_inf[f64](), Scalar[f64](0.0)],
+        shape=[3],
+    )
+    var zero_arr = nm.array[f64](
+        data=[neg_inf[f64](), Scalar[f64](0.0), neg_inf[f64]()],
+        shape=[3],
+    )
+    var neg_inf_np = neg_inf_arr.to_numpy()
+    var zero_np = zero_arr.to_numpy()
+    check_is_close(
+        nm.logaddexp(neg_inf_arr, zero_arr),
+        np.logaddexp(neg_inf_np, zero_np),
+        "`logaddexp` is broken for -inf",
+    )
+    check_is_close(
+        nm.logaddexp2(neg_inf_arr, zero_arr),
+        np.logaddexp2(neg_inf_np, zero_np),
+        "`logaddexp2` is broken for -inf",
+    )
+
+
+def test_float_power() raises:
+    var np = Python.import_module("numpy")
+    var base = nm.fromstring[nm.f64]("[1.0, 2.0, 3.0, 4.0]")
+    var exponent = nm.fromstring[nm.f64]("[2.0, 3.0, 0.5, -1.0]")
+
+    check_is_close(
+        nm.float_power(base, exponent),
+        np.float_power(base.to_numpy(), exponent.to_numpy()),
+        "`float_power` is broken",
+    )
+
+
+def test_reciprocal_spacing_signbit() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.fromstring[nm.f64]("[1.0, 2.0, 4.0, -0.5]")
+    var anp = a.to_numpy()
+
+    check_is_close(
+        nm.reciprocal(a), np.reciprocal(anp), "`reciprocal` is broken"
+    )
+    check_is_close(nm.spacing(a), np.spacing(anp), "`spacing` is broken")
+
+    var signed = nm.fromstring[nm.f64]("[1.0, -1.0, 0.0, -0.0]")
+    check_with_dtype(
+        nm.signbit(signed),
+        np.signbit(signed.to_numpy()),
+        "`signbit` is broken",
+    )
+
+
+def test_heaviside() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.fromstring[nm.f64]("[-1.0, 0.0, 2.0]")
+    var b = nm.fromstring[nm.f64]("[0.5, 0.5, 0.5]")
+
+    check_is_close(
+        nm.heaviside(a, b),
+        np.heaviside(a.to_numpy(), b.to_numpy()),
+        "`heaviside` is broken",
+    )
+
+
+def test_modf_frexp_ldexp() raises:
+    var np = Python.import_module("numpy")
+    var a = nm.fromstring[nm.f64]("[3.5, -2.25, 8.0, 0.0]")
+    var anp = a.to_numpy()
+
+    var modf_result = nm.modf(a)
+    var np_modf = np.modf(anp)
+    check_is_close(modf_result[0], np_modf[0], "`modf` fractional is broken")
+    check_is_close(modf_result[1], np_modf[1], "`modf` integral is broken")
+
+    var frexp_result = nm.frexp(a)
+    var np_frexp = np.frexp(anp)
+    check_is_close(
+        frexp_result[0], np_frexp[0], "`frexp` mantissa is broken"
+    )
+    check_with_dtype(
+        frexp_result[1], np_frexp[1], "`frexp` exponent is broken"
+    )
+
+    var ldexp_result = nm.ldexp(frexp_result[0], frexp_result[1])
+    check_is_close(ldexp_result, anp, "`ldexp` is broken as `frexp` inverse")
+
+    with assert_raises():
+        _ = nm.ldexp(a, nm.fromstring[nm.i32]("[1, 2]"))
 
 
 def main() raises:

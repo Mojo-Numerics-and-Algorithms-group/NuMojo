@@ -618,8 +618,10 @@ def histogramdd[
         raise Error(
             NumojoError(
                 category="shape",
-                message="`sample` must be a 2-dimensional array of shape"
-                " (n_points, n_dims).",
+                message=(
+                    "`sample` must be a 2-dimensional array of shape"
+                    " (n_points, n_dims)."
+                ),
                 location="histogramdd",
             )
         )
@@ -746,9 +748,7 @@ def digitize[
     var result = NDArray[DType.int](Shape(x_c.shape))
     var side_right = not right
 
-    var decreasing = n >= 2 and bins_c.unsafe_get(0) > bins_c.unsafe_get(
-        n - 1
-    )
+    var decreasing = n >= 2 and bins_c.unsafe_get(0) > bins_c.unsafe_get(n - 1)
     var search_bins: NDArray[dtype]
     if decreasing:
         search_bins = NDArray[dtype](Shape(n))

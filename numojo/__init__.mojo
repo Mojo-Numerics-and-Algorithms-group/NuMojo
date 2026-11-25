@@ -256,6 +256,7 @@ from numojo.routines.math import (
     hypot,
     hypot_fma,
 )
+from numojo.routines.math import degrees, rad2deg, radians, deg2rad
 
 from numojo.routines import statistics
 from numojo.routines.statistics import (
@@ -285,6 +286,10 @@ from numojo.routines.statistics import (
     corrcoef,
     bincount,
     histogram,
+    histogram_bin_edges,
+    histogram2d,
+    histogramdd,
+    digitize,
 )
 
 from numojo.routines import bitwise
@@ -303,6 +308,7 @@ from numojo.routines.bitwise import (
 from numojo.routines import creation
 from numojo.routines.creation import (
     arange,
+    astype,
     linspace,
     logspace,
     geomspace,

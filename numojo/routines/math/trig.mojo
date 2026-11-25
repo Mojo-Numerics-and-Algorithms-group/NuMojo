@@ -18,6 +18,7 @@ Exports
 - Circular: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`.
 - Hyperbolic: `sinh`, `cosh`, `tanh`, `arcsinh`, `arccosh`, `arctanh`.
 - Utilities: `hypot`, `hypot_fma`.
+- Angle conversions: `degrees`/`rad2deg`, `radians`/`deg2rad`.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -30,6 +31,7 @@ import std.math as math
 # ===----------------------------------------------------------------------=== #
 from numojo.core.ndarray import NDArray
 from numojo.routines import HostExecutor
+from numojo.routines.constants import Constants
 from numojo.routines.math.arithmetic import fma
 from numojo.routines.math.misc import sqrt
 
@@ -324,3 +326,84 @@ def hypot_fma[
     """
     var array2_squared = fma[dtype](array2, array2, SIMD[dtype, 1](0))
     return sqrt[dtype](fma[dtype](array1, array1, array2_squared))
+
+
+# ===------------------------------------------------------------------------===#
+# Angle conversions (NDArray)
+# ===------------------------------------------------------------------------===#
+def radians[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Convert angles from degrees to radians, element-wise.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray of angles in degrees.
+
+    Returns:
+        The element-wise conversion of `array` to radians.
+    """
+
+    comptime factor = Constants.pi / 180
+
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
+        return simd * Scalar[dtype](factor)
+
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
+
+
+def deg2rad[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """Convert angles from degrees to radians, element-wise."""
+    return radians(array)
+
+
+def degrees[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Convert angles from radians to degrees, element-wise.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array: A NDArray of angles in radians.
+
+    Returns:
+        The element-wise conversion of `array` to degrees.
+    """
+
+    comptime factor = 180 / Constants.pi
+
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd: SIMD[dtype, simd_w]) {} -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
+        return simd * Scalar[dtype](factor)
+
+    return HostExecutor.apply_unary_float[dtype, _kernel](array)
+
+
+def rad2deg[
+    dtype: DType
+](array: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """Convert angles from radians to degrees, element-wise."""
+    return degrees(array)

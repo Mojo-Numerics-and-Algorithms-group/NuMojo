@@ -379,6 +379,20 @@ def test_sin() raises:
     )
 
 
+def test_angle_conversions() raises:
+    var np = Python.import_module("numpy")
+    var deg = nm.fromstring[nm.f64]("[0.0, 30.0, 90.0, 180.0, 270.0, 360.0]")
+    var degnp = deg.to_numpy()
+
+    check_is_close(nm.radians(deg), np.radians(degnp), "`radians` is broken")
+    check_is_close(nm.deg2rad(deg), np.deg2rad(degnp), "`deg2rad` is broken")
+
+    var rad = nm.radians(deg)
+    var radnp = rad.to_numpy()
+    check_is_close(nm.degrees(rad), np.degrees(radnp), "`degrees` is broken")
+    check_is_close(nm.rad2deg(rad), np.rad2deg(radnp), "`rad2deg` is broken")
+
+
 def test_extrema() raises:
     var np = Python.import_module("numpy")
     var a = nm.random.randn(10)

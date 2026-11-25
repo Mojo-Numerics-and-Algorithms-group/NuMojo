@@ -13,7 +13,7 @@ Arithmetic, trigonometric, hyperbolic, exponential, and utility mathematical ope
 Exports
 -------
 Arithmetic: `add`, `sub`, `mul`, `div`, `floor_div`, `mod`, `remainder`, `fma`,
-`gcd`, `lcm`.
+`gcd`, `lcm`, `divmod`.
 
 Trigonometric: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`, `atan2`, `hypot`, `hypot_fma`.
 
@@ -21,11 +21,14 @@ Angle conversions: `degrees`/`rad2deg`, `radians`/`deg2rad`.
 
 Hyperbolic: `sinh`, `cosh`, `tanh`, `arcsinh`, `arccosh`, `arctanh`.
 
-Exponential: `exp`, `exp2`, `expm1`, `log`, `log2`, `log10`, `log1p`.
+Exponential: `exp`, `exp2`, `expm1`, `log`, `log2`, `log10`, `log1p`,
+`logaddexp`, `logaddexp2`.
 
 Extrema: `max`, `min`, `maximum`, `minimum`.
 
-Floating point: `copysign`, `nextafter`, `scalb`, `cbrt`, `sqrt`, `rsqrt`, `clip`.
+Floating point: `copysign`, `nextafter`, `scalb`, `cbrt`, `sqrt`, `rsqrt`, `clip`,
+`reciprocal`, `spacing`, `signbit`, `heaviside`, `modf`, `frexp`, `ldexp`,
+`float_power`.
 
 Rounding: `round`, `roundeven`, `trunc`, `ceil`, `floor`.
 
@@ -47,6 +50,7 @@ Element-wise: `sign`, `square`, `power`/`pow`, `negative`, `positive`, `fmax`,
 from .arithmetic import (
     add,
     div,
+    divmod,
     floor_div,
     fma,
     gcd,
@@ -77,10 +81,13 @@ from .exponents import (
     exp,
     exp2,
     expm1,
+    float_power,
     log,
     log10,
     log1p,
     log2,
+    logaddexp,
+    logaddexp2,
 )
 from .extrema import (
     max,
@@ -89,7 +96,16 @@ from .extrema import (
     minimum,
     ptp,
 )
-from .floating import copysign
+from .floating import (
+    copysign,
+    frexp,
+    heaviside,
+    ldexp,
+    modf,
+    reciprocal,
+    signbit,
+    spacing,
+)
 from .hyper import (
     acosh,
     arccosh,

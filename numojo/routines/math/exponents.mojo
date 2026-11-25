@@ -17,6 +17,8 @@ Exports
 -------
 - `exp`, `exp2`, `expm1`: Exponential functions.
 - `log`, `log2`, `log10`, `log1p`: Logarithmic functions.
+- `logaddexp`, `logaddexp2`: Overflow-safe log-sum-exp functions.
+- `float_power`: `power` constrained to floating-point input.
 """
 
 # ===----------------------------------------------------------------------=== #
@@ -26,6 +28,7 @@ import std.math as math
 from max.algorithm import parallelize
 from std.algorithm import Static2DTileUnitFunc as Tile2DFunc
 from std.utils import Variant
+from std.utils.numerics import isinf, isnan
 
 # ===----------------------------------------------------------------------=== #
 # NuMojo
@@ -479,3 +482,158 @@ def log1p[
         ```
     """
     return math.log1p(value)
+
+
+# ===------------------------------------------------------------------------===#
+# Log-sum-exp
+# ===------------------------------------------------------------------------===#
+
+
+def logaddexp[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Compute `log(exp(array1) + exp(array2))`, element-wise, without
+    overflow.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A NDArray equal to `log(exp(array1) + exp(array2))`.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.fromstring("[1.0, 2.0, 3.0]")
+        var b = nm.fromstring("[4.0, 5.0, 6.0]")
+        var result = nm.logaddexp(a, b)
+        ```
+    """
+
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
+        var mx = simd1.gt(simd2).select(simd1, simd2)
+        var absdiff = (simd1 - simd2).__abs__()
+        var stable = mx + math.log1p(math.exp(-absdiff))
+        var neg_inf = isinf(mx) & mx.lt(0)
+        return neg_inf.select(mx, stable)
+
+    return HostExecutor.apply_binary_float[dtype, _kernel](array1, array2)
+
+
+def logaddexp2[
+    dtype: DType
+](array1: NDArray[dtype], array2: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Compute `log2(2**array1 + 2**array2)`, element-wise, without
+    overflow.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        array1: A NDArray.
+        array2: A NDArray.
+
+    Returns:
+        A NDArray equal to `log2(2**array1 + 2**array2)`.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var a = nm.fromstring("[1.0, 2.0, 3.0]")
+        var b = nm.fromstring("[4.0, 5.0, 6.0]")
+        var result = nm.logaddexp2(a, b)
+        ```
+    """
+
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
+        var mx = simd1.gt(simd2).select(simd1, simd2)
+        var absdiff = (simd1 - simd2).__abs__()
+        # `math.exp2` crashes on an infinite/NaN input, so an infinite
+        # `absdiff` (same magnitudes are infinite and apart) is replaced
+        # with a value that still underflows `exp2` to exactly 0.
+        var bad = isinf(absdiff) | isnan(absdiff)
+        var safe_neg_absdiff = bad.select(SIMD[dtype, simd_w](-1100), -absdiff)
+        var stable = mx + math.log2(1 + math.exp2(safe_neg_absdiff))
+        var neg_inf = isinf(mx) & mx.lt(0)
+        return neg_inf.select(mx, stable)
+
+    return HostExecutor.apply_binary_float[dtype, _kernel](array1, array2)
+
+
+# ===------------------------------------------------------------------------===#
+# Float power
+# ===------------------------------------------------------------------------===#
+
+
+def float_power[
+    dtype: DType
+](base: NDArray[dtype], exponent: NDArray[dtype]) raises -> NDArray[
+    dtype
+] where dtype.is_floating_point():
+    """
+    Raise each element in one array to the corresponding array exponent,
+    constrained to floating-point input.
+
+    Unlike `numpy.float_power`, this does not promote integer input to
+    float64; cast with `astype` first if needed.
+
+    Parameters:
+        dtype: The element type.
+
+    Args:
+        base: The base array.
+        exponent: The exponent array.
+
+    Returns:
+        A NDArray equal to `base**exponent`.
+
+    Constraints:
+        Both arrays must have the same shapes.
+
+    Examples:
+        ```mojo
+        import numojo as nm
+        from numojo.prelude import *
+
+        var base = nm.fromstring("[1.0, 2.0, 3.0]")
+        var exponent = nm.fromstring("[2.0, 3.0, 2.0]")
+        var result = nm.float_power(base, exponent)
+        ```
+    """
+
+    def _kernel[
+        dtype: DType, simd_w: Int
+    ](simd1: SIMD[dtype, simd_w], simd2: SIMD[dtype, simd_w]) {} -> SIMD[
+        dtype, simd_w
+    ] where dtype.is_floating_point():
+        return simd1**simd2
+
+    return HostExecutor.apply_binary_float[dtype, _kernel](base, exponent)

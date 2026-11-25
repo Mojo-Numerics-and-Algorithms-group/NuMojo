@@ -210,6 +210,7 @@ from numojo.routines.math import gradient, diff, ediff1d
 from numojo.routines.math import trapezoid, cumtrapz
 from numojo.routines.math import convolve, interp
 from numojo.routines.math import exp, exp2, expm1, log, log2, log10, log1p
+from numojo.routines.math import logaddexp, logaddexp2, float_power
 from numojo.routines.math import (
     max,
     min,
@@ -217,8 +218,17 @@ from numojo.routines.math import (
     maximum,
     ptp,
 )
-from numojo.routines.math import gcd, lcm
+from numojo.routines.math import gcd, lcm, divmod
 from numojo.routines.math import copysign
+from numojo.routines.math import (
+    reciprocal,
+    spacing,
+    signbit,
+    heaviside,
+    modf,
+    frexp,
+    ldexp,
+)
 from numojo.routines.math import (
     arccosh,
     acosh,
